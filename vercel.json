@@ -1,1 +1,1 @@
-{"cleanUrls": true}
+{"cleanUrls":true,"rewrites":[{"source":"/app","destination":"/learn"},{"source":"/app.html","destination":"/learn"}]}
