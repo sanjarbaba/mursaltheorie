@@ -21,7 +21,9 @@ const FA_LESSONS=[
 ];
 const WORD=[['voorrang','حق تقدم'],['haaientanden','خط‌های مثلثی'],['rijstrook','خط عبور'],['invoegen','داخل شدن'],['uitvoegen','خارج شدن'],['remweg','مسافت ترمز'],['volgafstand','فاصله'],['zebrapad','گذرگاه پیاده'],['rotonde','میدان'],['snelweg','بزرگراه'],['dode hoek','نقطه کور'],['richtingaanwijzer','چراغ راهنما'],['dimlicht','چراغ پایین'],['parkeerverbod','ممنوعیت پارک'],['stopverbod','ممنوعیت توقف'],['voetganger','پیاده'],['fietser','دوچرخه‌سوار'],['gordel','کمربند ایمنی'],['aquaplaning','سر خوردن روی آب'],['inhalen','سبقت'],['vluchtstrook','شانه اضطراری'],['matrixbord','تابلوی ماتریسی'],['afrit','خروجی'],['stopafstand','فاصله توقف']];
 const T={nl:{dashboard:'Dashboard',lessons:'Lessen',signs:'Borden',words:'Woorden',hazard:'Training',exams:'Examens'},fa:{dashboard:'داشبورد',lessons:'درس‌ها',signs:'علایم',words:'واژه‌ها',hazard:'تمرین',exams:'امتحان‌ها'}};
-const S={lang:localStorage.getItem('mt-lang')||'nl',view:'dashboard',mod:1,lesson:null,lessonAns:null,hazard:+(localStorage.getItem('mt-hazard')||0),hazAns:null,exam:null,examResult:null,examPage:0,user:JSON.parse(localStorage.getItem('mt-user')||'null'),auth:false,authMode:'login'};
+const S={lang:localStorage.getItem('mt-lang')||'nl',view:'dashboard',mod:1,lesson:null,lessonAns:null,hazard:+(localStorage.getItem('mt-hazard')||0),hazAns:null,exam:null,examResult:null,examPage:0,user:null,auth:false,authMode:'login'};
+localStorage.removeItem('mt-user');
+window.addEventListener('mt-clerk-change',event=>{S.user=event.detail.user;S.auth=false;render()});
 const tr=(a,b)=>S.lang==='fa'?b:a;
 function allLessons(){let a=[];for(let m=0;m<15;m++)for(let i=1;i<=10;i++)a.push({id:m*10+i,module:m+1,title:MOD[m][i],mn:MOD[m][0]});return a}
 function done(){return JSON.parse(localStorage.getItem('mt-done')||'[]')}
@@ -117,12 +119,12 @@ function resultView(){let r=S.examResult;if(r.review){let i=r.wrong[r.pos],q=que
 function closeExam(){if(S.exam?.timer)clearInterval(S.exam.timer);S.exam=null;render()}
 function go(v){S.view=v;S.lesson=null;S.hazAns=null;render();scrollTo(0,0)}
 function setLanguage(l){S.lang=l;localStorage.setItem('mt-lang',l);render()}
-function openAuth(){S.auth=true;render()}
+function openAuth(mode='login'){window.mtOpenAuth?.(mode)}
 function closeAuth(){S.auth=false;render()}
-function switchAuth(mode){S.authMode=mode;render()}
-function submitAuth(event){event.preventDefault();let form=new FormData(event.target),name=(form.get('name')||form.get('email').split('@')[0]).trim(),email=form.get('email').trim();S.user={name,email};localStorage.setItem('mt-user',JSON.stringify(S.user));S.auth=false;render()}
-function logout(){S.user=null;localStorage.removeItem('mt-user');S.auth=false;render()}
-function authView(){if(!S.auth)return'';let register=S.authMode==='register';return`<div class=overlay onclick="if(event.target===this)closeAuth()"><section class="modal ${S.lang==='fa'?'rtl':''}" style="max-width:430px;padding:22px"><div class=row><h2 style="margin:0">${register?tr('Registreren','ثبت‌نام'):tr('Inloggen','ورود')}</h2><button class=ghost onclick="closeAuth()">✕</button></div>${S.user?`<div class=box style="margin-top:16px"><b>${tr('Ingelogd als','وارد شده به نام')} ${esc(S.user.name)}</b><p>${esc(S.user.email)}</p><button class=ghost onclick="logout()">${tr('Uitloggen','خروج')}</button></div>`:`<form onsubmit="submitAuth(event)" style="display:grid;gap:12px;margin-top:16px">${register?`<label>${tr('Naam','نام')}<input required name=name style="width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;margin-top:4px"></label>`:''}<label>${tr('E-mailadres','ایمیل')}<input required type=email name=email style="width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;margin-top:4px"></label><label>${tr('Wachtwoord','رمز عبور')}<input required minlength=6 type=password name=password style="width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;margin-top:4px"></label><button class=primary type=submit>${register?tr('Account maken','ساخت حساب'):tr('Inloggen','ورود')}</button><button class=ghost type=button onclick="switchAuth('${register?'login':'register'}')">${register?tr('Al een account? Inloggen','حساب دارید؟ وارد شوید'):tr('Nog geen account? Registreren','حساب ندارید؟ ثبت‌نام کنید')}</button></form>`}<p class=mut style="font-size:12px">${tr('Tijdelijk lokaal testaccount; echte accounts volgen later.','حساب آزمایشی محلی است؛ حساب واقعی بعداً اضافه می‌شود.')}</p></section></div>`}
+function switchAuth(mode){openAuth(mode)}
+function submitAuth(event){event.preventDefault();openAuth(S.authMode)}
+function logout(){window.mtSignOut?.()}
+function authView(){return''}
 function setMod(m){if(m<1||m>15)return;S.mod=m;render();scrollTo(0,0)}
 function render(){document.documentElement.lang=S.lang==='fa'?'fa':'nl';document.documentElement.dir=S.lang==='fa'?'rtl':'ltr';root.innerHTML=S.exam?examView():S.examResult?resultView():nav()+({dashboard,lessons:lessonsView,signs:signsView,words:wordsView,hazard:hazardView,exams:examsView}[S.view]||dashboard)()+mobile()+lessonModal()+authView()}render();
-</script></body></html>
+</script><script defer src="/clerk-auth.js"></script></body></html>
