@@ -30,6 +30,15 @@ export function integer(value, { min, max }) {
   return Number.isInteger(number) && number >= min && number <= max ? number : null;
 }
 
+export function locale(value) {
+  return value === 'fa' ? 'fa' : 'nl';
+}
+
+export function localized(value, language) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+  return value[language] || value.nl || value.fa || '';
+}
+
 export function requestId(request) {
   return request.headers.get('x-request-id') || crypto.randomUUID();
 }
