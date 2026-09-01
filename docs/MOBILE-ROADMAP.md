@@ -32,7 +32,7 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [x] Voer contentmigratie 003 uit op Neon preview en verifieer aantallen en idempotentie.
 - [ ] Vul ontbrekende unieke lesinhoud aan.
 - [x] Verwijder juiste antwoorden uit publieke payloads.
-- [ ] Laat de website uitsluitend de v1-content API gebruiken.
+- [x] Laat de website uitsluitend de v1-content- en examen-API gebruiken.
 
 ## Fase 4 — Expo-app
 
