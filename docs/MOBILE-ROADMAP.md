@@ -24,7 +24,7 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [x] Voeg sync metadata toe aan voortgang.
 - [x] Voer migratie 001 uit op Neon previewbranch `preview/codex/mobile-api-v1-foundation` en verifieer de tabellen.
 - [x] Voeg een idempotente migratie voor bestaande beta-toegang naar entitlements toe.
-- [ ] Voer migratie 002 uit op de Neon previewbranch en verifieer aantallen.
+- [x] Voer migratie 002 uit op de Neon previewbranch en verifieer aantallen en idempotentie.
 
 ## Fase 3 — Contentmigratie
 
