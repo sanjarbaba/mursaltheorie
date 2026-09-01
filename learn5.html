@@ -122,6 +122,7 @@ function resultView(){let r=S.examResult;if(r.review){let i=r.wrong[r.pos],q=que
 function closeExam(){if(S.exam?.timer)clearInterval(S.exam.timer);S.exam=null;render()}
 function go(v){S.view=v;S.lesson=null;S.hazAns=null;render();scrollTo(0,0)}
 function setLanguage(l){S.lang=l;localStorage.setItem('mt-lang',l);render()}
+function setLang(l){setLanguage(l)}
 function openAuth(mode='login'){window.mtOpenAuth?.(mode)}
 function closeAuth(){S.auth=false;render()}
 function switchAuth(mode){openAuth(mode)}
