@@ -29,6 +29,7 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 ## Fase 3 — Contentmigratie
 
 - [x] Extraheer 150 lessen en 30 unieke vragen reproduceerbaar uit `learn5.html`.
+- [x] Voer contentmigratie 003 uit op Neon preview en verifieer aantallen en idempotentie.
 - [ ] Vul ontbrekende unieke lesinhoud aan.
 - [x] Verwijder juiste antwoorden uit publieke payloads.
 - [ ] Laat de website uitsluitend de v1-content API gebruiken.
