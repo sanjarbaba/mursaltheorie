@@ -8,7 +8,9 @@ export function publicQuestion(row, language, localized) {
   return {
     id: Number(row.id),
     prompt: localized(row.prompt, language),
-    options: Array.isArray(row.options) ? row.options : [],
+    options: Array.isArray(row.options)
+      ? row.options.map((option) => typeof option === 'string' ? option : localized(option, language))
+      : [],
     category: row.category,
     media: Array.isArray(row.media) ? row.media : [],
     sortOrder: row.sort_order
