@@ -22,19 +22,24 @@ CREATE UNIQUE INDEX IF NOT EXISTS content_releases_one_published_idx
 
 CREATE TABLE IF NOT EXISTS course_modules (
   id BIGSERIAL PRIMARY KEY,
-  module_number INTEGER NOT NULL UNIQUE CHECK (module_number BETWEEN 1 AND 99),
-  slug TEXT NOT NULL UNIQUE,
+  release_id BIGINT NOT NULL REFERENCES content_releases(id),
+  module_number INTEGER NOT NULL CHECK (module_number BETWEEN 1 AND 99),
+  slug TEXT NOT NULL,
   title JSONB NOT NULL DEFAULT '{}'::JSONB,
   description JSONB NOT NULL DEFAULT '{}'::JSONB,
   sort_order INTEGER NOT NULL CHECK (sort_order > 0),
   published BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (id, release_id),
+  UNIQUE (release_id, module_number),
+  UNIQUE (release_id, slug)
 );
 
 CREATE TABLE IF NOT EXISTS course_lessons (
-  id INTEGER PRIMARY KEY CHECK (id > 0),
-  module_id BIGINT NOT NULL REFERENCES course_modules(id),
+  id BIGSERIAL PRIMARY KEY,
+  lesson_number INTEGER NOT NULL CHECK (lesson_number > 0),
+  module_id BIGINT NOT NULL,
   release_id BIGINT NOT NULL REFERENCES content_releases(id),
   slug TEXT NOT NULL,
   title JSONB NOT NULL DEFAULT '{}'::JSONB,
@@ -46,6 +51,8 @@ CREATE TABLE IF NOT EXISTS course_lessons (
   published BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  FOREIGN KEY (module_id, release_id) REFERENCES course_modules(id, release_id),
+  UNIQUE (release_id, lesson_number),
   UNIQUE (release_id, slug),
   UNIQUE (release_id, module_id, sort_order)
 );
@@ -53,6 +60,20 @@ CREATE TABLE IF NOT EXISTS course_lessons (
 CREATE INDEX IF NOT EXISTS course_lessons_release_order_idx
   ON course_lessons (release_id, module_id, sort_order)
   WHERE published = TRUE;
+
+CREATE TABLE IF NOT EXISTS exam_definitions (
+  id BIGSERIAL PRIMARY KEY,
+  release_id BIGINT NOT NULL REFERENCES content_releases(id),
+  exam_number INTEGER NOT NULL CHECK (exam_number > 0),
+  title JSONB NOT NULL DEFAULT '{}'::JSONB,
+  question_count SMALLINT NOT NULL CHECK (question_count BETWEEN 1 AND 100),
+  pass_score SMALLINT NOT NULL CHECK (pass_score BETWEEN 0 AND 100),
+  duration_seconds INTEGER CHECK (duration_seconds > 0),
+  published BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (release_id, exam_number)
+);
 
 CREATE TABLE IF NOT EXISTS exam_questions_v1 (
   id BIGSERIAL PRIMARY KEY,
@@ -73,6 +94,36 @@ CREATE TABLE IF NOT EXISTS exam_questions_v1 (
 CREATE INDEX IF NOT EXISTS exam_questions_v1_release_idx
   ON exam_questions_v1 (release_id, category)
   WHERE published = TRUE;
+
+CREATE TABLE IF NOT EXISTS exam_definition_questions_v1 (
+  exam_id BIGINT NOT NULL REFERENCES exam_definitions(id) ON DELETE CASCADE,
+  question_id BIGINT NOT NULL REFERENCES exam_questions_v1(id),
+  sort_order SMALLINT NOT NULL CHECK (sort_order > 0),
+  PRIMARY KEY (exam_id, question_id),
+  UNIQUE (exam_id, sort_order)
+);
+
+CREATE TABLE IF NOT EXISTS exam_attempts_v1 (
+  id BIGSERIAL PRIMARY KEY,
+  clerk_user_id TEXT NOT NULL REFERENCES app_users(clerk_user_id) ON DELETE CASCADE,
+  exam_id BIGINT NOT NULL REFERENCES exam_definitions(id),
+  mutation_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'started'
+    CHECK (status IN ('started', 'submitted', 'expired', 'abandoned')),
+  score SMALLINT CHECK (score BETWEEN 0 AND 100),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  submitted_at TIMESTAMPTZ,
+  UNIQUE (clerk_user_id, mutation_id)
+);
+
+CREATE TABLE IF NOT EXISTS exam_attempt_answers_v1 (
+  attempt_id BIGINT NOT NULL REFERENCES exam_attempts_v1(id) ON DELETE CASCADE,
+  question_id BIGINT NOT NULL REFERENCES exam_questions_v1(id),
+  selected_option SMALLINT NOT NULL CHECK (selected_option BETWEEN 0 AND 9),
+  is_correct BOOLEAN NOT NULL,
+  answered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (attempt_id, question_id)
+);
 
 CREATE TABLE IF NOT EXISTS entitlements (
   id BIGSERIAL PRIMARY KEY,
