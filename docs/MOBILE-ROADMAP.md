@@ -22,7 +22,7 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [x] Modelleer examens, vragen, antwoorden en uitleg afzonderlijk.
 - [x] Voeg entitlements en onveranderlijke purchase events toe.
 - [x] Voeg sync metadata toe aan voortgang.
-- [ ] Voer migratie 001 uit op een Neon preview branch en verifieer de tabellen.
+- [x] Voer migratie 001 uit op Neon previewbranch `preview/codex/mobile-api-v1-foundation` en verifieer de tabellen.
 - [ ] Migreer de bestaande beta-toegang naar entitlements.
 
 ## Fase 3 — Contentmigratie
