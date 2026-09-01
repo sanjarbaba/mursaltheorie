@@ -75,6 +75,22 @@ export function hasCourseAccess(user) {
 }
 
 export async function requireCourseAccess(sql, userId) {
+  try {
+    const entitlements = await sql`
+      SELECT id
+      FROM entitlements
+      WHERE clerk_user_id = ${userId}
+        AND product_key = 'course.full'
+        AND status IN ('active', 'grace')
+        AND starts_at <= NOW()
+        AND (ends_at IS NULL OR ends_at > NOW())
+      LIMIT 1
+    `;
+    if (entitlements[0]) return { entitlement: entitlements[0] };
+  } catch (error) {
+    if (error?.code !== '42P01') throw error;
+  }
+
   const rows = await sql`
     SELECT clerk_user_id, access_status, access_starts_at, access_ends_at
     FROM app_users WHERE clerk_user_id = ${userId}
