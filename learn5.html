@@ -25,7 +25,7 @@ const VALID_VIEWS=['dashboard','lessons','signs','words','hazard','exams'];
 const savedView=localStorage.getItem('mt-view');
 const S={lang:localStorage.getItem('mt-lang')||'nl',view:VALID_VIEWS.includes(savedView)?savedView:'dashboard',mod:1,lesson:null,lessonAns:null,signCat:'all',hazard:+(localStorage.getItem('mt-hazard')||0),hazAns:null,exam:null,examResult:null,examPage:0,user:null,auth:false,authMode:'login'};
 localStorage.removeItem('mt-user');
-window.addEventListener('mt-clerk-change',event=>{S.user=event.detail.user;S.auth=false;render()});
+window.addEventListener('mt-clerk-change',event=>{S.user=event.detail.signedIn?(event.detail.user||{name:tr('Jouw account','حساب شما'),email:''}):null;S.auth=false;render()});
 window.addEventListener('mt-account-data',event=>{let local=done(),remote=event.detail.completedLessons||[],merged=[...new Set([...local,...remote])].sort((a,b)=>a-b);localStorage.setItem('mt-done',JSON.stringify(merged));local.filter(id=>!remote.includes(id)).forEach(id=>window.mtSaveLessonProgress?.(id,true));let latest=event.detail.results?.[0];if(latest)localStorage.setItem('mt-last-exam',JSON.stringify({n:latest.exam_number,score:latest.score,date:latest.completed_at}));render()});
 const tr=(a,b)=>S.lang==='fa'?b:a;
 function allLessons(){let a=[];for(let m=0;m<15;m++)for(let i=1;i<=10;i++)a.push({id:m*10+i,module:m+1,title:MOD[m][i],mn:MOD[m][0]});return a}

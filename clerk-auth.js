@@ -40,10 +40,12 @@
   }
 
   function announceAuthState(snapshot) {
-    const activeUser = snapshot?.user || window.Clerk?.user || null;
+    const activeSession = snapshot?.session || window.Clerk?.session || null;
+    const activeUser = snapshot?.user || activeSession?.user || window.Clerk?.user || null;
+    const signedIn = Boolean(activeUser || activeSession || window.Clerk?.isSignedIn);
     window.dispatchEvent(new CustomEvent('mt-clerk-change', {
       detail: {
-        signedIn: Boolean(activeUser),
+        signedIn,
         user: userDetails(activeUser)
       }
     }));
