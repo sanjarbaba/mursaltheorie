@@ -69,7 +69,7 @@ test('percentage rondt examenscores voorspelbaar af', () => {
 
 test('publicQuestion lekt geen antwoord of uitleg', () => {
   const question = publicQuestion({
-    id: '12', prompt: { nl: 'Vraag?' }, options: ['A', 'B'], category: 'regels',
+    id: '12', prompt: { nl: 'Vraag?' }, options: [{ nl: 'A', fa: 'الف' }, { nl: 'B', fa: 'ب' }], category: 'regels',
     media: [], sort_order: 1, correct_option: 1, explanation: { nl: 'Omdat.' }
   }, 'nl', localized);
   assert.deepEqual(question, {
