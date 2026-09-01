@@ -28,9 +28,9 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 
 ## Fase 3 — Contentmigratie
 
-- [ ] Extraheer lessen en vragen uit `learn5.html`.
+- [x] Extraheer 150 lessen en 30 unieke vragen reproduceerbaar uit `learn5.html`.
 - [ ] Vul ontbrekende unieke lesinhoud aan.
-- [ ] Verwijder juiste antwoorden uit publieke payloads.
+- [x] Verwijder juiste antwoorden uit publieke payloads.
 - [ ] Laat de website uitsluitend de v1-content API gebruiken.
 
 ## Fase 4 — Expo-app
