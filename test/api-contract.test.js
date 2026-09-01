@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { API_VERSION, fail, integer, locale, localized, ok } from '../api/v1/_contract.js';
 import { accessSummary, entitlementIsActive } from '../api/v1/_access.js';
+import { mutationId, percentage, publicQuestion } from '../api/v1/_exam.js';
 
 test('integer accepteert alleen gehele getallen binnen het bereik', () => {
   assert.equal(integer('12', { min: 1, max: 150 }), 12);
@@ -52,4 +53,28 @@ test('accessSummary valt gecontroleerd terug op legacy-toegang', () => {
     products: [],
     entitlements: []
   });
+});
+
+test('mutationId accepteert alleen bruikbare idempotency-sleutels', () => {
+  assert.equal(mutationId(' mobile-123 '), 'mobile-123');
+  assert.equal(mutationId('kort'), null);
+  assert.equal(mutationId(null), null);
+});
+
+test('percentage rondt examenscores voorspelbaar af', () => {
+  assert.equal(percentage(7, 10), 70);
+  assert.equal(percentage(2, 3), 67);
+  assert.equal(percentage(0, 0), 0);
+});
+
+test('publicQuestion lekt geen antwoord of uitleg', () => {
+  const question = publicQuestion({
+    id: '12', prompt: { nl: 'Vraag?' }, options: ['A', 'B'], category: 'regels',
+    media: [], sort_order: 1, correct_option: 1, explanation: { nl: 'Omdat.' }
+  }, 'nl', localized);
+  assert.deepEqual(question, {
+    id: 12, prompt: 'Vraag?', options: ['A', 'B'], category: 'regels', media: [], sortOrder: 1
+  });
+  assert.equal('correctOption' in question, false);
+  assert.equal('explanation' in question, false);
 });
