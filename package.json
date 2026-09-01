@@ -1,0 +1,12 @@
+{
+  "name": "mursaltheorie",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@clerk/backend": "^3.16.4",
+    "@neondatabase/serverless": "^1.1.0"
+  }
+}
