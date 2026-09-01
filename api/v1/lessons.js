@@ -24,19 +24,20 @@ export default {
 
       const release = releases[0];
       const rows = await sql`
-        SELECT l.id, l.slug, l.title, l.summary, l.content_blocks, l.media,
+        SELECT l.lesson_number, l.slug, l.title, l.summary, l.content_blocks, l.media,
           l.estimated_minutes, l.sort_order,
           m.module_number, m.slug AS module_slug, m.title AS module_title
         FROM course_lessons l
         JOIN course_modules m ON m.id = l.module_id
         WHERE l.release_id = ${release.id}
+          AND m.release_id = ${release.id}
           AND l.published = TRUE
           AND m.published = TRUE
         ORDER BY m.sort_order, l.sort_order
       `;
 
       const lessons = rows.map((row) => ({
-        id: row.id,
+        id: row.lesson_number,
         slug: row.slug,
         title: localized(row.title, language),
         summary: localized(row.summary, language),
