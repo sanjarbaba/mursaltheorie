@@ -80,7 +80,14 @@ async function saveAnswer(sql, userId, body) {
     RETURNING attempt_id, question_id, selected_option, answered_at
   `;
   if (!rows[0]) return fail('ATTEMPT_NOT_ACTIVE', 'Deze examenpoging is niet actief of de vraag hoort niet bij het examen.', 409);
-  return ok({ answer: rows[0] });
+  return ok({
+    answer: {
+      attemptId: Number(rows[0].attempt_id),
+      questionId: Number(rows[0].question_id),
+      selectedOption: rows[0].selected_option,
+      answeredAt: rows[0].answered_at
+    }
+  });
 }
 
 async function submitAttempt(sql, userId, body, language) {
@@ -124,7 +131,19 @@ async function submitAttempt(sql, userId, body, language) {
       WHERE id = ${attemptId} AND clerk_user_id = ${userId} AND status = 'started'
       RETURNING status, score, submitted_at
     `;
-    Object.assign(attempt, updated[0]);
+    if (updated[0]) {
+      Object.assign(attempt, updated[0]);
+    } else {
+      const concurrent = await sql`
+        SELECT status, score, submitted_at
+        FROM exam_attempts_v1
+        WHERE id = ${attemptId} AND clerk_user_id = ${userId}
+      `;
+      if (concurrent[0]?.status !== 'submitted') {
+        return fail('ATTEMPT_NOT_ACTIVE', 'Deze examenpoging kon niet worden ingediend.', 409);
+      }
+      Object.assign(attempt, concurrent[0]);
+    }
   } else if (attempt.status !== 'submitted') {
     return fail('ATTEMPT_NOT_ACTIVE', 'Deze examenpoging kan niet worden ingediend.', 409);
   }
