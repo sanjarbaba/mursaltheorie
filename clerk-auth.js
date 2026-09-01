@@ -39,11 +39,12 @@
     };
   }
 
-  function announceAuthState() {
+  function announceAuthState(snapshot) {
+    const activeUser = snapshot?.user || window.Clerk?.user || null;
     window.dispatchEvent(new CustomEvent('mt-clerk-change', {
       detail: {
-        signedIn: Boolean(window.Clerk?.isSignedIn),
-        user: userDetails(window.Clerk?.user)
+        signedIn: Boolean(activeUser),
+        user: userDetails(activeUser)
       }
     }));
   }
@@ -56,7 +57,7 @@
     await window.Clerk.load({
       ui: { ClerkUI: window.__internal_ClerkUICtor }
     });
-    window.Clerk.addListener(announceAuthState);
+    window.Clerk.addListener((snapshot) => announceAuthState(snapshot));
     announceAuthState();
     return window.Clerk;
   })().catch((error) => {
@@ -70,7 +71,9 @@
       if (clerk.isSignedIn) {
         return clerk.openUserProfile();
       }
-      return mode === 'register' ? clerk.openSignUp() : clerk.openSignIn();
+      const result = mode === 'register' ? await clerk.openSignUp() : await clerk.openSignIn();
+      announceAuthState();
+      return result;
     } catch (error) {
       alert('Inloggen kon niet worden geladen. Vernieuw de pagina en probeer het opnieuw.');
     }
