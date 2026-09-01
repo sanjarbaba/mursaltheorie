@@ -23,7 +23,8 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [x] Voeg entitlements en onveranderlijke purchase events toe.
 - [x] Voeg sync metadata toe aan voortgang.
 - [x] Voer migratie 001 uit op Neon previewbranch `preview/codex/mobile-api-v1-foundation` en verifieer de tabellen.
-- [ ] Migreer de bestaande beta-toegang naar entitlements.
+- [x] Voeg een idempotente migratie voor bestaande beta-toegang naar entitlements toe.
+- [ ] Voer migratie 002 uit op de Neon previewbranch en verifieer aantallen.
 
 ## Fase 3 — Contentmigratie
 
