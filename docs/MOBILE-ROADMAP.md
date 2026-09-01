@@ -12,7 +12,7 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [x] Gebruik vaste responsevormen en machineleesbare foutcodes.
 - [x] Maak Clerk authorized parties configureerbaar via een servervariabele.
 - [x] Voeg contracttests toe.
-- [ ] Implementeer v1 examenpogingen met server-side antwoordcontrole.
+- [x] Implementeer v1 examenpogingen met server-side antwoordcontrole.
 - [ ] Voeg schema-validatie en idempotency voor schrijfrequests toe.
 
 ## Fase 2 — Datamodel en migraties
