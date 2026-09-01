@@ -17,11 +17,13 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 
 ## Fase 2 — Datamodel en migraties
 
-- [ ] Introduceer genummerde, herhaalbaar uitvoerbare SQL-migraties.
-- [ ] Modelleer lessen als versieerbare contentblokken.
-- [ ] Modelleer examens, vragen, antwoorden en uitleg afzonderlijk.
-- [ ] Voeg entitlements en onveranderlijke purchase events toe.
-- [ ] Voeg sync metadata toe aan voortgang.
+- [x] Introduceer genummerde, herhaalbaar uitvoerbare SQL-migraties.
+- [x] Modelleer lessen als versieerbare contentblokken.
+- [x] Modelleer examens, vragen, antwoorden en uitleg afzonderlijk.
+- [x] Voeg entitlements en onveranderlijke purchase events toe.
+- [x] Voeg sync metadata toe aan voortgang.
+- [ ] Voer migratie 001 uit op een Neon preview branch en verifieer de tabellen.
+- [ ] Migreer de bestaande beta-toegang naar entitlements.
 
 ## Fase 3 — Contentmigratie
 
