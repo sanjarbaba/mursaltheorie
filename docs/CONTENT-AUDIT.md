@@ -1,4 +1,4 @@
-# Content audit â€” 2 September 2026
+# Content audit Ã¢â‚¬â€ 2 September 2026
 
 The seed migration is now audited reproducibly with `node scripts/audit-content.mjs database/migrations/003_seed_learn5_content.sql`.
 
@@ -11,4 +11,6 @@ The seed migration is now audited reproducibly with `node scripts/audit-content.
 - All 30 question explanations are identical generic text.
 - No lesson or question is missing media in the seed data.
 
-The audit deliberately reports duplication instead of silently rewriting traffic-law content. The next content pass must replace ^iÈ`zw«‰Ë.šf«Ë÷±¦V§jØ¨Ÿ­†Ú)‰Ë)yÈŸ‰ÀîµÈZĞÚ®+^ÆÖ§v·¯‰ì-…è¦jš¨§²Ûaz«²Ø¨
+The audit deliberately reports duplication instead of silently rewriting traffic-law content. The next content pass must replace ^iÃˆ`zwÂ«â€°Ã‹.Å¡fÂ«Ã‹Ã·Â±Â¦VÂ§jÃ˜Â¨Å¸Â­â€ Ãš)â€°Ã‹)yÃˆÅ¸â€°Ã€Ã®ÂµÃˆZÂÃÃšÂ®+^Ã†Ã–Â§vÂ·Â¯â€°Ã¬-â€¦Ã¨Â¦jÅ¡ÂÂ¨Â§Â²Ã›azÂ«Å¾Â²Ã˜Â¨
+
+Preview deployment trigger: environment validation.
