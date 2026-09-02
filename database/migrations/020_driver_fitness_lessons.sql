@@ -1,0 +1,16 @@
+-- Complete lessons 121-130 with bilingual driver-fitness and attention rules.
+BEGIN;
+DO $do$
+DECLARE i int; nums int[]:=ARRAY[121,122,123,124,125,126,127,128,129,130];
+ rules text[]:=ARRAY['Alcohol vermindert je rijvaardigheid en is geen veilige combinatie met rijden.','Drugs en medicijnen kunnen je rijgedrag en reactietijd beïnvloeden.','Rijd nooit onder invloed van alcohol, drugs of medicijnen die je rijvaardigheid verminderen.','Plan een alternatief als je weet dat je alcohol gaat drinken.','Vermoeidheid vertraagt je reacties; neem op tijd pauze.','Leg afleiding weg en houd je aandacht volledig bij het verkeer.','Een smartphone bedien je niet tijdens het rijden.','Boosheid of stress kan je oordeel verslechteren; kalmeer eerst.','Een goede reactietijd vraagt rust, slaap en concentratie.','Verantwoord rijden betekent risico’s vooraf herkennen en vermijden.'];
+ rulesfa text[]:=ARRAY['الکل مهارت رانندگی را کم می‌کند و با رانندگی ایمن سازگار نیست.','مواد و داروها می‌توانند رفتار و زمان واکنش را تغییر دهند.','هرگز زیر تأثیر الکل، مواد یا داروی کاهنده توان رانندگی نکنید.','اگر نوشیدنی دارید، از قبل راه جایگزین برنامه‌ریزی کنید.','خستگی واکنش را کند می‌کند؛ به‌موقع استراحت کنید.','حواس‌پرتی را کنار بگذارید و تمام توجه را به راه بدهید.','هنگام رانندگی گوشی را استفاده نکنید.','خشم و استرس قضاوت را بدتر می‌کند؛ ابتدا آرام شوید.','واکنش خوب به خواب، آرامش و تمرکز نیاز دارد.','رانندگی مسئولانه یعنی خطرها را از پیش بشناسید و دوری کنید.'];
+ q text[]:=ARRAY['Wat doet alcohol met rijden?','Wat kunnen drugs of medicijnen doen?','Wat is de veilige keuze onder invloed?','Wat plan je vóór alcohol drinken?','Wat doe je bij vermoeidheid?','Hoe voorkom je afleiding?','Mag je een smartphone bedienen tijdens het rijden?','Wat doe je bij sterke emoties?','Wat helpt je reactievermogen?','Wat betekent verantwoord rijden?'];
+ qfa text[]:=ARRAY['الکل با رانندگی چه می‌کند؟','مواد یا دارو چه اثری دارند؟','انتخاب ایمن زیر تأثیر چیست؟','پیش از نوشیدن الکل چه برنامه‌ای می‌ریزید؟','در خستگی چه می‌کنید؟','چگونه حواس‌پرتی را پیشگیری می‌کنید؟','آیا هنگام رانندگی می‌توان گوشی را استفاده کرد؟','در احساسات شدید چه می‌کنید؟','چه چیزی واکنش را بهتر می‌کند؟','رانندگی مسئولانه یعنی چه؟'];
+BEGIN
+ FOR i IN 1..10 LOOP
+  UPDATE course_lessons l SET summary=jsonb_build_object('nl',rules[i],'fa',rulesfa[i]),content_blocks=jsonb_build_array(jsonb_build_object('type','rule','text',jsonb_build_object('nl',rules[i],'fa',rulesfa[i])),jsonb_build_object('type','exam_tip','text',jsonb_build_object('nl','Stop en regel hulp of rust voordat je verder rijdt.','fa','پیش از ادامه، توقف کنید و کمک یا استراحت فراهم کنید.')),jsonb_build_object('type','quiz','question',jsonb_build_object('nl',q[i],'fa',qfa[i]),'options',jsonb_build_array(jsonb_build_object('nl',rules[i],'fa',rulesfa[i]),jsonb_build_object('nl','Toch doorrijden','fa','با این حال ادامه دادن'),jsonb_build_object('nl','Sneller rijden','fa','سریع‌تر راندن')),'correctOption',0,'explanation',jsonb_build_object('nl',rules[i],'fa',rulesfa[i]))),updated_at=NOW() WHERE l.release_id=(SELECT id FROM content_releases WHERE version=1) AND l.lesson_number=nums[i];
+ END LOOP;
+END $do$;
+INSERT INTO schema_migrations(version,name) VALUES(20,'driver_fitness_lessons') ON CONFLICT(version) DO NOTHING;
+COMMIT;
+
