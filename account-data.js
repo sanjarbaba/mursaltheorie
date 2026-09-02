@@ -100,6 +100,32 @@
 
   window.mtLoadExamResults = loadExamResults;
 
+  window.mtExportAccountData = async function () {
+    const payload = await apiRequest('/api/v1/me?resource=export');
+    const blob = new Blob([JSON.stringify(payload.export, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `mursaltheorie-gegevens-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  window.mtDeleteAccount = async function (confirmation) {
+    const result = await apiRequest('/api/v1/me', {
+      method: 'DELETE',
+      body: JSON.stringify({ confirmation })
+    });
+    const clerk = await window.mtClerkReady;
+    await clerk?.signOut?.();
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('mt-')) localStorage.removeItem(key);
+    }
+    return result;
+  };
+
   function getDeviceId() {
     const key = 'mt-device-id-v1';
     let id = localStorage.getItem(key);
@@ -216,4 +242,3 @@
     flushProgressQueue().catch((error) => console.warn('Offline voortgang blijft in de wachtrij.', error));
   });
 }());
-

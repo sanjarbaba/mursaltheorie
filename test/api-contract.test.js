@@ -5,6 +5,7 @@ import { accessSummary, entitlementIsActive } from '../api/v1/_access.js';
 import { mutationId, percentage, publicQuestion } from '../api/v1/_exam.js';
 import { clientTimestamp, deviceId, platform, shouldApplyProgress, syncMutationId } from '../api/v1/_sync.js';
 import { summarizeResults } from '../api/v1/_results.js';
+import { ACCOUNT_DELETE_CONFIRMATION, accountExport, validDeletionConfirmation } from '../api/v1/_privacy.js';
 
 test('integer accepteert alleen gehele getallen binnen het bereik', () => {
   assert.equal(integer('12', { min: 1, max: 150 }), 12);
@@ -114,3 +115,18 @@ test('resultatensamenvatting berekent voortgang zonder lege-geschiedenisfouten',
   });
 });
 
+test('accountverwijdering vereist de exacte expliciete bevestiging', () => {
+  assert.equal(validDeletionConfirmation({ confirmation: ACCOUNT_DELETE_CONFIRMATION }), true);
+  assert.equal(validDeletionConfirmation({ confirmation: 'verwijder mijn account' }), false);
+  assert.equal(validDeletionConfirmation(null), false);
+});
+
+test('gegevensexport bevat geen push-token', () => {
+  const exported = accountExport({
+    profile: { clerk_user_id: 'user_1' },
+    devices: [{ device_id: 'web:1', platform: 'web', push_token: 'secret' }]
+  }, '2026-09-02T12:00:00.000Z');
+  assert.equal(exported.schemaVersion, 1);
+  assert.equal(exported.exportedAt, '2026-09-02T12:00:00.000Z');
+  assert.deepEqual(exported.devices, [{ device_id: 'web:1', platform: 'web' }]);
+});

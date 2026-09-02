@@ -48,6 +48,6 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 
 - [ ] Koppel web-, Apple- en Google-aankopen aan centrale entitlements.
 - [ ] Verifieer aankopen en webhooks server-side en idempotent.
-- [ ] Voeg aankoopherstel, accountverwijdering en privacyflows toe.
+- [ ] Voeg aankoopherstel toe.
+- [x] Voeg gegevensexport, accountverwijdering en privacyflows toe.
 - [ ] Test via TestFlight en Google Play internal testing.
-
