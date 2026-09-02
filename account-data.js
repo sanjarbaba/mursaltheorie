@@ -5,7 +5,7 @@
   async function apiRequest(path, options) {
     const clerk = await window.mtClerkReady;
     // Clerk may expose the active session through client.sessions briefly before clerk.session.
-    let session = clerk?.session || clerk?.client?.sessions?.find(item => item.status === 'active') || null;
+    let session = clerk?.session || clerk?.client?.sessions?.find(item => item.status === 'active') || clerk?.client?.sessions?.[0] || null;
     for (let attempt = 0; !session && attempt < 10; attempt += 1) {
       await new Promise(resolve => setTimeout(resolve, 200));
       session = clerk?.session || clerk?.client?.sessions?.find(item => item.status === 'active') || null;
