@@ -10,9 +10,14 @@
       if (existing) {
         if (existing.dataset.loaded === 'true' || existing.readyState === 'complete') resolve();
         else {
+          // A stale preloaded tag can have missed its load event; replace it.
+          existing.remove();
+          return loadScript(src, attributes);
+        }
+        /*
           existing.addEventListener('load', resolve, { once: true });
           existing.addEventListener('error', reject, { once: true });
-        }
+        */
         return;
       }
 
