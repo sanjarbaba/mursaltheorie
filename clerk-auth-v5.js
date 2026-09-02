@@ -14,7 +14,7 @@
   function announceAuthState(snapshot) {
     const activeSession = snapshot?.session || window.Clerk?.session || null;
     const activeUser = snapshot?.user || activeSession?.user || window.Clerk?.user || null;
-    const signedIn = Boolean(activeSession);
+    const signedIn = Boolean(activeSession && window.Clerk?.isSignedIn);
     window.dispatchEvent(new CustomEvent('mt-clerk-change', { detail:{ signedIn, user:signedIn ? userDetails(activeUser) : null } }));
     // Re-check after Clerk finishes session hydration to clear stale user-only snapshots.
     if (!snapshot) setTimeout(() => announceAuthState({ session: window.Clerk?.session || null, user: window.Clerk?.user || null }), 500);
