@@ -4,12 +4,14 @@
 
   async function apiRequest(path, options) {
     const clerk = await window.mtClerkReady;
-    // Clerk can hydrate the current session just after its ready promise resolves.
-    for (let attempt = 0; !clerk?.session && attempt < 10; attempt += 1) {
+    // Clerk may expose the active session through client.sessions briefly before clerk.session.
+    let session = clerk?.session || clerk?.client?.sessions?.find(item => item.status === 'active') || null;
+    for (let attempt = 0; !session && attempt < 10; attempt += 1) {
       await new Promise(resolve => setTimeout(resolve, 200));
+      session = clerk?.session || clerk?.client?.sessions?.find(item => item.status === 'active') || null;
     }
-    if (!clerk?.session) throw new Error('AUTH_REQUIRED');
-    const token = await clerk.session.getToken();
+    if (!session) throw new Error('AUTH_REQUIRED');
+    const token = await session.getToken();
     const response = await fetch(path, {
       ...options,
       headers: {
