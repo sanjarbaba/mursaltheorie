@@ -16,6 +16,8 @@
     const activeUser = snapshot?.user || activeSession?.user || window.Clerk?.user || null;
     const signedIn = Boolean(activeSession);
     window.dispatchEvent(new CustomEvent('mt-clerk-change', { detail:{ signedIn, user:signedIn ? userDetails(activeUser) : null } }));
+    // Re-check after Clerk finishes session hydration to clear stale user-only snapshots.
+    if (!snapshot) setTimeout(() => announceAuthState({ session: window.Clerk?.session || null, user: window.Clerk?.user || null }), 500);
   }
   window.mtClerkReady = (async () => {
     await loadScript(`${frontendApi}/npm/@clerk/ui@1/dist/ui.browser.js`);
