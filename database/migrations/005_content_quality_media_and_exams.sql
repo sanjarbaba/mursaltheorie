@@ -7,6 +7,16 @@ SET explanation = jsonb_build_object(
   'fa', 'پاسخ درست این است: ' || (options->correct_option->>'fa') || '. سپس پیش از عمل، تمام وضعیت ترافیک را بررسی کنید.'
 );
 
+-- Replace legacy placeholder summaries only; preserve already reviewed copy.
+UPDATE course_lessons
+SET summary = jsonb_build_object(
+  'nl', 'Bij ' || (title->>'nl') || ' leer je de belangrijkste regel en hoe je die veilig toepast.',
+  'fa', 'در درس «' || (title->>'fa') || '» مهم‌ترین قانون و روش اجرای ایمن آن را یاد می‌گیرید.'
+)
+WHERE summary->>'nl' IS NULL
+   OR summary->>'nl' = 'Kijk naar alle richtingen en bepaal eerst wie voorrang heeft.'
+   OR summary->>'fa' = 'اول تمام وضعیت ترافیک، علایم و خطر را بررسی کنید و سپس طبق قانون عمل کنید.';
+
 WITH media_map (lesson_no, media) AS (
   VALUES
     (2, 'theory-005-lights-check.webp'),
