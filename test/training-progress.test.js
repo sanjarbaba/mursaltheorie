@@ -15,3 +15,16 @@ test('training screen displays correct, answered and percentage', () => {
   assert.match(html, /S\.training\.correct\}\/\$\{S\.training\.answered\}/);
 });
 
+test('training contains thirty bilingual, uniquely described situations', () => {
+  const nlBlock = html.match(/const H=\[(.*?)\];\s*const FA_H=/s)?.[1] || '';
+  const faBlock = html.match(/const FA_H=\[(.*?)\];\s*function hazardView/s)?.[1] || '';
+  const nlQuestions = [...nlBlock.matchAll(/\{q:'([^']+)'/g)].map((match) => match[1]);
+  const faQuestions = [...faBlock.matchAll(/^\['([^']+)'/gm)].map((match) => match[1]);
+  assert.equal(nlQuestions.length, 30);
+  assert.equal(new Set(nlQuestions).size, 30);
+  assert.equal(faQuestions.length, 30);
+  assert.match(nlBlock, /a:'rem'/);
+  assert.match(nlBlock, /a:'gas'/);
+  assert.match(nlBlock, /a:'nothing'/);
+});
+
