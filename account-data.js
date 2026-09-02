@@ -68,9 +68,10 @@
       });
       await registerDevice();
       await flushProgressQueue();
-      const [progress, training, content, history] = await Promise.all([
+      const [progress, training, access, content, history] = await Promise.all([
         apiRequest('/api/v1/progress'),
         apiRequest('/api/v1/progress?resource=training'),
+        apiRequest('/api/v1/access'),
         loadV1Content(),
         loadExamResults()
       ]);
@@ -79,6 +80,7 @@
           profile: profile.user,
           completedLessons: (progress.progress || []).filter((item) => item.completed).map((item) => item.lesson_id),
           trainingProgress: training.progress || null,
+          access: access.access || null,
           results: history.results || [],
           resultSummary: history.summary,
           content
@@ -210,6 +212,12 @@
         clientUpdatedAt: new Date().toISOString()
       })
     });
+  };
+
+  window.mtStartCheckout = async function () {
+    const result = await apiRequest('/api/v1/access?resource=checkout', { method: 'POST' });
+    if (!result.checkoutUrl) throw new Error('CHECKOUT_URL_MISSING');
+    window.location.assign(result.checkoutUrl);
   };
 
   window.mtStartExam = async function (examNumber) {
