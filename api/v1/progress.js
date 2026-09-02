@@ -14,6 +14,31 @@ export default {
       const access = await requireCourseAccess(sql, auth.userId);
       if (access.error) return fail('ACCESS_REQUIRED', 'Geen actieve toegang.', 403);
 
+      const resource = new URL(request.url).searchParams.get('resource');
+      if (resource === 'training') {
+        if (request.method === 'GET') {
+          const rows = await sql`SELECT answered, correct, scenario_index, client_updated_at, updated_at FROM training_progress WHERE clerk_user_id=${auth.userId}`;
+          return ok({ progress: rows[0] || { answered: 0, correct: 0, scenario_index: 0 } });
+        }
+        const training = await parseBody(request);
+        const answered = integer(training?.answered, { min: 0, max: 1000000 });
+        const correct = integer(training?.correct, { min: 0, max: 1000000 });
+        const scenarioIndex = integer(training?.scenarioIndex, { min: 0, max: 1000000 });
+        const updated = clientTimestamp(training?.clientUpdatedAt || new Date().toISOString());
+        if (answered === null || correct === null || correct > answered || scenarioIndex === null || !updated) {
+          return fail('VALIDATION_ERROR', 'Ongeldige trainingsvoortgang.', 422);
+        }
+        const rows = await sql`
+          INSERT INTO training_progress(clerk_user_id,answered,correct,scenario_index,client_updated_at,updated_at)
+          VALUES(${auth.userId},${answered},${correct},${scenarioIndex},${updated},NOW())
+          ON CONFLICT(clerk_user_id) DO UPDATE SET answered=EXCLUDED.answered,correct=EXCLUDED.correct,scenario_index=EXCLUDED.scenario_index,client_updated_at=EXCLUDED.client_updated_at,updated_at=NOW()
+          WHERE EXCLUDED.client_updated_at >= training_progress.client_updated_at
+          RETURNING answered,correct,scenario_index,client_updated_at,updated_at`;
+        if (rows[0]) return ok({ progress: rows[0], applied: true });
+        const current = await sql`SELECT answered,correct,scenario_index,client_updated_at,updated_at FROM training_progress WHERE clerk_user_id=${auth.userId}`;
+        return ok({ progress: current[0], applied: false });
+      }
+
       if (request.method === 'GET') {
         const url = new URL(request.url);
         const sinceValue = url.searchParams.get('since');
