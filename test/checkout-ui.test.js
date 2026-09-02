@@ -12,6 +12,7 @@ test('account data loads course access before rendering the account view', () =>
 });
 
 test('checkout is shown only without access and redirects to hosted checkout', () => {
+  assert.match(html, /account-data\.js\?v=3/);
   assert.match(html, /S\.access&&!S\.access\.hasAccess/);
   assert.match(html, /onclick=startCheckout\(\)/);
   assert.match(accountData, /apiRequest\('\/api\/v1\/access\?resource=checkout'/);
