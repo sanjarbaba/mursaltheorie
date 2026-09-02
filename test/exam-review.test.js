@@ -17,5 +17,10 @@ test('exam scene map covers specialized question categories', () => {
   for (const category of ['bus','seatbelt','motorway','overtaking','road-position','trailer','emergency']) {
     assert.match(html, new RegExp(`${category.replace('-', '\\-')}[:']`));
   }
+  assert.match(html, /bus:'\/images\/Bus vertrekt, auto geeft ruimte\.jpg'/);
+  assert.match(html, /'traffic-light':'\/images\/theory-021-traffic-lights\.webp'/);
+  assert.match(html, /turning:'\/images\/Auto slaat rechtsaf, fietser rijdt rechtdoor\.jpg'/);
+  assert.match(html, /safety:'\/images\/Nederlandse portiercheck bij rood fietspad\.jpg'/);
+  assert.match(html, /alcohol:'\/images\/Beginnende bestuurder met alcoholgrens 0,2‰\.jpg'/);
 });
 
