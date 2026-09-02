@@ -1,7 +1,7 @@
 import { verifyToken } from '@clerk/backend';
 import { neon } from '@neondatabase/serverless';
 
-const allowedOrigins = [
+const webAuthorizedParties = [
   'https://mursaltheorie.nl',
   'https://www.mursaltheorie.nl'
 ];
@@ -9,9 +9,7 @@ const allowedOrigins = [
 let sqlClient;
 
 export function getSql() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is not configured');
-  }
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not configured');
   if (!sqlClient) sqlClient = neon(process.env.DATABASE_URL);
   return sqlClient;
 }
@@ -27,18 +25,24 @@ export function json(data, status = 200, extraHeaders = {}) {
   });
 }
 
+function authorizedParties() {
+  const configured = (process.env.CLERK_AUTHORIZED_PARTIES || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return [...new Set([...webAuthorizedParties, ...configured])];
+}
+
 export async function authenticate(request) {
   const authorization = request.headers.get('authorization') || '';
   const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
   if (!token) return { error: json({ error: 'Inloggen is vereist.' }, 401) };
-  if (!process.env.CLERK_SECRET_KEY) {
-    return { error: json({ error: 'Clerk-serverconfiguratie ontbreekt.' }, 503) };
-  }
+  if (!process.env.CLERK_SECRET_KEY) return { error: json({ error: 'Clerk-serverconfiguratie ontbreekt.' }, 503) };
 
   try {
     const payload = await verifyToken(token, {
       secretKey: process.env.CLERK_SECRET_KEY,
-      authorizedParties: allowedOrigins
+      authorizedParties: authorizedParties()
     });
     if (!payload.sub) throw new Error('Token has no subject');
     return { userId: payload.sub, sessionId: payload.sid };
@@ -71,21 +75,31 @@ export function hasCourseAccess(user) {
 }
 
 export async function requireCourseAccess(sql, userId) {
+  try {
+    const entitlements = await sql`
+      SELECT id
+      FROM entitlements
+      WHERE clerk_user_id = ${userId}
+        AND product_key = 'course.full'
+        AND status IN ('active', 'grace')
+        AND starts_at <= NOW()
+        AND (ends_at IS NULL OR ends_at > NOW())
+      LIMIT 1
+    `;
+    if (entitlements[0]) return { entitlement: entitlements[0] };
+  } catch (error) {
+    if (error?.code !== '42P01') throw error;
+  }
+
   const rows = await sql`
     SELECT clerk_user_id, access_status, access_starts_at, access_ends_at
     FROM app_users WHERE clerk_user_id = ${userId}
   `;
   const user = rows[0];
-  if (!hasCourseAccess(user)) {
-    return { error: json({ error: 'Geen actieve toegang.', code: 'ACCESS_REQUIRED' }, 403) };
-  }
+  if (!hasCourseAccess(user)) return { error: json({ error: 'Geen actieve toegang.', code: 'ACCESS_REQUIRED' }, 403) };
   return { user };
 }
 
 export async function parseBody(request) {
-  try {
-    return await request.json();
-  } catch {
-    return null;
-  }
+  try { return await request.json(); } catch { return null; }
 }
