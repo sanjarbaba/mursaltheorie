@@ -22,5 +22,6 @@ test('lesson modal renders API rule and exam-tip content instead of fixed generi
   assert.match(html, /tip=lessonBlock\(l,'exam_tip'/);
   assert.match(html, /<p>\$\{esc\(core\)\}<\/p>/);
   assert.match(html, /<p>\$\{esc\(tip\)\}<\/p>/);
+  assert.doesNotMatch(html, /alt="\$\{esc\(bilingualTitle\(l\)\)\}"/);
 });
 
