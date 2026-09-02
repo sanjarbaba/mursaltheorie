@@ -1,0 +1,65 @@
+-- Replace generic content in lessons 1-10 and add a bilingual lesson-specific quiz.
+
+BEGIN;
+
+WITH data (
+  lesson_number, summary_nl, summary_fa, rule_nl, rule_fa, tip_nl, tip_fa, image_src,
+  question_nl, question_fa,
+  option_1_nl, option_1_fa, option_2_nl, option_2_fa, option_3_nl, option_3_fa,
+  correct_option, explanation_nl, explanation_fa
+) AS (
+  VALUES
+    (1, 'Je rijbewijs bepaalt welke voertuigcategorieën je mag besturen; het kenteken identificeert het voertuig.', 'گواهینامه تعیین می‌کند کدام دسته وسیله را می‌توانید برانید؛ پلاک وسیله را مشخص می‌کند.', 'Bestuur alleen een voertuig waarvoor jouw rijbewijs geldig is en controleer of het voertuig correct is geregistreerd en verzekerd.', 'فقط وسیله‌ای را برانید که گواهینامه شما برای آن معتبر است و ثبت و بیمه بودن وسیله را بررسی کنید.', 'Verwar het rijbewijs van de bestuurder niet met het kentekenbewijs van het voertuig.', 'گواهینامه راننده را با سند ثبت وسیله اشتباه نکنید.', '/images/theory-026-pull-away.webp', 'Welk document toont welke voertuigcategorieën jij mag besturen?', 'کدام سند نشان می‌دهد شما مجاز به راندن کدام دسته وسایل هستید؟', 'Het rijbewijs', 'گواهینامه', 'Het kentekenbewijs', 'سند ثبت وسیله', 'De APK-brief', 'برگه معاینه فنی', 0, 'Het rijbewijs vermeldt de categorieën waarvoor jij bevoegd bent.', 'گواهینامه دسته‌هایی را نشان می‌دهد که اجازه راندن آن‌ها را دارید.'),
+    (2, 'Een rood waarschuwingslampje kan betekenen dat je veilig moet stoppen en de motor moet uitschakelen.', 'چراغ هشدار سرخ می‌تواند به معنی توقف ایمن و خاموش کردن موتور باشد.', 'Negeer een rood controlelampje niet. Stop zodra dat veilig kan, raadpleeg de handleiding en laat de oorzaak controleren.', 'چراغ هشدار سرخ را نادیده نگیرید. به محض امکان ایمن توقف کنید، راهنما را ببینید و علت را بررسی کنید.', 'De kleur en het symbool bepalen de betekenis: rood vraagt meestal direct handelen, geel om spoedige controle.', 'رنگ و نماد معنا را تعیین می‌کند: سرخ معمولاً اقدام فوری و زرد بررسی زودهنگام می‌خواهد.', '/images/theory-005-lights-check.webp', 'Het rode oliedruklampje blijft tijdens het rijden branden. Wat doe je?', 'چراغ سرخ فشار روغن هنگام رانندگی روشن می‌ماند. چه می‌کنید؟', 'Doorrijden tot de volgende tankbeurt', 'تا سوخت‌گیری بعدی ادامه می‌دهید', 'Veilig stoppen en de motor uitschakelen', 'با ایمنی توقف و موتور را خاموش می‌کنید', 'Alleen de radio uitzetten', 'فقط رادیو را خاموش می‌کنید', 1, 'Een blijvend rood oliedruklampje kan ernstige motorschade aankondigen; stop veilig en schakel de motor uit.', 'روشن ماندن چراغ سرخ فشار روغن می‌تواند نشانه آسیب جدی موتور باشد؛ ایمن توقف و موتور را خاموش کنید.'),
+    (3, 'Personenautobanden moeten voldoende profiel hebben; wettelijk is minimaal 1,6 millimeter vereist.', 'تایر موتر سواری باید آج کافی داشته باشد؛ حداقل قانونی ۱٫۶ میلی‌متر است.', 'Controleer alle banden op profieldiepte, scheuren, uitstulpingen en ongelijkmatige slijtage.', 'همه تایرها را از نظر عمق آج، ترک، برآمدگی و ساییدگی نامنظم بررسی کنید.', 'Meet profiel in de hoofdgroeven en wacht niet tot de wettelijke ondergrens voordat je versleten banden vervangt.', 'آج را در شیارهای اصلی اندازه بگیرید و برای تعویض تایر فرسوده تا حد قانونی صبر نکنید.', '/images/Bandprofiel meten_ 1,6 mm.jpg', 'Wat is de wettelijke minimale profieldiepte van een personenautoband?', 'حداقل قانونی عمق آج تایر موتر سواری چقدر است؟', '1,0 mm', '۱٫۰ میلی‌متر', '1,6 mm', '۱٫۶ میلی‌متر', '2,5 mm', '۲٫۵ میلی‌متر', 1, 'Voor personenautobanden geldt wettelijk minimaal 1,6 millimeter profiel.', 'برای تایر موتر سواری حداقل قانونی ۱٫۶ میلی‌متر است.'),
+    (4, 'De juiste bandenspanning verbetert grip, remgedrag, bandenslijtage en brandstofverbruik.', 'فشار درست تایر چسبندگی، ترمز، ساییدگی تایر و مصرف سوخت را بهتر می‌کند.', 'Gebruik de spanning die de voertuigfabrikant voorschrijft en pas deze zo nodig aan bij zware belading.', 'از فشار توصیه‌شده سازنده وسیله استفاده کنید و در بار سنگین در صورت نیاز آن را تنظیم کنید.', 'Controleer de spanning bij voorkeur als de banden koud zijn; vergeet het reservewiel niet als dat aanwezig is.', 'فشار را ترجیحاً وقتی تایر سرد است بررسی کنید؛ تایر زاپاس را نیز فراموش نکنید.', '/images/theory-002-tyre-pressure.webp', 'Wanneer controleer je de bandenspanning het betrouwbaarst?', 'چه زمانی فشار تایر را مطمئن‌تر بررسی می‌کنید؟', 'Als de banden koud zijn', 'وقتی تایرها سردند', 'Direct na een lange snelwegrit', 'بلافاصله پس از سفر طولانی در بزرگراه', 'Alleen wanneer een band zichtbaar leeg is', 'فقط وقتی تایر آشکارا کم‌باد است', 0, 'Bij koude banden sluit de meting het beste aan op de voorgeschreven spanning.', 'اندازه‌گیری تایر سرد بهتر با فشار توصیه‌شده مطابقت دارد.'),
+    (5, 'Iedereen gebruikt de aanwezige veiligheidsgordel; de gordel moet vlak en goed aangesloten zitten.', 'همه باید از کمربند موجود استفاده کنند؛ کمربند باید صاف و محکم روی بدن باشد.', 'Bestuurder en passagiers dragen de gordel tijdens de rit, ook achterin en bij korte afstanden.', 'راننده و سرنشینان در تمام مسیر، حتی عقب و مسیر کوتاه، کمربند می‌بندند.', 'Laat de schouderband over schouder en borst lopen, niet achter de rug of onder de arm.', 'بخش شانه‌ای کمربند باید روی شانه و سینه باشد، نه پشت کمر یا زیر بازو.', '/images/Iedereen draagt de veiligheidsgordel.jpg', 'Wie moet een aanwezige veiligheidsgordel gebruiken?', 'چه کسی باید از کمربند ایمنی موجود استفاده کند؟', 'Alleen de bestuurder', 'فقط راننده', 'Alleen mensen voorin', 'فقط افراد جلو', 'Iedereen op een zitplaats met een gordel', 'همه افراد روی چوکی دارای کمربند', 2, 'Iedere inzittende gebruikt de beschikbare veiligheidsgordel; voor kinderen gelden aanvullende regels.', 'هر سرنشین باید از کمربند موجود استفاده کند؛ برای کودکان قواعد اضافی وجود دارد.'),
+    (6, 'Een kind kleiner dan 1,35 meter zit in beginsel in een passend en goedgekeurd kinderbeveiligingssysteem.', 'کودک کوتاه‌تر از ۱٫۳۵ متر اصولاً باید در صندلی ایمنی مناسب و تأییدشده بنشیند.', 'Kies een kinderzitje dat past bij lengte en gewicht en monteer het precies volgens de instructies.', 'صندلی کودکی انتخاب کنید که با قد و وزن مناسب باشد و دقیقاً طبق دستور نصب شود.', 'Plaats een achterwaarts gericht zitje nooit voor een actieve voorairbag.', 'صندلی رو به عقب را هرگز جلوی ایربگ فعال قرار ندهید.', '/images/Kind veilig in autostoel onder 1,35 m.jpg', 'Hoe vervoer je een kind kleiner dan 1,35 meter normaal in een personenauto?', 'کودک کوتاه‌تر از ۱٫۳۵ متر را معمولاً چگونه در موتر سواری جابه‌جا می‌کنید؟', 'Los op de achterbank', 'بدون مهار روی چوکی عقب', 'Met alleen een gordel voor volwassenen', 'فقط با کمربند بزرگسال', 'In een passend goedgekeurd kinderzitje', 'در صندلی کودک مناسب و تأییدشده', 2, 'Voor kinderen kleiner dan 1,35 meter is in beginsel een passend goedgekeurd kinderbeveiligingssysteem verplicht.', 'برای کودکان کوتاه‌تر از ۱٫۳۵ متر اصولاً صندلی ایمنی مناسب و تأییدشده الزامی است.'),
+    (7, 'Spiegels verkleinen de dode hoek, maar nemen deze niet volledig weg.', 'آینه‌ها نقطه کور را کمتر می‌کنند اما کاملاً از بین نمی‌برند.', 'Stel spiegels vóór vertrek goed af en controleer bij zijwaartse verplaatsing ook rechtstreeks naast de auto.', 'پیش از حرکت آینه‌ها را تنظیم کنید و هنگام حرکت جانبی کنار موتر را مستقیم نیز ببینید.', 'Gebruik de volgorde binnenspiegel, buitenspiegel, richtingaanwijzer en dodehoekcontrole voordat je verplaatst.', 'پیش از تغییر مسیر، آینه داخل، آینه بیرون، راهنما و سپس نقطه کور را بررسی کنید.', '/images/theory-004-mirrors-blind-spot.webp', 'Waarom kijk je naast de spiegels ook in de dode hoek?', 'چرا علاوه بر آینه‌ها نقطه کور را نیز نگاه می‌کنید؟', 'Omdat spiegels niet alles naast de auto tonen', 'چون آینه‌ها تمام کنار موتر را نشان نمی‌دهند', 'Omdat richting aangeven verboden is', 'چون راهنما زدن ممنوع است', 'Om de snelheid af te lezen', 'برای دیدن سرعت', 0, 'Een fietser, motor of auto kan buiten het zicht van de spiegels in de dode hoek rijden.', 'دوچرخه، موتورسیکلت یا موتر می‌تواند بیرون دید آینه در نقطه کور باشد.'),
+    (8, 'Gebruik dimlicht in het donker en overdag wanneer het zicht ernstig wordt belemmerd.', 'در تاریکی و روز هنگامی که دید به‌شدت کم است از چراغ پایین استفاده کنید.', 'Controleer vóór vertrek of dimlicht, achterlichten, remlichten en richtingaanwijzers werken en schoon zijn.', 'پیش از حرکت کارکرد و پاک بودن چراغ پایین، عقب، ترمز و راهنما را بررسی کنید.', 'Dagrijverlichting schakelt niet bij iedere auto automatisch de achterlichten in.', 'چراغ روز در همه موترها چراغ عقب را خودکار روشن نمی‌کند.', '/images/theory-005-lights-check.webp', 'Wanneer is dimlicht verplicht?', 'چه زمانی چراغ پایین الزامی است؟', 'Alleen in tunnels', 'فقط در تونل', 'In het donker en bij ernstig belemmerd zicht', 'در تاریکی و دید بسیار کم', 'Alleen buiten de bebouwde kom', 'فقط بیرون شهر', 1, 'Dimlicht is verplicht in het donker en overdag als het zicht ernstig wordt belemmerd.', 'چراغ پایین در تاریکی و روز وقتی دید بسیار کم است الزامی است.'),
+    (9, 'Open het koelsysteem nooit wanneer de motor heet is; hete vloeistof en stoom kunnen ernstige brandwonden veroorzaken.', 'وقتی موتور داغ است هرگز سیستم خنک‌کننده را باز نکنید؛ مایع و بخار داغ می‌تواند سوختگی شدید ایجاد کند.', 'Controleer koelvloeistof alleen volgens de handleiding en bij een voldoende afgekoelde motor.', 'مایع خنک‌کننده را فقط طبق راهنما و پس از سرد شدن کافی موتور بررسی کنید.', 'Gaat de temperatuurwaarschuwing branden, stop dan veilig en laat de motor afkoelen; draai de dop niet meteen open.', 'اگر هشدار دما روشن شد، ایمن توقف کنید و بگذارید موتور سرد شود؛ درپوش را فوراً باز نکنید.', '/images/Hete koelvloeistoftank_ blijf van de dop af.jpg', 'De motor is oververhit. Mag je direct de dop van het koelvloeistofreservoir openen?', 'موتور بیش از حد داغ شده است. آیا می‌توانید فوراً درپوش مخزن مایع خنک‌کننده را باز کنید؟', 'Ja, als je handschoenen draagt', 'بله، اگر دستکش دارید', 'Nee, eerst veilig laten afkoelen', 'خیر، ابتدا بگذارید با ایمنی سرد شود', 'Alleen bij draaiende motor', 'فقط وقتی موتور روشن است', 1, 'Een heet koelsysteem staat onder druk; openen kan hete vloeistof en stoom laten ontsnappen.', 'سیستم خنک‌کننده داغ تحت فشار است و باز کردن می‌تواند مایع و بخار داغ آزاد کند.'),
+    (10, 'Een korte voertuigcontrole vóór vertrek voorkomt dat je met een zichtbaar onveilig gebrek wegrijdt.', 'بررسی کوتاه وسیله پیش از حرکت از رانندگی با نقص آشکار و خطرناک جلوگیری می‌کند.', 'Controleer banden, verlichting, ruiten, spiegels, vloeistofwaarschuwingen en of lading en portieren veilig zijn.', 'تایرها، چراغ‌ها، شیشه‌ها، آینه‌ها، هشدار مایعات و ایمنی بار و درها را بررسی کنید.', 'Loop bij twijfel rond de auto en los een veiligheidsprobleem op vóórdat je aan de rit begint.', 'در صورت تردید دور موتر را بررسی و مشکل ایمنی را پیش از آغاز سفر حل کنید.', '/images/theory-005-lights-check.webp', 'Wat hoort bij een veilige controle vóór vertrek?', 'کدام مورد جزو بررسی ایمن پیش از حرکت است؟', 'Banden, verlichting, ruiten en spiegels controleren', 'بررسی تایرها، چراغ‌ها، شیشه‌ها و آینه‌ها', 'Alleen de radio instellen', 'فقط تنظیم رادیو', 'De motor direct hoog in toeren laten draaien', 'فوراً دور موتور را زیاد کردن', 0, 'Een controle van zicht, banden en verlichting helpt zichtbare veiligheidsgebreken vóór vertrek ontdekken.', 'بررسی دید، تایر و چراغ‌ها کمک می‌کند نقص آشکار ایمنی پیش از حرکت پیدا شود.')
+), release AS (
+  SELECT id FROM content_releases WHERE version = 1
+)
+UPDATE course_lessons AS lesson
+SET summary = jsonb_build_object('nl', data.summary_nl, 'fa', data.summary_fa),
+    content_blocks = jsonb_build_array(
+      jsonb_build_object('type', 'rule', 'text', jsonb_build_object('nl', data.rule_nl, 'fa', data.rule_fa)),
+      jsonb_build_object('type', 'exam_tip', 'text', jsonb_build_object('nl', data.tip_nl, 'fa', data.tip_fa)),
+      jsonb_build_object(
+        'type', 'quiz',
+        'question', jsonb_build_object('nl', data.question_nl, 'fa', data.question_fa),
+        'options', jsonb_build_array(
+          jsonb_build_object('nl', data.option_1_nl, 'fa', data.option_1_fa),
+          jsonb_build_object('nl', data.option_2_nl, 'fa', data.option_2_fa),
+          jsonb_build_object('nl', data.option_3_nl, 'fa', data.option_3_fa)
+        ),
+        'correctOption', data.correct_option,
+        'explanation', jsonb_build_object('nl', data.explanation_nl, 'fa', data.explanation_fa)
+      )
+    ),
+    media = jsonb_build_array(jsonb_build_object('type', 'image', 'src', data.image_src, 'alt', lesson.title)),
+    updated_at = NOW()
+FROM data, release
+WHERE lesson.release_id = release.id AND lesson.lesson_number = data.lesson_number;
+
+DO $check$
+DECLARE valid_count integer;
+BEGIN
+  SELECT count(*) INTO valid_count FROM course_lessons
+  WHERE release_id = (SELECT id FROM content_releases WHERE version = 1)
+    AND lesson_number BETWEEN 1 AND 10
+    AND jsonb_array_length(content_blocks) = 3
+    AND content_blocks->2->>'type' = 'quiz'
+    AND jsonb_array_length(content_blocks->2->'options') = 3
+    AND (content_blocks->2->>'correctOption')::integer BETWEEN 0 AND 2;
+  IF valid_count <> 10 THEN RAISE EXCEPTION 'Vehicle lessons validation failed: %', valid_count; END IF;
+END
+$check$;
+
+INSERT INTO schema_migrations (version, name) VALUES (9, 'vehicle_documents_lessons')
+ON CONFLICT (version) DO NOTHING;
+
+COMMIT;
+
