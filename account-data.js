@@ -70,7 +70,7 @@
       await flushProgressQueue();
       const [progress, training, content, history] = await Promise.all([
         apiRequest('/api/v1/progress'),
-        apiRequest('/api/v1/training-progress'),
+        apiRequest('/api/v1/progress?resource=training'),
         loadV1Content(),
         loadExamResults()
       ]);
@@ -201,7 +201,7 @@
   };
 
   window.mtSaveTrainingProgress = async function (progress) {
-    return apiRequest('/api/v1/training-progress', {
+    return apiRequest('/api/v1/progress?resource=training', {
       method: 'PUT',
       body: JSON.stringify({
         answered: progress.answered,
