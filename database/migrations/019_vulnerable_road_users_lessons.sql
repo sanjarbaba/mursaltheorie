@@ -1,0 +1,16 @@
+-- Complete lessons 111-120 with bilingual vulnerable-road-user safety rules.
+BEGIN;
+DO $do$
+DECLARE i int; nums int[]:=ARRAY[111,112,113,114,115,116,117,118,119,120];
+ rules text[]:=ARRAY['Geef kwetsbare verkeersdeelnemers extra ruimte en tijd.','Kinderen kunnen onverwacht oversteken; verlaag je snelheid.','Fietsers hebben ruimte nodig en kunnen van richting veranderen.','Voetgangers bij een zebrapad laat je voorgaan.','Bromfietsers kunnen tussen verkeer rijden; controleer je dode hoek.','Motorrijders zijn smal en minder zichtbaar; kijk extra goed.','Ouderen kunnen langzamer reageren; houd geduld en afstand.','Maak oogcontact en geef ruimte aan slechtziende voetgangers.','Let op hulpmiddelen en geef gehandicapte weggebruikers voldoende tijd.','Rijd zeer langzaam en alert in een schoolomgeving.'];
+ rulesfa text[]:=ARRAY['به کاربران آسیب‌پذیر فضا و زمان بیشتری بدهید.','کودکان ممکن است ناگهانی عبور کنند؛ سرعت را کم کنید.','دوچرخه‌سواران فضا لازم دارند و ممکن است مسیر عوض کنند.','عابران نزدیک خط عابر را مقدم کنید.','موتورسیکلت‌های سبک ممکن است بین ترافیک حرکت کنند؛ نقطه کور را بررسی کنید.','موتورسواران باریک و کم‌دید هستند؛ با دقت بیشتری نگاه کنید.','سالمندان ممکن است کندتر واکنش دهند؛ صبر و فاصله داشته باشید.','با عابر کم‌بینا ارتباط چشمی و فضای کافی فراهم کنید.','به وسایل کمکی توجه و زمان کافی بدهید.','در محیط مدرسه بسیار آهسته و هوشیار برانید.'];
+ q text[]:=ARRAY['Wat geef je kwetsbare weggebruikers?','Waar let je op bij kinderen?','Wat hebben fietsers nodig?','Wie laat je bij een zebrapad voorgaan?','Waar let je op bij bromfietsers?','Waarom kijk je extra naar motorrijders?','Hoe reageer je op ouderen?','Wat doe je bij een slechtziende voetganger?','Wat is belangrijk bij gehandicapte weggebruikers?','Hoe rijd je bij een school?'];
+ qfa text[]:=ARRAY['به کاربران آسیب‌پذیر چه می‌دهید؟','در مورد کودکان به چه توجه می‌کنید؟','دوچرخه‌سواران چه لازم دارند؟','در خط عابر چه کسی مقدم است؟','در مورد موتورسیکلت سبک چه می‌بینید؟','چرا بیشتر به موتورسوار نگاه می‌کنید؟','در برابر سالمندان چگونه واکنش می‌دهید؟','با عابر کم‌بینا چه می‌کنید؟','در مورد افراد معلول چه مهم است؟','در مدرسه چگونه می‌رانید؟'];
+BEGIN
+ FOR i IN 1..10 LOOP
+  UPDATE course_lessons l SET summary=jsonb_build_object('nl',rules[i],'fa',rulesfa[i]),content_blocks=jsonb_build_array(jsonb_build_object('type','rule','text',jsonb_build_object('nl',rules[i],'fa',rulesfa[i])),jsonb_build_object('type','exam_tip','text',jsonb_build_object('nl','Anticipeer en neem geen risico met kwetsbare mensen.','fa','پیش‌بینی کنید و با افراد آسیب‌پذیر ریسک نکنید.')),jsonb_build_object('type','quiz','question',jsonb_build_object('nl',q[i],'fa',qfa[i]),'options',jsonb_build_array(jsonb_build_object('nl',rules[i],'fa',rulesfa[i]),jsonb_build_object('nl','Geen extra aandacht','fa','بدون توجه اضافی'),jsonb_build_object('nl','Dicht achterop rijden','fa','چسبیده حرکت کردن')),'correctOption',0,'explanation',jsonb_build_object('nl',rules[i],'fa',rulesfa[i]))),updated_at=NOW() WHERE l.release_id=(SELECT id FROM content_releases WHERE version=1) AND l.lesson_number=nums[i];
+ END LOOP;
+END $do$;
+INSERT INTO schema_migrations(version,name) VALUES(19,'vulnerable_road_users_lessons') ON CONFLICT(version) DO NOTHING;
+COMMIT;
+
