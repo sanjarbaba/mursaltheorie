@@ -1,17 +1,10 @@
 (function () {
   'use strict';
-  // Preview auth hydration guard enabled.
 
   async function apiRequest(path, options) {
     const clerk = await window.mtClerkReady;
-    // Clerk may expose the active session through client.sessions briefly before clerk.session.
-    let session = clerk?.session || clerk?.client?.sessions?.find(item => item.status === 'active') || clerk?.client?.sessions?.[0] || null;
-    for (let attempt = 0; !session && attempt < 10; attempt += 1) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      session = clerk?.session || clerk?.client?.sessions?.find(item => item.status === 'active') || null;
-    }
-    if (!session) throw new Error('AUTH_REQUIRED');
-    const token = await session.getToken();
+    if (!clerk?.isSignedIn || !clerk.session) throw new Error('AUTH_REQUIRED');
+    const token = await clerk.session.getToken();
     const response = await fetch(path, {
       ...options,
       headers: {
@@ -75,8 +68,9 @@
       });
       await registerDevice();
       await flushProgressQueue();
-      const [progress, content, history] = await Promise.all([
+      const [progress, training, content, history] = await Promise.all([
         apiRequest('/api/v1/progress'),
+        apiRequest('/api/v1/training-progress'),
         loadV1Content(),
         loadExamResults()
       ]);
@@ -84,6 +78,7 @@
         detail: {
           profile: profile.user,
           completedLessons: (progress.progress || []).filter((item) => item.completed).map((item) => item.lesson_id),
+          trainingProgress: training.progress || null,
           results: history.results || [],
           resultSummary: history.summary,
           content
@@ -205,6 +200,18 @@
     }
   };
 
+  window.mtSaveTrainingProgress = async function (progress) {
+    return apiRequest('/api/v1/training-progress', {
+      method: 'PUT',
+      body: JSON.stringify({
+        answered: progress.answered,
+        correct: progress.correct,
+        scenarioIndex: progress.scenarioIndex,
+        clientUpdatedAt: new Date().toISOString()
+      })
+    });
+  };
+
   window.mtStartExam = async function (examNumber) {
     const mutationId = crypto.randomUUID();
     const request = (locale) => apiRequest('/api/v1/exam-attempts', {
@@ -249,3 +256,4 @@
     flushProgressQueue().catch((error) => console.warn('Offline voortgang blijft in de wachtrij.', error));
   });
 }());
+
