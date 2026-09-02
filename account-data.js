@@ -3,7 +3,7 @@
 
   async function apiRequest(path, options) {
     const clerk = await window.mtClerkReady;
-    if (!clerk?.isSignedIn || !clerk.session) throw new Error('AUTH_REQUIRED');
+    if (!clerk?.session) throw new Error('AUTH_REQUIRED');
     const token = await clerk.session.getToken();
     const response = await fetch(path, {
       ...options,
