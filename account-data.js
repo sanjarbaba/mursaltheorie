@@ -68,15 +68,17 @@
       });
       await registerDevice();
       await flushProgressQueue();
-      const [progress, content] = await Promise.all([
+      const [progress, content, history] = await Promise.all([
         apiRequest('/api/v1/progress'),
-        loadV1Content()
+        loadV1Content(),
+        loadExamResults()
       ]);
       window.dispatchEvent(new CustomEvent('mt-account-data', {
         detail: {
           profile: profile.user,
           completedLessons: (progress.progress || []).filter((item) => item.completed).map((item) => item.lesson_id),
-          results: [],
+          results: history.results || [],
+          resultSummary: history.summary,
           content
         }
       }));
@@ -89,6 +91,14 @@
   }
 
   window.mtLoadV1Content = loadV1Content;
+
+  async function loadExamResults() {
+    const history = await apiRequest('/api/v1/results?locale=nl&limit=20');
+    window.dispatchEvent(new CustomEvent('mt-exam-history', { detail: history }));
+    return history;
+  }
+
+  window.mtLoadExamResults = loadExamResults;
 
   function getDeviceId() {
     const key = 'mt-device-id-v1';
@@ -191,10 +201,12 @@
   };
 
   window.mtSubmitExam = async function (attemptId, locale) {
-    return apiRequest('/api/v1/exam-attempts', {
+    const result = await apiRequest('/api/v1/exam-attempts', {
       method: 'POST',
       body: JSON.stringify({ action: 'submit', attemptId, locale })
     });
+    loadExamResults().catch((error) => console.warn('Examenhistorie wordt later vernieuwd.', error));
+    return result;
   };
 
   window.addEventListener('mt-clerk-change', (event) => {

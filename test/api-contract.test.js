@@ -4,6 +4,7 @@ import { API_VERSION, fail, integer, locale, localized, ok } from '../api/v1/_co
 import { accessSummary, entitlementIsActive } from '../api/v1/_access.js';
 import { mutationId, percentage, publicQuestion } from '../api/v1/_exam.js';
 import { clientTimestamp, deviceId, platform, shouldApplyProgress, syncMutationId } from '../api/v1/_sync.js';
+import { summarizeResults } from '../api/v1/_results.js';
 
 test('integer accepteert alleen gehele getallen binnen het bereik', () => {
   assert.equal(integer('12', { min: 1, max: 150 }), 12);
@@ -100,5 +101,16 @@ test('nieuwste clientmutatie wint bij synchronisatieconflicten', () => {
   assert.equal(shouldApplyProgress(null, '2026-09-02T10:00:00Z'), true);
   assert.equal(shouldApplyProgress('2026-09-02T10:00:00Z', '2026-09-02T10:00:00Z'), true);
   assert.equal(shouldApplyProgress('2026-09-02T10:00:01Z', '2026-09-02T10:00:00Z'), false);
+});
+
+test('resultatensamenvatting berekent voortgang zonder lege-geschiedenisfouten', () => {
+  assert.deepEqual(summarizeResults([]), {
+    total: 0, passed: 0, passRate: 0, bestScore: null, averageScore: null
+  });
+  assert.deepEqual(summarizeResults([
+    { score: 90, passed: true }, { score: 75, passed: false }, { score: 88, passed: true }
+  ]), {
+    total: 3, passed: 2, passRate: 67, bestScore: 90, averageScore: 84
+  });
 });
 

@@ -33,6 +33,7 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [ ] Vul ontbrekende unieke lesinhoud aan.
 - [x] Verwijder juiste antwoorden uit publieke payloads.
 - [x] Laat de website uitsluitend de v1-content- en examen-API gebruiken.
+- [x] Toon examenresultaten en geschiedenis vanuit Neon in de webaccountomgeving.
 
 ## Fase 4 — Expo-app
 
