@@ -15,3 +15,12 @@ test('special manoeuvres receive ten bilingual rules, tips and matching media', 
   assert.match(sql, /updated_count <> 10/);
 });
 
+test('lesson modal renders API rule and exam-tip content instead of fixed generic copy', async () => {
+  const html = await readFile(new URL('../learn5.source.html', import.meta.url), 'utf8');
+  assert.match(html, /function lessonBlock\(l,type,fallbackNl,fallbackFa\)/);
+  assert.match(html, /core=lessonBlock\(l,'rule'/);
+  assert.match(html, /tip=lessonBlock\(l,'exam_tip'/);
+  assert.match(html, /<p>\$\{esc\(core\)\}<\/p>/);
+  assert.match(html, /<p>\$\{esc\(tip\)\}<\/p>/);
+});
+
