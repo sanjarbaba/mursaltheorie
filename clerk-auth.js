@@ -47,7 +47,8 @@
   function announceAuthState(snapshot) {
     const activeSession = snapshot?.session || window.Clerk?.session || null;
     const activeUser = snapshot?.user || activeSession?.user || window.Clerk?.user || null;
-    // A loaded user object alone is not an authenticated session; API calls need a session token.\n    const signedIn = Boolean(activeSession || window.Clerk?.isSignedIn);
+    // A loaded user object alone is not an authenticated session; API calls need a session token.
+    const signedIn = Boolean(activeSession || window.Clerk?.isSignedIn);
     window.dispatchEvent(new CustomEvent('mt-clerk-change', {
       detail: {
         signedIn,
