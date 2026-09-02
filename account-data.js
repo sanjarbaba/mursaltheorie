@@ -66,6 +66,8 @@
         method: 'PUT',
         body: JSON.stringify({ name: user.name, email: user.email })
       });
+      await registerDevice();
+      await flushProgressQueue();
       const [progress, content] = await Promise.all([
         apiRequest('/api/v1/progress'),
         loadV1Content()
@@ -88,12 +90,72 @@
 
   window.mtLoadV1Content = loadV1Content;
 
-  window.mtSaveLessonProgress = async function (lessonId, completed) {
+  function getDeviceId() {
+    const key = 'mt-device-id-v1';
+    let id = localStorage.getItem(key);
+    if (!id) {
+      id = `web:${crypto.randomUUID()}`;
+      localStorage.setItem(key, id);
+    }
+    return id;
+  }
+
+  async function queueKey() {
+    const clerk = await window.mtClerkReady;
+    return clerk?.user?.id ? `mt-progress-queue-v1:${clerk.user.id}` : null;
+  }
+
+  async function readQueue() {
+    const key = await queueKey();
+    if (!key) return { key: null, items: [] };
     try {
-      return await apiRequest('/api/v1/progress', {
-        method: 'PUT',
-        body: JSON.stringify({ lessonId, completed })
-      });
+      const items = JSON.parse(localStorage.getItem(key) || '[]');
+      return { key, items: Array.isArray(items) ? items : [] };
+    } catch {
+      return { key, items: [] };
+    }
+  }
+
+  let flushPromise;
+  async function flushProgressQueue() {
+    if (flushPromise) return flushPromise;
+    flushPromise = (async () => {
+      const queue = await readQueue();
+      if (!queue.key) return null;
+      while (queue.items.length) {
+        await apiRequest('/api/v1/progress', {
+          method: 'PUT',
+          body: JSON.stringify(queue.items[0])
+        });
+        queue.items.shift();
+        localStorage.setItem(queue.key, JSON.stringify(queue.items));
+      }
+      return true;
+    })().finally(() => { flushPromise = null; });
+    return flushPromise;
+  }
+
+  async function registerDevice() {
+    return apiRequest('/api/v1/devices', {
+      method: 'PUT',
+      body: JSON.stringify({ deviceId: getDeviceId(), platform: 'web' })
+    });
+  }
+
+  window.mtSaveLessonProgress = async function (lessonId, completed) {
+    const queue = await readQueue();
+    if (!queue.key) return null;
+    queue.items.push({
+      lessonId,
+      completed,
+      progressPercent: completed ? 100 : 0,
+      clientUpdatedAt: new Date().toISOString(),
+      deviceId: getDeviceId(),
+      mutationId: crypto.randomUUID()
+    });
+    localStorage.setItem(queue.key, JSON.stringify(queue.items));
+    try {
+      return await flushProgressQueue();
     } catch (error) {
       console.warn('Lesvoortgang wordt later opnieuw gesynchroniseerd.', error);
       return null;
@@ -138,4 +200,8 @@
   window.addEventListener('mt-clerk-change', (event) => {
     if (event.detail?.signedIn && event.detail.user) loadAccountData(event.detail.user);
   });
+  window.addEventListener('online', () => {
+    flushProgressQueue().catch((error) => console.warn('Offline voortgang blijft in de wachtrij.', error));
+  });
 }());
+

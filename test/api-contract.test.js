@@ -3,6 +3,7 @@ import test from 'node:test';
 import { API_VERSION, fail, integer, locale, localized, ok } from '../api/v1/_contract.js';
 import { accessSummary, entitlementIsActive } from '../api/v1/_access.js';
 import { mutationId, percentage, publicQuestion } from '../api/v1/_exam.js';
+import { clientTimestamp, deviceId, platform, shouldApplyProgress, syncMutationId } from '../api/v1/_sync.js';
 
 test('integer accepteert alleen gehele getallen binnen het bereik', () => {
   assert.equal(integer('12', { min: 1, max: 150 }), 12);
@@ -78,3 +79,26 @@ test('publicQuestion lekt geen antwoord of uitleg', () => {
   assert.equal('correctOption' in question, false);
   assert.equal('explanation' in question, false);
 });
+
+test('sync-identifiers en platformen worden strikt gevalideerd', () => {
+  assert.equal(deviceId(' web:550e8400-e29b-41d4-a716-446655440000 '), 'web:550e8400-e29b-41d4-a716-446655440000');
+  assert.equal(deviceId('te kort'), null);
+  assert.equal(syncMutationId('mutation_123'), 'mutation_123');
+  assert.equal(syncMutationId('ongeldige sleutel!'), null);
+  assert.equal(platform('ios'), 'ios');
+  assert.equal(platform('windows'), null);
+});
+
+test('clientTimestamp weigert ongeldige en te toekomstige tijden', () => {
+  const now = Date.parse('2026-09-02T12:00:00Z');
+  assert.equal(clientTimestamp('2026-09-02T11:59:00Z', now), '2026-09-02T11:59:00.000Z');
+  assert.equal(clientTimestamp('geen datum', now), null);
+  assert.equal(clientTimestamp('2026-09-02T12:06:00Z', now), null);
+});
+
+test('nieuwste clientmutatie wint bij synchronisatieconflicten', () => {
+  assert.equal(shouldApplyProgress(null, '2026-09-02T10:00:00Z'), true);
+  assert.equal(shouldApplyProgress('2026-09-02T10:00:00Z', '2026-09-02T10:00:00Z'), true);
+  assert.equal(shouldApplyProgress('2026-09-02T10:00:01Z', '2026-09-02T10:00:00Z'), false);
+});
+

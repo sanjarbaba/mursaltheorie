@@ -13,7 +13,7 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [x] Maak Clerk authorized parties configureerbaar via een servervariabele.
 - [x] Voeg contracttests toe.
 - [x] Implementeer v1 examenpogingen met server-side antwoordcontrole.
-- [ ] Voeg schema-validatie en idempotency voor schrijfrequests toe.
+- [x] Voeg schema-validatie en idempotency voor schrijfrequests toe.
 
 ## Fase 2 — Datamodel en migraties
 
@@ -38,7 +38,8 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 
 - [ ] Maak een TypeScript Expo-project met Expo Router.
 - [ ] Configureer Clerk Native API, iOS bundle ID en Android package name.
-- [ ] Implementeer veilige tokenopslag, lokale contentcache en sync queue.
+- [x] Implementeer een accountgebonden, offline voortgangsqueue met conflictbehandeling.
+- [ ] Implementeer veilige native tokenopslag en lokale contentcache.
 - [ ] Bouw lessen, examens, resultaten en accountbeheer native.
 
 ## Fase 5 — Betalingen en publicatie
@@ -47,3 +48,4 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [ ] Verifieer aankopen en webhooks server-side en idempotent.
 - [ ] Voeg aankoopherstel, accountverwijdering en privacyflows toe.
 - [ ] Test via TestFlight en Google Play internal testing.
+
