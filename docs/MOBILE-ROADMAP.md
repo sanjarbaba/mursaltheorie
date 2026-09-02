@@ -40,7 +40,7 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [x] Voeg Clerk Expo met versleutelde tokenopslag en voorlopige native identifiers toe.
 - [ ] Registreer en bevestig iOS bundle ID en Android package name in Clerk en de stores.
 - [x] Implementeer een accountgebonden, offline voortgangsqueue met conflictbehandeling.
-- [ ] Implementeer veilige native tokenopslag en lokale contentcache.
+- [x] Implementeer veilige native tokenopslag, SQLite-lescache en voortgangsqueue.
 - [ ] Bouw lessen, examens, resultaten en accountbeheer native.
 
 ## Fase 5 — Betalingen en publicatie

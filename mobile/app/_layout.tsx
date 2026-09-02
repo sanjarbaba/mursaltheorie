@@ -19,6 +19,7 @@ function Routes() {
       </Stack.Protected>
       <Stack.Protected guard={Boolean(isSignedIn)}>
         <Stack.Screen name="index" options={{ title: 'Mijn cursus' }} />
+        <Stack.Screen name="lesson/[id]" options={{ title: 'Les' }} />
       </Stack.Protected>
     </Stack>
   );
