@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Mursal Theorie",
+    "slug": "mursaltheorie",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "mursaltheorie",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "nl.mursaltheorie.app"
+    },
+    "android": {
+      "package": "nl.mursaltheorie.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "@clerk/expo"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
+
