@@ -1,6 +1,6 @@
 # Content audit â€” 2 September 2026
 
-The seed migration is now audited reproducibly with `node scripts/audit-content.mjs database/migrations/003_seed_learn5_content.sql`.
+The original seed migration is audited reproducibly with `node scripts/audit-content.mjs database/migrations/003_seed_learn5_content.sql`. Migration `005_content_quality_media_and_exams.sql` applies the reviewed content corrections when a database is initialized or repaired.
 
 ## Baseline findings
 
