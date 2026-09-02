@@ -8,7 +8,7 @@
     return new Promise((resolve, reject) => {
       const existing = document.querySelector(`script[src="${src}"]`);
       if (existing) {
-        if (existing.dataset.loaded === 'true') resolve();
+        if (existing.dataset.loaded === 'true' || existing.readyState === 'complete') resolve();
         else {
           existing.addEventListener('load', resolve, { once: true });
           existing.addEventListener('error', reject, { once: true });
