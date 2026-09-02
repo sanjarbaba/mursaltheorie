@@ -1,5 +1,6 @@
 (function () {
   'use strict';
+  // Preview auth hydration guard enabled.
 
   async function apiRequest(path, options) {
     const clerk = await window.mtClerkReady;
