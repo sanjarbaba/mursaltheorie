@@ -111,4 +111,4 @@ function setMod(m){if(m<1||m>15)return;S.mod=m;render();scrollTo(0,0)}
 function render(){document.documentElement.lang=S.lang==='fa'?'fa':'nl';document.documentElement.dir=S.lang==='fa'?'rtl':'ltr';root.innerHTML=S.exam?examView():S.examResult?resultView():nav()+({dashboard,lessons:lessonsView,signs:signsView,words:wordsView,hazard:hazardView,exams:examsView}[S.view]||dashboard)()+mobile()+lessonModal()+authView()}
 Object.assign(window,{go,setLanguage,openAuth,closeAuth,logout,openLesson,toggleDone,chooseHaz,nextHaz,startExam,chooseExamAnswer,finishExam,closeExam,setMod,exportMyData,deleteMyAccount});
 render();
-</script><script defer src="/clerk-auth-v5.js"></script><script defer src="/account-data.js?v=2"></script></body></html>
+</script><script defer src="/clerk-auth-v5.js"></script><script defer src="/account-data.js?v=3"></script></body></html>
