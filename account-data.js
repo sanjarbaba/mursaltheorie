@@ -240,11 +240,25 @@
     });
   };
 
-  window.mtSubmitExam = async function (attemptId, locale) {
-    const result = await apiRequest('/api/v1/exam-attempts', {
+  window.mtSubmitExam = async function (attemptId) {
+    const submit = (locale) => apiRequest('/api/v1/exam-attempts', {
       method: 'POST',
       body: JSON.stringify({ action: 'submit', attemptId, locale })
     });
+    const nl = await submit('nl');
+    const fa = await submit('fa');
+    const faAnswers = new Map(fa.result.answers.map((answer) => [answer.questionId, answer]));
+    const result = {
+      ...nl,
+      result: {
+        ...nl.result,
+        answers: nl.result.answers.map((answer) => ({
+          ...answer,
+          explanationNl: answer.explanation,
+          explanationFa: faAnswers.get(answer.questionId)?.explanation || answer.explanation
+        }))
+      }
+    };
     loadExamResults().catch((error) => console.warn('Examenhistorie wordt later vernieuwd.', error));
     return result;
   };
