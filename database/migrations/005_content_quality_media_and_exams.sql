@@ -1,6 +1,8 @@
 -- Content quality follow-up: persist reviewed exam explanations and lesson media fixes.
 -- Safe to re-run: updates are deterministic and do not change question answers.
 
+BEGIN;
+
 UPDATE exam_questions_v1
 SET explanation = jsonb_build_object(
   'nl', 'Het juiste uitgangspunt is: ' || (options->correct_option->>'nl') || '. Controleer daarna de volledige verkeerssituatie voordat je handelt.',
@@ -17,7 +19,7 @@ WHERE summary->>'nl' IS NULL
    OR summary->>'nl' = 'Kijk naar alle richtingen en bepaal eerst wie voorrang heeft.'
    OR summary->>'fa' = 'اول تمام وضعیت ترافیک، علایم و خطر را بررسی کنید و سپس طبق قانون عمل کنید.';
 
-WITH media_map (lesson_no, media) AS (
+WITH media_map (lesson_number, filename) AS (
   VALUES
     (2, 'theory-005-lights-check.webp'),
     (38, 'theory-010-bus-lane.webp'),
@@ -35,6 +37,19 @@ WITH media_map (lesson_no, media) AS (
     (125, 'Slaperige bestuurder parkeert bij rustplaats.jpg')
 )
 UPDATE course_lessons AS l
-SET media = to_jsonb(m.media::text)
+SET media = CASE
+  WHEN jsonb_typeof(l.media) = 'array' AND jsonb_array_length(l.media) > 0
+    THEN jsonb_set(l.media, '{0,src}', to_jsonb(('/images/' || m.filename)::text), TRUE)
+  ELSE jsonb_build_array(
+    jsonb_build_object(
+      'type', 'image',
+      'src', '/images/' || m.filename,
+      'alt', l.title
+    )
+  )
+END
 FROM media_map AS m
-WHERE l.lesson_no = m.lesson_no;
+WHERE l.lesson_number = m.lesson_number;
+
+COMMIT;
+
