@@ -176,25 +176,31 @@ USING exam_definitions AS exam
 WHERE link.exam_id = exam.id
   AND exam.release_id = (SELECT id FROM content_releases WHERE version = 1);
 
--- A deterministic hash creates a different 50-question set for each exam.
--- Across 30 exams, a bank item is used about 1.5 times on average.
-WITH selected AS (
+-- Shuffle the bank once and assign consecutive blocks of 50. Twenty exams cover
+-- the complete bank; the remaining ten start the second cycle. Every question
+-- is therefore used once or twice, with an exact average of 1.5 uses.
+WITH ranked AS (
   SELECT
-    exam.id AS exam_id,
     question.id AS question_id,
     row_number() OVER (
-      PARTITION BY exam.id
-      ORDER BY md5(exam.exam_number::text || ':bank-1000:' || question.external_key)
-    ) AS sort_order
+      ORDER BY md5('bank-1000:' || question.external_key)
+    ) AS bank_position
+  FROM exam_questions_v1 AS question
+  WHERE question.release_id = (SELECT id FROM content_releases WHERE version = 1)
+    AND question.published = TRUE
+), slots AS (
+  SELECT
+    exam.id AS exam_id,
+    slot.number + 1 AS sort_order,
+    (((exam.exam_number - 1) * 50 + slot.number) % 1000) + 1 AS bank_position
   FROM exam_definitions AS exam
-  JOIN exam_questions_v1 AS question
-    ON question.release_id = exam.release_id AND question.published = TRUE
+  CROSS JOIN generate_series(0, 49) AS slot(number)
   WHERE exam.release_id = (SELECT id FROM content_releases WHERE version = 1)
 )
 INSERT INTO exam_definition_questions_v1 (exam_id, question_id, sort_order)
-SELECT exam_id, question_id, sort_order::smallint
-FROM selected
-WHERE sort_order <= 50;
+SELECT slots.exam_id, ranked.question_id, slots.sort_order::smallint
+FROM slots
+JOIN ranked ON ranked.bank_position = slots.bank_position;
 
 DO $check$
 DECLARE
@@ -202,6 +208,8 @@ DECLARE
   generated_count integer;
   duplicate_prompts integer;
   invalid_exams integer;
+  minimum_usage integer;
+  maximum_usage integer;
 BEGIN
   SELECT count(*) INTO bank_count
   FROM exam_questions_v1
@@ -233,10 +241,22 @@ BEGIN
       OR count(DISTINCT link.question_id) <> 50
   ) AS invalid;
 
-  IF bank_count <> 1000 OR generated_count <> 888 OR duplicate_prompts <> 0 OR invalid_exams <> 0 THEN
+  SELECT min(uses), max(uses)
+  INTO minimum_usage, maximum_usage
+  FROM (
+    SELECT question.id, count(link.question_id)::integer AS uses
+    FROM exam_questions_v1 AS question
+    LEFT JOIN exam_definition_questions_v1 AS link ON link.question_id = question.id
+    WHERE question.release_id = (SELECT id FROM content_releases WHERE version = 1)
+      AND question.published = TRUE
+    GROUP BY question.id
+  ) AS usage;
+
+  IF bank_count <> 1000 OR generated_count <> 888 OR duplicate_prompts <> 0
+    OR invalid_exams <> 0 OR minimum_usage <> 1 OR maximum_usage <> 2 THEN
     RAISE EXCEPTION
-      '1000-question validation failed: bank=%, generated=%, duplicate_prompts=%, invalid_exams=%',
-      bank_count, generated_count, duplicate_prompts, invalid_exams;
+      '1000-question validation failed: bank=%, generated=%, duplicates=%, invalid_exams=%, usage=%..%',
+      bank_count, generated_count, duplicate_prompts, invalid_exams, minimum_usage, maximum_usage;
   END IF;
 END
 $check$;
