@@ -6,6 +6,7 @@ import { mutationId, percentage, publicQuestion } from '../api/v1/_exam.js';
 import { clientTimestamp, deviceId, platform, shouldApplyProgress, syncMutationId } from '../api/v1/_sync.js';
 import { summarizeResults } from '../api/v1/_results.js';
 import { ACCOUNT_DELETE_CONFIRMATION, accountExport, validDeletionConfirmation } from '../api/v1/_privacy.js';
+import { grantedLocales, grantsCourseAccess, productLocales } from '../api/v1/_products.js';
 
 test('integer accepteert alleen gehele getallen binnen het bereik', () => {
   assert.equal(integer('12', { min: 1, max: 150 }), 12);
@@ -31,12 +32,14 @@ test('fail gebruikt een machineleesbare foutcode', async () => {
 
 test('locale valt veilig terug op Nederlands', () => {
   assert.equal(locale('fa'), 'fa');
+  assert.equal(locale('ps'), 'ps');
   assert.equal(locale('nl'), 'nl');
   assert.equal(locale('en'), 'nl');
 });
 
 test('localized gebruikt de gekozen taal en een gecontroleerde fallback', () => {
   assert.equal(localized({ nl: 'Les', fa: 'درس' }, 'fa'), 'درس');
+  assert.equal(localized({ nl: 'Les', ps: 'درس' }, 'ps'), 'درس');
   assert.equal(localized({ nl: 'Les' }, 'fa'), 'Les');
   assert.equal(localized(null, 'nl'), '');
 });
@@ -54,8 +57,19 @@ test('accessSummary valt gecontroleerd terug op legacy-toegang', () => {
     hasAccess: true,
     source: 'legacy',
     products: [],
+    locales: ['nl', 'fa'],
     entitlements: []
   });
+});
+
+test('taalpakketten houden Dari/Farsi en Pashto strikt gescheiden', () => {
+  assert.deepEqual(productLocales('theory_b_nl_30d'), ['nl']);
+  assert.deepEqual(productLocales('theory_b_nl_fa_30d'), ['nl', 'fa']);
+  assert.deepEqual(productLocales('theory_b_nl_ps_30d'), ['nl', 'ps']);
+  assert.equal(grantsCourseAccess('onbekend'), false);
+  assert.deepEqual(grantedLocales([
+    { product_key: 'theory_b_nl_ps_30d' }
+  ]), ['nl', 'ps']);
 });
 
 test('mutationId accepteert alleen bruikbare idempotency-sleutels', () => {
@@ -130,3 +144,4 @@ test('gegevensexport bevat geen push-token', () => {
   assert.equal(exported.exportedAt, '2026-09-02T12:00:00.000Z');
   assert.deepEqual(exported.devices, [{ device_id: 'web:1', platform: 'web' }]);
 });
+
