@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import Storage from 'expo-sqlite/kv-store';
-import type { Lesson, LessonsResponse, ProgressMutation } from './types';
+import type { Lesson, LessonsResponse, Locale, ProgressMutation } from './types';
 
 const lessonsKey = (locale: string) => `lessons:v1:${locale}`;
 const queueKey = (userId: string) => `progress-queue:v1:${userId}`;
@@ -9,13 +9,13 @@ export async function cacheLessons(response: LessonsResponse) {
   await Storage.setItem(lessonsKey(response.locale), JSON.stringify(response));
 }
 
-export async function readCachedLessons(locale: 'nl' | 'fa' = 'nl'): Promise<LessonsResponse | null> {
+export async function readCachedLessons(locale: Locale = 'nl'): Promise<LessonsResponse | null> {
   const value = await Storage.getItem(lessonsKey(locale));
   if (!value) return null;
   try { return JSON.parse(value) as LessonsResponse; } catch { return null; }
 }
 
-export async function readCachedLesson(id: number, locale: 'nl' | 'fa' = 'nl'): Promise<Lesson | null> {
+export async function readCachedLesson(id: number, locale: Locale = 'nl'): Promise<Lesson | null> {
   const cache = await readCachedLessons(locale);
   return cache?.lessons.find((lesson) => lesson.id === id) || null;
 }
