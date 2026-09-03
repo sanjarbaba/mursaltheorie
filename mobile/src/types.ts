@@ -1,4 +1,6 @@
-export type LocalizedContent = string | { nl?: string; fa?: string };
+export type Locale = 'nl' | 'fa' | 'ps';
+
+export type LocalizedContent = string | { nl?: string; fa?: string; ps?: string };
 
 export type ContentBlock = {
   type: string;
@@ -22,7 +24,7 @@ export type Lesson = {
 export type LessonsResponse = {
   release: { version: number; publishedAt: string } | null;
   lessons: Lesson[];
-  locale: 'nl' | 'fa';
+  locale: Locale;
 };
 
 export type ProgressMutation = {
