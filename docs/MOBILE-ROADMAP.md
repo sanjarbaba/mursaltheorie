@@ -30,7 +30,7 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 
 - [x] Extraheer 150 lessen en 30 unieke vragen reproduceerbaar uit `learn5.html`.
 - [x] Voer contentmigratie 003 uit op Neon preview en verifieer aantallen en idempotentie.
-- [ ] Vul ontbrekende unieke lesinhoud aan.
+- [x] Vul alle 150 lessen aan met unieke Nederlandstalige en Dari/Farsi-inhoud en een lesquiz.
 - [x] Verwijder juiste antwoorden uit publieke payloads.
 - [x] Laat de website uitsluitend de v1-content- en examen-API gebruiken.
 - [x] Toon examenresultaten en geschiedenis vanuit Neon in de webaccountomgeving.
@@ -44,10 +44,15 @@ gedeeld; API-contracten, gegevenstypen en content wel.
 - [x] Implementeer veilige native tokenopslag, SQLite-lescache en voortgangsqueue.
 - [ ] Bouw lessen, examens, resultaten en accountbeheer native.
 
+De website-API, accountkoppeling en synchronisatie zijn productiegereed. De native schermen en store-registraties starten pas nadat de website-eindtest is goedgekeurd.
+
 ## Fase 5 — Betalingen en publicatie
 
-- [ ] Koppel web-, Apple- en Google-aankopen aan centrale entitlements.
-- [ ] Verifieer aankopen en webhooks server-side en idempotent.
+- [x] Bereid Stripe Checkout voor web voor met centrale entitlements, ondertekende webhooks en idempotente verwerking.
+- [ ] Activeer Stripe pas na bevestiging van prijs en betaalmodel en test eerst in Stripe-testmodus.
+- [ ] Koppel toekomstige Apple- en Google-aankopen aan dezelfde centrale entitlements.
+- [ ] Verifieer Apple- en Google-aankopen en webhooks server-side en idempotent.
 - [ ] Voeg aankoopherstel toe.
 - [x] Voeg gegevensexport, accountverwijdering en privacyflows toe.
 - [ ] Test via TestFlight en Google Play internal testing.
+
