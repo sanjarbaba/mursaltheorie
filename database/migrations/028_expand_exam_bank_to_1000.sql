@@ -20,16 +20,16 @@ WITH release AS (
   JOIN course_modules AS module
     ON module.id = lesson.module_id AND module.release_id = lesson.release_id
   CROSS JOIN LATERAL (
-    SELECT block FROM jsonb_array_elements(lesson.content_blocks) AS block
-    WHERE block->>'type' = 'quiz' LIMIT 1
+    SELECT item.block FROM jsonb_array_elements(lesson.content_blocks) AS item(block)
+    WHERE item.block->>'type' = 'quiz' LIMIT 1
   ) AS quiz(block)
   CROSS JOIN LATERAL (
-    SELECT block FROM jsonb_array_elements(lesson.content_blocks) AS block
-    WHERE block->>'type' = 'rule' LIMIT 1
+    SELECT item.block FROM jsonb_array_elements(lesson.content_blocks) AS item(block)
+    WHERE item.block->>'type' = 'rule' LIMIT 1
   ) AS rule(block)
   CROSS JOIN LATERAL (
-    SELECT block FROM jsonb_array_elements(lesson.content_blocks) AS block
-    WHERE block->>'type' = 'exam_tip' LIMIT 1
+    SELECT item.block FROM jsonb_array_elements(lesson.content_blocks) AS item(block)
+    WHERE item.block->>'type' = 'exam_tip' LIMIT 1
   ) AS tip(block)
   WHERE lesson.release_id = (SELECT id FROM release)
     AND lesson.published = TRUE
