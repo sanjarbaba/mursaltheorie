@@ -1,7 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { authenticate, ensureUser, getSql, hasCourseAccess } from '../_lib.js';
+import { authenticate, ensureUser, getSql, hasCourseAccess, parseBody } from '../_lib.js';
 import { accessSummary } from './_access.js';
 import { fail, integer, locale, localized, ok } from './_contract.js';
+import { answersEqual, normalizeAnswer, percentage, publicQuestion, questionType } from './_exam.js';
 import { summarizeResults } from './_results.js';
 
 function configured(name) {
@@ -112,6 +113,79 @@ async function examHistory(sql, userId, url) {
   return ok({ results, summary: summarizeResults(results), locale: language });
 }
 
+async function topicStats(sql, userId) {
+  const rows = await sql`
+    SELECT q.category,
+      COUNT(*)::INTEGER AS answered,
+      COUNT(*) FILTER (WHERE answer.is_correct)::INTEGER AS correct,
+      COUNT(*) FILTER (WHERE NOT answer.is_correct)::INTEGER AS wrong
+    FROM exam_attempt_answers_v1 answer
+    JOIN exam_attempts_v1 attempt ON attempt.id = answer.attempt_id
+    JOIN exam_questions_v1 q ON q.id = answer.question_id
+    WHERE attempt.clerk_user_id = ${userId} AND attempt.status = 'submitted'
+    GROUP BY q.category
+    ORDER BY (COUNT(*) FILTER (WHERE answer.is_correct))::DECIMAL / NULLIF(COUNT(*), 0), q.category
+  `;
+  return ok({
+    topics: rows.map((row) => ({
+      category: row.category,
+      answered: Number(row.answered),
+      correct: Number(row.correct),
+      wrong: Number(row.wrong),
+      percentage: percentage(Number(row.correct), Number(row.answered))
+    }))
+  });
+}
+
+async function errorQuestions(sql, userId, url) {
+  const language = locale(url.searchParams.get('locale'));
+  const rows = await sql`
+    SELECT DISTINCT ON (q.id) q.id, q.prompt, q.options, q.category, q.question_type, q.media,
+      answer.answered_at, ROW_NUMBER() OVER (ORDER BY answer.answered_at DESC) AS sort_order
+    FROM exam_attempt_answers_v1 answer
+    JOIN exam_attempts_v1 attempt ON attempt.id = answer.attempt_id
+    JOIN exam_questions_v1 q ON q.id = answer.question_id
+    WHERE attempt.clerk_user_id = ${userId}
+      AND attempt.status = 'submitted'
+      AND answer.is_correct = FALSE
+      AND q.published = TRUE
+      AND q.question_type IN ('single_choice', 'yes_no', 'hotspot')
+    ORDER BY q.id, answer.answered_at DESC
+    LIMIT 20
+  `;
+  return ok({ questions: rows.map((row) => publicQuestion(row, language, localized)) });
+}
+
+async function checkErrorAnswer(sql, userId, request, language) {
+  const body = await parseBody(request);
+  const questionId = integer(body?.questionId, { min: 1, max: Number.MAX_SAFE_INTEGER });
+  if (questionId === null) return fail('VALIDATION_ERROR', 'questionId is verplicht.', 422);
+  const rows = await sql`
+    SELECT q.id, q.question_type, q.options, q.correct_answer, q.correct_option, q.explanation
+    FROM exam_questions_v1 q
+    WHERE q.id = ${questionId} AND EXISTS (
+      SELECT 1 FROM exam_attempt_answers_v1 answer
+      JOIN exam_attempts_v1 attempt ON attempt.id = answer.attempt_id
+      WHERE answer.question_id = q.id AND attempt.clerk_user_id = ${userId}
+        AND attempt.status = 'submitted' AND answer.is_correct = FALSE
+    )
+    LIMIT 1
+  `;
+  const question = rows[0];
+  if (!question) return fail('QUESTION_NOT_FOUND', 'Deze vraag staat niet in jouw foutentraining.', 404);
+  const type = questionType(question.question_type);
+  const answer = normalizeAnswer(type, body?.answer, Array.isArray(question.options) ? question.options.length : 0);
+  const correctAnswer = normalizeAnswer(type, question.correct_answer, Array.isArray(question.options) ? question.options.length : 0);
+  if (answer === null) return fail('VALIDATION_ERROR', 'Het antwoord past niet bij dit vraagtype.', 422);
+  return ok({ result: {
+    questionId,
+    isCorrect: answersEqual(type, answer, correctAnswer),
+    correctAnswer,
+    correctOption: question.correct_option,
+    explanation: localized(question.explanation, language)
+  } });
+}
+
 export default {
   async fetch(request) {
     if (!['GET', 'POST'].includes(request.method)) return fail('METHOD_NOT_ALLOWED', 'Methode niet toegestaan.', 405);
@@ -127,6 +201,9 @@ export default {
     try {
       const sql = getSql();
       const user = await ensureUser(sql, auth.userId);
+      if (request.method === 'POST' && resource === 'error-answer') {
+        return checkErrorAnswer(sql, auth.userId, request, locale(url.searchParams.get('locale')));
+      }
       if (request.method === 'POST' && resource === 'checkout') {
         const entitlements = await loadEntitlements(sql, auth.userId);
         if (accessSummary(entitlements, hasCourseAccess(user)).hasAccess) {
@@ -136,6 +213,8 @@ export default {
       }
       if (request.method !== 'GET') return fail('VALIDATION_ERROR', 'Ongeldige betaalactie.', 422);
       if (url.searchParams.get('resource') === 'results') return examHistory(sql, auth.userId, url);
+      if (url.searchParams.get('resource') === 'topic-stats') return topicStats(sql, auth.userId);
+      if (url.searchParams.get('resource') === 'errors') return errorQuestions(sql, auth.userId, url);
       const entitlements = await loadEntitlements(sql, auth.userId);
 
       return ok({ access: accessSummary(entitlements, hasCourseAccess(user)) });
