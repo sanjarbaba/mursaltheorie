@@ -68,12 +68,13 @@
       });
       await registerDevice();
       await flushProgressQueue();
-      const [progress, training, access, content, history] = await Promise.all([
+      const [progress, training, access, content, history, topicStats] = await Promise.all([
         apiRequest('/api/v1/progress'),
         apiRequest('/api/v1/progress?resource=training'),
         apiRequest('/api/v1/access'),
         loadV1Content(),
-        loadExamResults()
+        loadExamResults(),
+        apiRequest('/api/v1/access?resource=topic-stats')
       ]);
       window.dispatchEvent(new CustomEvent('mt-account-data', {
         detail: {
@@ -83,6 +84,7 @@
           access: access.access || null,
           results: history.results || [],
           resultSummary: history.summary,
+          topicStats: topicStats.topics || [],
           content
         }
       }));
@@ -103,6 +105,28 @@
   }
 
   window.mtLoadExamResults = loadExamResults;
+
+  window.mtLoadErrorTraining = async function () {
+    const [nl, fa] = await Promise.all([
+      apiRequest('/api/v1/access?resource=errors&locale=nl'),
+      apiRequest('/api/v1/access?resource=errors&locale=fa')
+    ]);
+    const faQuestions = new Map((fa.questions || []).map((question) => [question.id, question]));
+    return (nl.questions || []).map((question) => ({
+      ...question,
+      promptNl: question.prompt,
+      promptFa: faQuestions.get(question.id)?.prompt || question.prompt,
+      optionsNl: question.options,
+      optionsFa: faQuestions.get(question.id)?.options || question.options
+    }));
+  };
+
+  window.mtCheckErrorAnswer = async function (questionId, answer, locale) {
+    return apiRequest(`/api/v1/access?resource=error-answer&locale=${encodeURIComponent(locale || 'nl')}`, {
+      method: 'POST',
+      body: JSON.stringify({ questionId, answer })
+    });
+  };
 
   window.mtExportAccountData = async function () {
     const payload = await apiRequest('/api/v1/me?resource=export');
@@ -241,10 +265,10 @@
     };
   };
 
-  window.mtSaveExamAnswer = async function (attemptId, questionId, selectedOption) {
+  window.mtSaveExamAnswer = async function (attemptId, questionId, answer) {
     return apiRequest('/api/v1/exam-attempts', {
       method: 'POST',
-      body: JSON.stringify({ action: 'answer', attemptId, questionId, selectedOption })
+      body: JSON.stringify({ action: 'answer', attemptId, questionId, answer })
     });
   };
 
