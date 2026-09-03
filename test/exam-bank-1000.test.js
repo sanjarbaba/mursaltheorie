@@ -13,6 +13,8 @@ test('question bank migration creates exactly 1,000 unique bilingual questions',
   assert.match(sql, /generated_count <> 888/);
   assert.match(sql, /duplicate_prompts <> 0/);
   assert.match(sql, /count\(DISTINCT link\.question_id\) <> 50/);
+  assert.match(sql, /minimum_usage <> 1/);
+  assert.match(sql, /maximum_usage <> 2/);
   assert.match(sql, /'nl'/);
   assert.match(sql, /'fa'/);
 });
