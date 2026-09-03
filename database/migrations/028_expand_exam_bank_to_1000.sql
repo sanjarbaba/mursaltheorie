@@ -70,30 +70,30 @@ WITH release AS (
     question_type,
     CASE variant_number
       WHEN 1 THEN jsonb_build_object(
-        'nl', 'Oefenvraag ' || question_number || ' — ' || title->>'nl' || ': ' || quiz->'question'->>'nl',
-        'fa', 'سوال تمرینی ' || question_number || ' — ' || title->>'fa' || ': ' || quiz->'question'->>'fa'
+        'nl', 'Oefenvraag ' || question_number || ' — ' || (title->>'nl') || ': ' || (quiz->'question'->>'nl'),
+        'fa', 'سوال تمرینی ' || question_number || ' — ' || (title->>'fa') || ': ' || (quiz->'question'->>'fa')
       )
       WHEN 2 THEN jsonb_build_object(
-        'nl', 'Oefenvraag ' || question_number || ' — Welke handelwijze past het best bij ' || title->>'nl' || '?',
-        'fa', 'سوال تمرینی ' || question_number || ' — کدام روش برای «' || title->>'fa' || '» مناسب‌تر است؟'
+        'nl', 'Oefenvraag ' || question_number || ' — Welke handelwijze past het best bij ' || (title->>'nl') || '?',
+        'fa', 'سوال تمرینی ' || question_number || ' — کدام روش برای «' || (title->>'fa') || '» مناسب‌تر است؟'
       )
       WHEN 3 THEN jsonb_build_object(
-        'nl', 'Oefenvraag ' || question_number || ' — Welke examentip hoort bij ' || title->>'nl' || '?',
-        'fa', 'سوال تمرینی ' || question_number || ' — کدام نکته امتحانی به «' || title->>'fa' || '» مربوط است؟'
+        'nl', 'Oefenvraag ' || question_number || ' — Welke examentip hoort bij ' || (title->>'nl') || '?',
+        'fa', 'سوال تمرینی ' || question_number || ' — کدام نکته امتحانی به «' || (title->>'fa') || '» مربوط است؟'
       )
       WHEN 4 THEN jsonb_build_object(
-        'nl', 'Oefenvraag ' || question_number || ' — Welke twee aandachtspunten horen bij ' || title->>'nl' || '? Kies alle juiste antwoorden.',
-        'fa', 'سوال تمرینی ' || question_number || ' — کدام دو نکته به «' || title->>'fa' || '» مربوط است؟ همه جواب‌های درست را انتخاب کنید.'
+        'nl', 'Oefenvraag ' || question_number || ' — Welke twee aandachtspunten horen bij ' || (title->>'nl') || '? Kies alle juiste antwoorden.',
+        'fa', 'سوال تمرینی ' || question_number || ' — کدام دو نکته به «' || (title->>'fa') || '» مربوط است؟ همه جواب‌های درست را انتخاب کنید.'
       )
       WHEN 5 THEN jsonb_build_object(
-        'nl', 'Oefenvraag ' || question_number || ' — Bij ' || title->>'nl' || ' geldt: ' ||
-          CASE WHEN lesson_number % 2 = 1 THEN rule_text->>'nl' ELSE next_rule->>'nl' END || ' Juist of onjuist?',
-        'fa', 'سوال تمرینی ' || question_number || ' — درباره «' || title->>'fa' || '»: ' ||
-          CASE WHEN lesson_number % 2 = 1 THEN rule_text->>'fa' ELSE next_rule->>'fa' END || ' درست یا نادرست؟'
+        'nl', 'Oefenvraag ' || question_number || ' — Bij ' || (title->>'nl') || ' geldt: ' ||
+          (CASE WHEN lesson_number % 2 = 1 THEN rule_text->>'nl' ELSE next_rule->>'nl' END) || ' Juist of onjuist?',
+        'fa', 'سوال تمرینی ' || question_number || ' — درباره «' || (title->>'fa') || '»: ' ||
+          (CASE WHEN lesson_number % 2 = 1 THEN rule_text->>'fa' ELSE next_rule->>'fa' END) || ' درست یا نادرست؟'
       )
       ELSE jsonb_build_object(
-        'nl', 'Oefenvraag ' || question_number || ' — Wat is de belangrijkste kern van ' || title->>'nl' || '?',
-        'fa', 'سوال تمرینی ' || question_number || ' — مهم‌ترین اصل «' || title->>'fa' || '» چیست؟'
+        'nl', 'Oefenvraag ' || question_number || ' — Wat is de belangrijkste kern van ' || (title->>'nl') || '?',
+        'fa', 'سوال تمرینی ' || question_number || ' — مهم‌ترین اصل «' || (title->>'fa') || '» چیست؟'
       )
     END AS prompt,
     CASE variant_number
@@ -110,12 +110,12 @@ WITH release AS (
     CASE variant_number
       WHEN 1 THEN quiz->'explanation'
       WHEN 2 THEN jsonb_build_object(
-        'nl', 'Bij ' || title->>'nl' || ' is dit de passende kernregel: ' || rule_text->>'nl',
-        'fa', 'در موضوع «' || title->>'fa' || '» این قاعده اصلی مناسب است: ' || rule_text->>'fa'
+        'nl', 'Bij ' || (title->>'nl') || ' is dit de passende kernregel: ' || (rule_text->>'nl'),
+        'fa', 'در موضوع «' || (title->>'fa') || '» این قاعده اصلی مناسب است: ' || (rule_text->>'fa')
       )
       WHEN 3 THEN jsonb_build_object(
-        'nl', 'Deze examentip helpt je de situatie rond ' || title->>'nl' || ' juist te beoordelen: ' || tip_text->>'nl',
-        'fa', 'این نکته امتحانی برای ارزیابی درست «' || title->>'fa' || '» کمک می‌کند: ' || tip_text->>'fa'
+        'nl', 'Deze examentip helpt je de situatie rond ' || (title->>'nl') || ' juist te beoordelen: ' || (tip_text->>'nl'),
+        'fa', 'این نکته امتحانی برای ارزیابی درست «' || (title->>'fa') || '» کمک می‌کند: ' || (tip_text->>'fa')
       )
       WHEN 4 THEN jsonb_build_object(
         'nl', 'Zowel de kernregel als de examentip horen bij dit onderwerp.',
