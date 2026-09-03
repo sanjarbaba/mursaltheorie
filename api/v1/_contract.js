@@ -31,14 +31,15 @@ export function integer(value, { min, max }) {
 }
 
 export function locale(value) {
-  return value === 'fa' ? 'fa' : 'nl';
+  return ['fa', 'ps'].includes(value) ? value : 'nl';
 }
 
 export function localized(value, language) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
-  return value[language] || value.nl || value.fa || '';
+  return value[language] || value.nl || value.fa || value.ps || '';
 }
 
 export function requestId(request) {
   return request.headers.get('x-request-id') || crypto.randomUUID();
 }
+
