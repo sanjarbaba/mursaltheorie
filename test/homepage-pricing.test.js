@@ -10,5 +10,9 @@ test('homepage shows the approved 30-day prices and bilingual introduction offer
   assert.match(home, /INTRODUCTIEPRIJS · EERSTE 3 MAANDEN/);
   assert.match(home, /Daarna €64,99 voor 30 dagen\./);
   assert.match(home, /قیمت معرفی · ۳ ماه نخست/);
+  assert.match(home, /NL \+ پښتو · BINNENKORT/);
+  assert.match(home, /Nederlands \+ Pashto/);
+  assert.match(home, /Binnenkort beschikbaar/);
+  assert.match(home, /disabled aria-disabled="true"/);
 });
 
