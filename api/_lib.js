@@ -1,5 +1,6 @@
 import { verifyToken } from '@clerk/backend';
 import { neon } from '@neondatabase/serverless';
+import { grantsCourseAccess } from './v1/_products.js';
 
 const webAuthorizedParties = [
   'https://mursaltheorie.nl',
@@ -77,16 +78,15 @@ export function hasCourseAccess(user) {
 export async function requireCourseAccess(sql, userId) {
   try {
     const entitlements = await sql`
-      SELECT id
+      SELECT id, product_key
       FROM entitlements
       WHERE clerk_user_id = ${userId}
-        AND product_key = 'course.full'
         AND status IN ('active', 'grace')
         AND starts_at <= NOW()
         AND (ends_at IS NULL OR ends_at > NOW())
-      LIMIT 1
     `;
-    if (entitlements[0]) return { entitlement: entitlements[0] };
+    const entitlement = entitlements.find((item) => grantsCourseAccess(item.product_key));
+    if (entitlement) return { entitlement };
   } catch (error) {
     if (error?.code !== '42P01') throw error;
   }
@@ -103,3 +103,4 @@ export async function requireCourseAccess(sql, userId) {
 export async function parseBody(request) {
   try { return await request.json(); } catch { return null; }
 }
+
