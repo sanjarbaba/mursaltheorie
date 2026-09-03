@@ -1,6 +1,6 @@
 import { authenticate, ensureUser, getSql, parseBody, requireCourseAccess } from '../_lib.js';
 import { fail, integer, locale, localized, ok } from './_contract.js';
-import { mutationId, percentage, publicQuestion } from './_exam.js';
+import { answersEqual, mutationId, normalizeAnswer, percentage, publicQuestion, questionType } from './_exam.js';
 
 async function startAttempt(sql, userId, body, language) {
   const examNumber = integer(body?.examNumber, { min: 1, max: 9999 });
@@ -27,7 +27,7 @@ async function startAttempt(sql, userId, body, language) {
   if (Number(attempt.exam_id) !== Number(exam.id)) return fail('IDEMPOTENCY_CONFLICT', 'mutationId is al voor een ander examen gebruikt.', 409);
 
   const questions = await sql`
-    SELECT q.id, q.prompt, q.options, q.category, q.media, link.sort_order
+    SELECT q.id, q.prompt, q.options, q.category, q.question_type, q.media, link.sort_order
     FROM exam_definition_questions_v1 link
     JOIN exam_questions_v1 q ON q.id = link.question_id
     WHERE link.exam_id = ${exam.id} AND q.published = TRUE
@@ -55,35 +55,47 @@ async function startAttempt(sql, userId, body, language) {
 async function saveAnswer(sql, userId, body) {
   const attemptId = integer(body?.attemptId, { min: 1, max: Number.MAX_SAFE_INTEGER });
   const questionId = integer(body?.questionId, { min: 1, max: Number.MAX_SAFE_INTEGER });
-  const selectedOption = integer(body?.selectedOption, { min: 0, max: 9 });
-  if (attemptId === null || questionId === null || selectedOption === null) {
-    return fail('VALIDATION_ERROR', 'attemptId, questionId en selectedOption zijn verplicht.', 422);
+  if (attemptId === null || questionId === null) {
+    return fail('VALIDATION_ERROR', 'attemptId en questionId zijn verplicht.', 422);
   }
 
-  const rows = await sql`
-    INSERT INTO exam_attempt_answers_v1 (attempt_id, question_id, selected_option, is_correct, answered_at)
-    SELECT a.id, q.id, ${selectedOption}, q.correct_option = ${selectedOption}, NOW()
+  const questions = await sql`
+    SELECT q.id, q.question_type, q.options, q.correct_answer
     FROM exam_attempts_v1 a
-    JOIN exam_definitions e ON e.id = a.exam_id
-    JOIN exam_definition_questions_v1 link ON link.exam_id = e.id
+    JOIN exam_definition_questions_v1 link ON link.exam_id = a.exam_id
     JOIN exam_questions_v1 q ON q.id = link.question_id
+    JOIN exam_definitions e ON e.id = a.exam_id
     WHERE a.id = ${attemptId}
       AND a.clerk_user_id = ${userId}
       AND a.status = 'started'
       AND q.id = ${questionId}
-      AND ${selectedOption} < jsonb_array_length(q.options)
       AND (e.duration_seconds IS NULL OR a.started_at + e.duration_seconds * INTERVAL '1 second' > NOW())
+    LIMIT 1
+  `;
+  const question = questions[0];
+  if (!question) return fail('ATTEMPT_NOT_ACTIVE', 'Deze examenpoging is niet actief of de vraag hoort niet bij het examen.', 409);
+
+  const type = questionType(question.question_type);
+  const receivedAnswer = Object.hasOwn(body || {}, 'answer') ? body.answer : body?.selectedOption;
+  const answer = normalizeAnswer(type, receivedAnswer, Array.isArray(question.options) ? question.options.length : 0);
+  if (answer === null) return fail('VALIDATION_ERROR', 'Het antwoord past niet bij dit vraagtype.', 422);
+  const correctAnswer = normalizeAnswer(type, question.correct_answer, Array.isArray(question.options) ? question.options.length : 0);
+  const selectedOption = typeof answer === 'number' && type !== 'numeric' ? answer : null;
+  const rows = await sql`
+    INSERT INTO exam_attempt_answers_v1 (attempt_id, question_id, selected_option, answer, is_correct, answered_at)
+    VALUES (${attemptId}, ${questionId}, ${selectedOption}, ${JSON.stringify(answer)}::jsonb, ${answersEqual(type, answer, correctAnswer)}, NOW())
     ON CONFLICT (attempt_id, question_id) DO UPDATE SET
       selected_option = EXCLUDED.selected_option,
+      answer = EXCLUDED.answer,
       is_correct = EXCLUDED.is_correct,
       answered_at = NOW()
     RETURNING attempt_id, question_id, selected_option, answered_at
   `;
-  if (!rows[0]) return fail('ATTEMPT_NOT_ACTIVE', 'Deze examenpoging is niet actief of de vraag hoort niet bij het examen.', 409);
   return ok({
     answer: {
       attemptId: Number(rows[0].attempt_id),
       questionId: Number(rows[0].question_id),
+      value: answer,
       selectedOption: rows[0].selected_option,
       answeredAt: rows[0].answered_at
     }
@@ -149,8 +161,8 @@ async function submitAttempt(sql, userId, body, language) {
   }
 
   const results = await sql`
-    SELECT q.id AS question_id, answer.selected_option, q.correct_option,
-      COALESCE(answer.is_correct, FALSE) AS is_correct, q.explanation
+    SELECT q.id AS question_id, q.question_type, answer.answer, answer.selected_option,
+      q.correct_answer, q.correct_option, COALESCE(answer.is_correct, FALSE) AS is_correct, q.explanation
     FROM exam_definition_questions_v1 link
     JOIN exam_questions_v1 q ON q.id = link.question_id
     LEFT JOIN exam_attempt_answers_v1 answer
@@ -167,6 +179,9 @@ async function submitAttempt(sql, userId, body, language) {
       submittedAt: attempt.submitted_at,
       answers: results.map((row) => ({
         questionId: Number(row.question_id),
+        questionType: questionType(row.question_type),
+        selectedAnswer: row.answer,
+        correctAnswer: row.correct_answer,
         selectedOption: row.selected_option,
         correctOption: row.correct_option,
         isCorrect: row.is_correct,
@@ -201,3 +216,4 @@ export default {
     }
   }
 };
+
