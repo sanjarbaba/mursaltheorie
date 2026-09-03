@@ -26,7 +26,11 @@ async function createCheckout(userId) {
   });
   const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Idempotency-Key': `checkout:${userId}:${Math.floor(Date.now() / 60000)}`
+    },
     body: form
   });
   const session = await response.json();
@@ -35,12 +39,30 @@ async function createCheckout(userId) {
 }
 
 function verifyStripeSignature(payload, header, secret) {
-  const parts = Object.fromEntries(String(header || '').split(',').map((part) => part.split('=')));
-  const timestamp = Number(parts.t);
-  if (!timestamp || !parts.v1 || Math.abs(Date.now() / 1000 - timestamp) > 300) return false;
+  const parts = String(header || '').split(',').map((part) => part.split('='));
+  const timestamp = Number(parts.find(([key]) => key === 't')?.[1]);
+  const signatures = parts.filter(([key]) => key === 'v1').map(([, value]) => value);
+  if (!timestamp || !signatures.length || Math.abs(Date.now() / 1000 - timestamp) > 300) return false;
   const expected = createHmac('sha256', secret).update(`${timestamp}.${payload}`).digest();
-  const received = Buffer.from(parts.v1, 'hex');
-  return received.length === expected.length && timingSafeEqual(received, expected);
+  return signatures.some((signature) => {
+    if (!/^[a-f0-9]{64}$/i.test(signature)) return false;
+    const received = Buffer.from(signature, 'hex');
+    return received.length === expected.length && timingSafeEqual(received, expected);
+  });
+}
+
+async function loadEntitlements(sql, userId) {
+  try {
+    return await sql`
+      SELECT product_key, source, status, starts_at, ends_at
+      FROM entitlements
+      WHERE clerk_user_id = ${userId}
+      ORDER BY created_at DESC
+    `;
+  } catch (error) {
+    if (error?.code === '42P01') return [];
+    throw error;
+  }
 }
 
 async function processStripeWebhook(request) {
@@ -105,20 +127,16 @@ export default {
     try {
       const sql = getSql();
       const user = await ensureUser(sql, auth.userId);
-      if (request.method === 'POST' && resource === 'checkout') return createCheckout(auth.userId);
+      if (request.method === 'POST' && resource === 'checkout') {
+        const entitlements = await loadEntitlements(sql, auth.userId);
+        if (accessSummary(entitlements, hasCourseAccess(user)).hasAccess) {
+          return fail('ACCESS_ALREADY_ACTIVE', 'Dit account heeft al volledige toegang.', 409);
+        }
+        return createCheckout(auth.userId);
+      }
       if (request.method !== 'GET') return fail('VALIDATION_ERROR', 'Ongeldige betaalactie.', 422);
       if (url.searchParams.get('resource') === 'results') return examHistory(sql, auth.userId, url);
-      let entitlements = [];
-      try {
-        entitlements = await sql`
-          SELECT product_key, source, status, starts_at, ends_at
-          FROM entitlements
-          WHERE clerk_user_id = ${auth.userId}
-          ORDER BY created_at DESC
-        `;
-      } catch (error) {
-        if (error?.code !== '42P01') throw error;
-      }
+      const entitlements = await loadEntitlements(sql, auth.userId);
 
       return ok({ access: accessSummary(entitlements, hasCourseAccess(user)) });
     } catch (error) {
