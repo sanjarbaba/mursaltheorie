@@ -1,3 +1,5 @@
+import { grantedLocales } from './_products.js';
+
 export function entitlementIsActive(entitlement, now = Date.now()) {
   if (!entitlement || !['active', 'grace'].includes(entitlement.status)) return false;
   const startsAt = entitlement.starts_at ? new Date(entitlement.starts_at).getTime() : 0;
@@ -13,6 +15,8 @@ export function accessSummary(entitlements, legacyHasAccess = false, now = Date.
     hasAccess: active.length > 0 || legacyHasAccess,
     source: active.length > 0 ? 'entitlement' : (legacyHasAccess ? 'legacy' : 'none'),
     products: [...new Set(active.map((entitlement) => entitlement.product_key))],
+    locales: grantedLocales(active, legacyHasAccess),
     entitlements: active
   };
 }
+
