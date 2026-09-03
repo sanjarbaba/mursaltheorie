@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { API_VERSION, fail, integer, locale, localized, ok } from '../api/v1/_contract.js';
 import { accessSummary, entitlementIsActive } from '../api/v1/_access.js';
-import { mutationId, percentage, publicQuestion } from '../api/v1/_exam.js';
+import { answersEqual, mutationId, normalizeAnswer, percentage, publicQuestion, questionType } from '../api/v1/_exam.js';
 import { clientTimestamp, deviceId, platform, shouldApplyProgress, syncMutationId } from '../api/v1/_sync.js';
 import { summarizeResults } from '../api/v1/_results.js';
 import { ACCOUNT_DELETE_CONFIRMATION, accountExport, validDeletionConfirmation } from '../api/v1/_privacy.js';
@@ -90,10 +90,23 @@ test('publicQuestion lekt geen antwoord of uitleg', () => {
     media: [], sort_order: 1, correct_option: 1, explanation: { nl: 'Omdat.' }
   }, 'nl', localized);
   assert.deepEqual(question, {
-    id: 12, prompt: 'Vraag?', options: ['A', 'B'], category: 'regels', media: [], sortOrder: 1
+    id: 12, prompt: 'Vraag?', options: ['A', 'B'], category: 'regels', questionType: 'single_choice', media: [], sortOrder: 1
   });
   assert.equal('correctOption' in question, false);
   assert.equal('explanation' in question, false);
+});
+
+test('nieuwe vraagtypen worden strikt genormaliseerd en vergeleken', () => {
+  assert.equal(questionType('numeric'), 'numeric');
+  assert.equal(questionType('onbekend'), 'single_choice');
+  assert.equal(normalizeAnswer('single_choice', 2, 3), 2);
+  assert.equal(normalizeAnswer('single_choice', 3, 3), null);
+  assert.deepEqual(normalizeAnswer('multiple_response', [2, 0, 2], 3), [0, 2]);
+  assert.equal(normalizeAnswer('multiple_response', [], 3), null);
+  assert.equal(normalizeAnswer('numeric', '12,5'), 12.5);
+  assert.equal(answersEqual('multiple_response', [0, 2], [0, 2]), true);
+  assert.equal(answersEqual('multiple_response', [2, 0], [0, 2]), false);
+  assert.equal(answersEqual('numeric', 12.5, 12.5), true);
 });
 
 test('sync-identifiers en platformen worden strikt gevalideerd', () => {
