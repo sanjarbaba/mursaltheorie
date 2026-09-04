@@ -260,6 +260,27 @@
     window.location.assign(result.checkoutUrl);
   };
 
+  window.mtResendPurchaseConfirmation = async function () {
+    return apiRequest('/api/v1/access?resource=resend-purchase-confirmation', {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+  };
+
+  window.mtActivatePurchase = async function () {
+    return apiRequest('/api/v1/access?resource=activate', {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+  };
+
+  window.mtWithdrawPurchase = async function () {
+    return apiRequest('/api/v1/access?resource=withdraw', {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+  };
+
   window.mtStartExam = async function (examNumber) {
     const mutationId = crypto.randomUUID();
     const request = (locale) => apiRequest('/api/v1/exam-attempts', {
