@@ -23,37 +23,46 @@
     return payload.data ?? payload;
   }
 
-  function mergeContent(nl, fa) {
+  function mergeContent(nl, fa, ps) {
     const faLessons = new Map((fa.lessons || []).map((lesson) => [lesson.id, lesson]));
+    const psLessons = new Map((ps.lessons || []).map((lesson) => [lesson.id, lesson]));
     const faExams = new Map((fa.exams || []).map((exam) => [exam.number, exam]));
+    const psExams = new Map((ps.exams || []).map((exam) => [exam.number, exam]));
     return {
       lessons: (nl.lessons || []).map((lesson) => ({
         ...lesson,
         titleNl: lesson.title,
         titleFa: faLessons.get(lesson.id)?.title || lesson.title,
+        titlePs: psLessons.get(lesson.id)?.title || lesson.title,
         summaryNl: lesson.summary,
         summaryFa: faLessons.get(lesson.id)?.summary || lesson.summary,
+        summaryPs: psLessons.get(lesson.id)?.summary || lesson.summary,
         moduleTitleNl: lesson.module.title,
-        moduleTitleFa: faLessons.get(lesson.id)?.module?.title || lesson.module.title
+        moduleTitleFa: faLessons.get(lesson.id)?.module?.title || lesson.module.title,
+        moduleTitlePs: psLessons.get(lesson.id)?.module?.title || lesson.module.title
       })),
       exams: (nl.exams || []).map((exam) => ({
         ...exam,
         titleNl: exam.title,
-        titleFa: faExams.get(exam.number)?.title || exam.title
+        titleFa: faExams.get(exam.number)?.title || exam.title,
+        titlePs: psExams.get(exam.number)?.title || exam.title
       }))
     };
   }
 
   async function loadV1Content() {
-    const [lessonsNl, lessonsFa, examsNl, examsFa] = await Promise.all([
+    const [lessonsNl, lessonsFa, lessonsPs, examsNl, examsFa, examsPs] = await Promise.all([
       apiRequest('/api/v1/lessons?locale=nl'),
       apiRequest('/api/v1/lessons?locale=fa'),
+      apiRequest('/api/v1/lessons?locale=ps'),
       apiRequest('/api/v1/exams?locale=nl'),
-      apiRequest('/api/v1/exams?locale=fa')
+      apiRequest('/api/v1/exams?locale=fa'),
+      apiRequest('/api/v1/exams?locale=ps')
     ]);
     const content = mergeContent(
       { lessons: lessonsNl.lessons, exams: examsNl.exams },
-      { lessons: lessonsFa.lessons, exams: examsFa.exams }
+      { lessons: lessonsFa.lessons, exams: examsFa.exams },
+      { lessons: lessonsPs.lessons, exams: examsPs.exams }
     );
     window.dispatchEvent(new CustomEvent('mt-v1-content', { detail: content }));
     return content;
@@ -107,17 +116,21 @@
   window.mtLoadExamResults = loadExamResults;
 
   window.mtLoadErrorTraining = async function () {
-    const [nl, fa] = await Promise.all([
+    const [nl, fa, ps] = await Promise.all([
       apiRequest('/api/v1/access?resource=errors&locale=nl'),
-      apiRequest('/api/v1/access?resource=errors&locale=fa')
+      apiRequest('/api/v1/access?resource=errors&locale=fa'),
+      apiRequest('/api/v1/access?resource=errors&locale=ps')
     ]);
     const faQuestions = new Map((fa.questions || []).map((question) => [question.id, question]));
+    const psQuestions = new Map((ps.questions || []).map((question) => [question.id, question]));
     return (nl.questions || []).map((question) => ({
       ...question,
       promptNl: question.prompt,
       promptFa: faQuestions.get(question.id)?.prompt || question.prompt,
+      promptPs: psQuestions.get(question.id)?.prompt || question.prompt,
       optionsNl: question.options,
-      optionsFa: faQuestions.get(question.id)?.options || question.options
+      optionsFa: faQuestions.get(question.id)?.options || question.options,
+      optionsPs: psQuestions.get(question.id)?.options || question.options
     }));
   };
 
@@ -250,17 +263,20 @@
       method: 'POST',
       body: JSON.stringify({ action: 'start', examNumber, mutationId, locale })
     });
-    const [nl, fa] = await Promise.all([request('nl'), request('fa')]);
+    const [nl, fa, ps] = await Promise.all([request('nl'), request('fa'), request('ps')]);
     const faQuestions = new Map(fa.attempt.questions.map((question) => [question.id, question]));
+    const psQuestions = new Map(ps.attempt.questions.map((question) => [question.id, question]));
     return {
       ...nl.attempt,
-      exam: { ...nl.attempt.exam, titleNl: nl.attempt.exam.title, titleFa: fa.attempt.exam.title },
+      exam: { ...nl.attempt.exam, titleNl: nl.attempt.exam.title, titleFa: fa.attempt.exam.title, titlePs: ps.attempt.exam.title },
       questions: nl.attempt.questions.map((question) => ({
         ...question,
         promptNl: question.prompt,
         promptFa: faQuestions.get(question.id)?.prompt || question.prompt,
+        promptPs: psQuestions.get(question.id)?.prompt || question.prompt,
         optionsNl: question.options,
-        optionsFa: faQuestions.get(question.id)?.options || question.options
+        optionsFa: faQuestions.get(question.id)?.options || question.options,
+        optionsPs: psQuestions.get(question.id)?.options || question.options
       }))
     };
   };
@@ -279,7 +295,9 @@
     });
     const nl = await submit('nl');
     const fa = await submit('fa');
+    const ps = await submit('ps');
     const faAnswers = new Map(fa.result.answers.map((answer) => [answer.questionId, answer]));
+    const psAnswers = new Map(ps.result.answers.map((answer) => [answer.questionId, answer]));
     const result = {
       ...nl,
       result: {
@@ -287,7 +305,8 @@
         answers: nl.result.answers.map((answer) => ({
           ...answer,
           explanationNl: answer.explanation,
-          explanationFa: faAnswers.get(answer.questionId)?.explanation || answer.explanation
+          explanationFa: faAnswers.get(answer.questionId)?.explanation || answer.explanation,
+          explanationPs: psAnswers.get(answer.questionId)?.explanation || answer.explanation
         }))
       }
     };
