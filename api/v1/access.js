@@ -15,7 +15,7 @@ const MOLLIE_PRODUCTS = Object.freeze({
   theory_b_nl_fa_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands + Dari/Farsi - 30 dagen' })
 });
 
-async function createCheckout(userId, productKey) {
+async function createCheckout(userId, productKey, immediateAccessConsent) {
   const secret = configured('MOLLIE_API_KEY');
   const product = MOLLIE_PRODUCTS[productKey];
   const appUrl = configured('APP_URL') || 'https://www.mursaltheorie.nl';
@@ -34,7 +34,11 @@ async function createCheckout(userId, productKey) {
       redirectUrl: `${appUrl}/learn5?payment=return`,
       cancelUrl: `${appUrl}/learn5?payment=cancelled`,
       webhookUrl: `${appUrl}/api/v1/access?resource=mollie-webhook`,
-      metadata: { clerk_user_id: userId, product_key: productKey }
+      metadata: {
+        clerk_user_id: userId,
+        product_key: productKey,
+        immediate_access_consent: immediateAccessConsent ? 'true' : 'false'
+      }
     })
   });
   const payment = await response.json();
@@ -65,9 +69,10 @@ async function processMollieWebhook(request) {
   const userId = payment?.metadata?.clerk_user_id;
   const product = MOLLIE_PRODUCTS[productKey];
   const amountMatches = payment?.amount?.currency === 'EUR' && payment?.amount?.value === product?.amount;
-  if (!product || !userId || !amountMatches) return fail('PAYMENT_MISMATCH', 'Betalingsgegevens komen niet overeen.', 400);
+  const consentMatches = payment?.metadata?.immediate_access_consent === 'true';
+  if (!product || !userId || !amountMatches || !consentMatches) return fail('PAYMENT_MISMATCH', 'Betalingsgegevens komen niet overeen.', 400);
   const sql = getSql();
-  const safePayload = { id: payment.id, status: payment.status, amount: payment.amount, product_key: productKey };
+  const safePayload = { id: payment.id, status: payment.status, amount: payment.amount, product_key: productKey, immediate_access_consent: true };
   await sql`INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at) VALUES('mollie',${payment.id},${`payment.${payment.status}`},${JSON.stringify(safePayload)}::jsonb,NOW()) ON CONFLICT(provider,provider_event_id) DO UPDATE SET event_type=EXCLUDED.event_type,payload=EXCLUDED.payload,processed_at=NOW()`;
   if (payment.status === 'paid') {
     await ensureUser(sql, userId);
@@ -249,11 +254,14 @@ export default {
         const body = await parseBody(request);
         const productKey = typeof body?.productKey === 'string' ? body.productKey : '';
         if (!MOLLIE_PRODUCTS[productKey]) return fail('INVALID_PRODUCT', 'Kies een geldig taalpakket.', 422);
+        if (body?.immediateAccessConsent !== true) {
+          return fail('CONSENT_REQUIRED', 'Bevestig dat de digitale toegang direct mag starten.', 422);
+        }
         const entitlements = await loadEntitlements(sql, auth.userId);
         if (accessSummary(entitlements, hasCourseAccess(user)).hasAccess) {
           return fail('ACCESS_ALREADY_ACTIVE', 'Dit account heeft al volledige toegang.', 409);
         }
-        return createCheckout(auth.userId, productKey);
+        return createCheckout(auth.userId, productKey, true);
       }
       if (request.method !== 'GET') return fail('VALIDATION_ERROR', 'Ongeldige betaalactie.', 422);
       if (url.searchParams.get('resource') === 'results') return examHistory(sql, auth.userId, url);
@@ -268,4 +276,3 @@ export default {
     }
   }
 };
-
