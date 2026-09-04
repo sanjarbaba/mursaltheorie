@@ -3,6 +3,7 @@ import { authenticate, ensureUser, getSql, hasCourseAccess, parseBody } from '..
 import { accessSummary } from './_access.js';
 import { fail, integer, locale, localized, ok } from './_contract.js';
 import { answersEqual, normalizeAnswer, percentage, publicQuestion, questionType } from './_exam.js';
+import { purchaseConfirmationEmail, withdrawalConfirmationEmail } from './_email.js';
 import { summarizeResults } from './_results.js';
 
 function configured(name) {
@@ -15,7 +16,10 @@ const MOLLIE_PRODUCTS = Object.freeze({
   theory_b_nl_fa_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands + Dari/Farsi - 30 dagen' })
 });
 
-async function createCheckout(userId, productKey, immediateAccessConsent) {
+const CONSENT_VERSION = 'digital-content-v2-2026-09-04';
+const CONSENT_TEXT = 'Ik geef uitdrukkelijk toestemming om de digitale inhoud na mijn eigen activatie direct te leveren. Ik verklaar dat mijn wettelijke herroepingsrecht vervalt zodra ik op “Start mijn 30 dagen toegang” klik.';
+
+async function createCheckout(sql, userId, customerEmail, productKey, immediateAccessConsent) {
   const secret = configured('MOLLIE_API_KEY');
   const product = MOLLIE_PRODUCTS[productKey];
   const appUrl = configured('APP_URL') || 'https://www.mursaltheorie.nl';
@@ -37,7 +41,9 @@ async function createCheckout(userId, productKey, immediateAccessConsent) {
       metadata: {
         clerk_user_id: userId,
         product_key: productKey,
-        immediate_access_consent: immediateAccessConsent ? 'true' : 'false'
+        immediate_access_consent: immediateAccessConsent ? 'true' : 'false',
+        consent_version: CONSENT_VERSION,
+        consented_at: new Date().toISOString()
       }
     })
   });
@@ -47,6 +53,17 @@ async function createCheckout(userId, productKey, immediateAccessConsent) {
     console.error('Mollie payment creation failed', { status: response.status, detail: payment?.detail });
     return fail('PAYMENT_PROVIDER_ERROR', 'De betaalpagina kon niet worden geopend.', 502);
   }
+  await sql`
+    INSERT INTO purchase_orders(
+      provider, provider_payment_id, clerk_user_id, customer_email, product_key, description,
+      amount_value, amount_currency, status, consent_version, consent_text, consented_at
+    ) VALUES(
+      'mollie', ${payment.id}, ${userId}, ${customerEmail || null}, ${productKey}, ${product.description},
+      ${product.amount}, 'EUR', 'payment_pending', ${CONSENT_VERSION}, ${CONSENT_TEXT},
+      ${payment.metadata.consented_at}
+    )
+    ON CONFLICT(provider, provider_payment_id) DO NOTHING
+  `;
   return ok({ checkoutUrl });
 }
 
@@ -74,9 +91,62 @@ async function processMollieWebhook(request) {
   const sql = getSql();
   const safePayload = { id: payment.id, status: payment.status, amount: payment.amount, product_key: productKey, immediate_access_consent: true };
   await sql`INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at) VALUES('mollie',${payment.id},${`payment.${payment.status}`},${JSON.stringify(safePayload)}::jsonb,NOW()) ON CONFLICT(provider,provider_event_id) DO UPDATE SET event_type=EXCLUDED.event_type,payload=EXCLUDED.payload,processed_at=NOW()`;
+  const ensuredUser = await ensureUser(sql, userId);
+  const orderStatus = payment.status === 'paid'
+    ? 'paid_awaiting_activation'
+    : ['canceled', 'expired'].includes(payment.status) ? 'cancelled'
+      : payment.status === 'failed' ? 'failed' : 'payment_pending';
+  const consentedAt = payment?.metadata?.consented_at || new Date().toISOString();
+  const savedOrders = await sql`
+    INSERT INTO purchase_orders(
+      provider, provider_payment_id, clerk_user_id, customer_email, product_key, description,
+      amount_value, amount_currency, status, consent_version, consent_text, consented_at, paid_at
+    ) VALUES(
+      'mollie', ${payment.id}, ${userId}, ${ensuredUser.email || null}, ${productKey}, ${product.description},
+      ${product.amount}, 'EUR', ${orderStatus}, ${payment?.metadata?.consent_version || CONSENT_VERSION},
+      ${CONSENT_TEXT}, ${consentedAt}, ${payment.status === 'paid' ? new Date().toISOString() : null}
+    )
+    ON CONFLICT(provider, provider_payment_id) DO UPDATE SET
+      status = CASE WHEN purchase_orders.status IN ('active','withdrawn') THEN purchase_orders.status ELSE EXCLUDED.status END,
+      paid_at = COALESCE(purchase_orders.paid_at, EXCLUDED.paid_at),
+      updated_at = NOW()
+    RETURNING provider_payment_id,amount_value::TEXT AS amount_value,amount_currency,status,refund_reference
+  `;
   if (payment.status === 'paid') {
-    await ensureUser(sql, userId);
-    await sql`INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status,starts_at,ends_at) VALUES(${userId},${productKey},'web',${payment.id},'active',NOW(),NOW()+INTERVAL '30 days') ON CONFLICT(source,external_reference) DO UPDATE SET status='active',product_key=EXCLUDED.product_key,ends_at=COALESCE(entitlements.ends_at,EXCLUDED.ends_at),updated_at=NOW()`;
+    const savedOrder = savedOrders[0];
+    if (savedOrder?.status === 'withdrawn') {
+      if (!savedOrder.refund_reference) {
+        const refund = await createMollieRefund(savedOrder);
+        await sql`UPDATE purchase_orders SET refund_reference=${refund.id},refunded_at=NOW(),updated_at=NOW() WHERE provider='mollie' AND provider_payment_id=${payment.id}`;
+      }
+      await sql`UPDATE entitlements SET status='revoked',updated_at=NOW() WHERE source='web' AND external_reference=${payment.id} AND status='pending'`;
+      return ok({ received: true, withdrawn: true });
+    }
+    await sql`INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status,starts_at,ends_at) VALUES(${userId},${productKey},'web',${payment.id},'pending',NOW(),NULL) ON CONFLICT(source,external_reference) DO UPDATE SET product_key=EXCLUDED.product_key,status=CASE WHEN entitlements.status='active' THEN 'active' ELSE 'pending' END,updated_at=NOW()`;
+    const orders = await sql`
+      SELECT order_row.id, order_row.provider_payment_id, order_row.description,
+        order_row.amount_value::TEXT AS amount_value, order_row.consent_text, app_users.email
+      FROM purchase_orders order_row
+      JOIN app_users ON app_users.clerk_user_id = order_row.clerk_user_id
+      WHERE order_row.provider = 'mollie' AND order_row.provider_payment_id = ${payment.id}
+        AND order_row.confirmation_sent_at IS NULL
+      LIMIT 1
+    `;
+    const order = orders[0];
+    if (order) {
+      const appUrl = configured('APP_URL') || 'https://www.mursaltheorie.nl';
+      const email = await purchaseConfirmationEmail({
+        email: order.email,
+        orderId: order.provider_payment_id,
+        description: order.description,
+        amount: order.amount_value,
+        consentText: order.consent_text,
+        appUrl
+      });
+      if (email.sent) {
+        await sql`UPDATE purchase_orders SET confirmation_sent_at=NOW(),confirmation_email_id=${email.id},updated_at=NOW() WHERE id=${order.id}`;
+      }
+    }
   }
   return ok({ received: true });
 }
@@ -106,6 +176,147 @@ async function loadEntitlements(sql, userId) {
     if (error?.code === '42P01') return [];
     throw error;
   }
+}
+
+async function loadLatestPurchase(sql, userId) {
+  try {
+    const rows = await sql`
+      SELECT provider_payment_id, product_key, description, amount_value::TEXT AS amount_value,
+        amount_currency, status, consent_version, consent_text, consented_at, paid_at,
+        confirmation_sent_at, activated_at, withdrawal_requested_at, refund_reference, refunded_at
+      FROM purchase_orders
+      WHERE clerk_user_id = ${userId}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    return rows[0] || null;
+  } catch (error) {
+    if (error?.code === '42P01') return null;
+    throw error;
+  }
+}
+
+function purchaseSummary(order) {
+  if (!order) return null;
+  return {
+    orderId: order.provider_payment_id,
+    productKey: order.product_key,
+    description: order.description,
+    amount: order.amount_value,
+    currency: order.amount_currency,
+    status: order.status,
+    consentVersion: order.consent_version,
+    consentText: order.consent_text,
+    consentedAt: order.consented_at,
+    paidAt: order.paid_at,
+    confirmationSentAt: order.confirmation_sent_at,
+    activatedAt: order.activated_at,
+    withdrawalRequestedAt: order.withdrawal_requested_at,
+    refundReference: order.refund_reference,
+    refundedAt: order.refunded_at
+  };
+}
+
+async function sendPendingPurchaseConfirmation(sql, userId) {
+  const rows = await sql`
+    SELECT order_row.id, order_row.provider_payment_id, order_row.description,
+      order_row.amount_value::TEXT AS amount_value, order_row.consent_text, app_users.email
+    FROM purchase_orders order_row
+    JOIN app_users ON app_users.clerk_user_id = order_row.clerk_user_id
+    WHERE order_row.clerk_user_id = ${userId}
+      AND order_row.status = 'paid_awaiting_activation'
+      AND order_row.confirmation_sent_at IS NULL
+    ORDER BY order_row.created_at DESC
+    LIMIT 1
+  `;
+  const order = rows[0];
+  if (!order) return { sent: false, reason: 'not_pending' };
+  const appUrl = configured('APP_URL') || 'https://www.mursaltheorie.nl';
+  const email = await purchaseConfirmationEmail({
+    email: order.email,
+    orderId: order.provider_payment_id,
+    description: order.description,
+    amount: order.amount_value,
+    consentText: order.consent_text,
+    appUrl
+  });
+  if (email.sent) {
+    await sql`UPDATE purchase_orders SET confirmation_sent_at=NOW(),confirmation_email_id=${email.id},updated_at=NOW() WHERE id=${order.id}`;
+  }
+  return email;
+}
+
+async function activatePurchase(sql, userId) {
+  const rows = await sql`
+    WITH activated AS (
+      UPDATE purchase_orders
+      SET status='active',activated_at=NOW(),updated_at=NOW()
+      WHERE id=(
+        SELECT id FROM purchase_orders
+        WHERE clerk_user_id=${userId} AND status='paid_awaiting_activation'
+          AND confirmation_sent_at IS NOT NULL AND withdrawal_requested_at IS NULL
+        ORDER BY created_at DESC LIMIT 1
+      )
+      RETURNING provider_payment_id,activated_at
+    )
+    UPDATE entitlements entitlement
+    SET status='active',starts_at=activated.activated_at,
+      ends_at=activated.activated_at+INTERVAL '30 days',updated_at=NOW()
+    FROM activated
+    WHERE entitlement.source='web' AND entitlement.external_reference=activated.provider_payment_id
+    RETURNING entitlement.product_key,entitlement.starts_at,entitlement.ends_at
+  `;
+  if (!rows[0]) {
+    const order = await loadLatestPurchase(sql, userId);
+    if (!order || order.status === 'payment_pending') return fail('PAYMENT_PENDING', 'De betaling wordt nog verwerkt.', 409);
+    if (order.status === 'withdrawn') return fail('PURCHASE_WITHDRAWN', 'Deze aankoop is ongedaan gemaakt.', 409);
+    if (!order.confirmation_sent_at) return fail('CONFIRMATION_PENDING', 'Starten kan pas nadat de aankoopbevestiging is verzonden.', 409);
+    return fail('ACTIVATION_UNAVAILABLE', 'Deze aankoop kan niet worden geactiveerd.', 409);
+  }
+  return ok({ activated: true, startsAt: rows[0].starts_at, endsAt: rows[0].ends_at });
+}
+
+async function createMollieRefund(order) {
+  const secret = configured('MOLLIE_API_KEY');
+  if (!secret) throw new Error('Mollie is not configured');
+  const response = await fetch(`https://api.mollie.com/v2/payments/${encodeURIComponent(order.provider_payment_id)}/refunds`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      'Content-Type': 'application/json',
+      'Idempotency-Key': `withdrawal:${order.provider_payment_id}`
+    },
+    body: JSON.stringify({ amount: { currency: order.amount_currency, value: order.amount_value } })
+  });
+  const refund = await response.json().catch(() => ({}));
+  if (!response.ok || !refund?.id) throw new Error(`Mollie refund failed: ${response.status}`);
+  return refund;
+}
+
+async function withdrawPurchase(sql, userId) {
+  const order = await loadLatestPurchase(sql, userId);
+  if (!order || !['payment_pending', 'paid_awaiting_activation'].includes(order.status)) {
+    if (order?.status === 'active') return fail('WITHDRAWAL_RIGHT_EXPIRED', 'De digitale inhoud is al geactiveerd. Neem contact op bij een probleem met de levering.', 409);
+    if (order?.status === 'withdrawn') return ok({ withdrawn: true, alreadyProcessed: true, purchase: purchaseSummary(order) });
+    return fail('NO_WITHDRAWABLE_PURCHASE', 'Er is geen aankoop die online ongedaan kan worden gemaakt.', 404);
+  }
+  let refund = null;
+  if (order.status === 'paid_awaiting_activation') refund = await createMollieRefund(order);
+  const requestedAt = new Date().toISOString();
+  const rows = await sql`
+    UPDATE purchase_orders
+    SET status='withdrawn',withdrawal_requested_at=${requestedAt},
+      refund_reference=${refund?.id || null},refunded_at=${refund ? requestedAt : null},updated_at=NOW()
+    WHERE clerk_user_id=${userId} AND provider='mollie' AND provider_payment_id=${order.provider_payment_id}
+      AND status IN ('payment_pending','paid_awaiting_activation')
+    RETURNING provider_payment_id,description
+  `;
+  if (!rows[0]) return fail('WITHDRAWAL_ALREADY_PROCESSED', 'De status van deze aankoop is al gewijzigd.', 409);
+  await sql`UPDATE entitlements SET status='revoked',updated_at=NOW() WHERE clerk_user_id=${userId} AND source='web' AND external_reference=${order.provider_payment_id} AND status='pending'`;
+  const users = await sql`SELECT email FROM app_users WHERE clerk_user_id=${userId} LIMIT 1`;
+  const email = await withdrawalConfirmationEmail({ email: users[0]?.email, orderId: order.provider_payment_id, description: order.description, requestedAt });
+  if (email.sent) await sql`UPDATE purchase_orders SET withdrawal_confirmation_sent_at=NOW(),updated_at=NOW() WHERE provider='mollie' AND provider_payment_id=${order.provider_payment_id}`;
+  return ok({ withdrawn: true, requestedAt, refundReference: refund?.id || null });
 }
 
 async function processStripeWebhook(request) {
@@ -238,8 +449,7 @@ export default {
       catch (error) { console.error('Mollie webhook failed', error); return fail('WEBHOOK_ERROR', 'Webhook kon niet worden verwerkt.', 400); }
     }
     if (request.method === 'POST' && resource === 'stripe-webhook') {
-      try { return await processStripeWebhook(request); }
-      catch (error) { console.error('Stripe webhook failed', error); return fail('WEBHOOK_ERROR', 'Webhook kon niet worden verwerkt.', 400); }
+      return fail('PAYMENT_PROVIDER_DISABLED', 'Deze betaalprovider is niet actief.', 410);
     }
     const auth = await authenticate(request);
     if (auth.error) return fail('UNAUTHORIZED', 'Inloggen is vereist.', 401);
@@ -261,15 +471,26 @@ export default {
         if (accessSummary(entitlements, hasCourseAccess(user)).hasAccess) {
           return fail('ACCESS_ALREADY_ACTIVE', 'Dit account heeft al volledige toegang.', 409);
         }
-        return createCheckout(auth.userId, productKey, true);
+        return createCheckout(sql, auth.userId, user.email, productKey, true);
       }
+      if (request.method === 'POST' && resource === 'resend-purchase-confirmation') {
+        const email = await sendPendingPurchaseConfirmation(sql, auth.userId);
+        if (!email.sent) {
+          const code = email.reason === 'not_configured' ? 'EMAIL_NOT_CONFIGURED' : 'CONFIRMATION_NOT_SENT';
+          return fail(code, 'De aankoopbevestiging kon nog niet worden verzonden.', 503);
+        }
+        return ok({ sent: true });
+      }
+      if (request.method === 'POST' && resource === 'activate') return activatePurchase(sql, auth.userId);
+      if (request.method === 'POST' && resource === 'withdraw') return withdrawPurchase(sql, auth.userId);
       if (request.method !== 'GET') return fail('VALIDATION_ERROR', 'Ongeldige betaalactie.', 422);
       if (url.searchParams.get('resource') === 'results') return examHistory(sql, auth.userId, url);
       if (url.searchParams.get('resource') === 'topic-stats') return topicStats(sql, auth.userId);
       if (url.searchParams.get('resource') === 'errors') return errorQuestions(sql, auth.userId, url);
       const entitlements = await loadEntitlements(sql, auth.userId);
+      const purchase = await loadLatestPurchase(sql, auth.userId);
 
-      return ok({ access: accessSummary(entitlements, hasCourseAccess(user)) });
+      return ok({ access: { ...accessSummary(entitlements, hasCourseAccess(user)), purchase: purchaseSummary(purchase) } });
     } catch (error) {
       console.error('v1 access endpoint failed', error);
       return fail('SERVICE_UNAVAILABLE', 'Toegang kon niet worden gecontroleerd.', 503);
