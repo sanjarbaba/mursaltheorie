@@ -10,33 +10,70 @@ function configured(name) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-async function createCheckout(userId) {
-  const secret = configured('STRIPE_SECRET_KEY');
-  const price = configured('STRIPE_PRICE_ID');
+const MOLLIE_PRODUCTS = Object.freeze({
+  theory_b_nl_30d: Object.freeze({ amount: '29.99', description: 'Mursaltheorie Nederlands - 30 dagen' }),
+  theory_b_nl_fa_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands + Dari/Farsi - 30 dagen' })
+});
+
+async function createCheckout(userId, productKey) {
+  const secret = configured('MOLLIE_API_KEY');
+  const product = MOLLIE_PRODUCTS[productKey];
   const appUrl = configured('APP_URL') || 'https://www.mursaltheorie.nl';
-  if (!secret || !price) return fail('PAYMENTS_NOT_CONFIGURED', 'Betalen is nog niet geactiveerd.', 503);
-  const form = new URLSearchParams({
-    mode: 'payment',
-    'line_items[0][price]': price,
-    'line_items[0][quantity]': '1',
-    success_url: `${appUrl}/learn5?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/learn5?payment=cancelled`,
-    client_reference_id: userId,
-    'metadata[clerk_user_id]': userId,
-    'metadata[product_key]': 'theory_b_access'
-  });
-  const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+  if (!secret) return fail('PAYMENTS_NOT_CONFIGURED', 'Betalen is nog niet geactiveerd.', 503);
+  if (!product) return fail('INVALID_PRODUCT', 'Kies een geldig taalpakket.', 422);
+  const response = await fetch('https://api.mollie.com/v2/payments', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${secret}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Idempotency-Key': `checkout:${userId}:${Math.floor(Date.now() / 60000)}`
+      'Content-Type': 'application/json',
+      'Idempotency-Key': `checkout:${userId}:${productKey}:${Math.floor(Date.now() / 60000)}`
     },
-    body: form
+    body: JSON.stringify({
+      amount: { currency: 'EUR', value: product.amount },
+      description: product.description,
+      redirectUrl: `${appUrl}/learn5?payment=return`,
+      cancelUrl: `${appUrl}/learn5?payment=cancelled`,
+      webhookUrl: `${appUrl}/api/v1/access?resource=mollie-webhook`,
+      metadata: { clerk_user_id: userId, product_key: productKey }
+    })
   });
-  const session = await response.json();
-  if (!response.ok || !session.url) return fail('PAYMENT_PROVIDER_ERROR', 'De betaalpagina kon niet worden geopend.', 502);
-  return ok({ checkoutUrl: session.url });
+  const payment = await response.json();
+  const checkoutUrl = payment?._links?.checkout?.href;
+  if (!response.ok || !payment?.id || !checkoutUrl) {
+    console.error('Mollie payment creation failed', { status: response.status, detail: payment?.detail });
+    return fail('PAYMENT_PROVIDER_ERROR', 'De betaalpagina kon niet worden geopend.', 502);
+  }
+  return ok({ checkoutUrl });
+}
+
+async function fetchMolliePayment(paymentId, secret) {
+  const response = await fetch(`https://api.mollie.com/v2/payments/${encodeURIComponent(paymentId)}`, {
+    headers: { Authorization: `Bearer ${secret}` }
+  });
+  const payment = await response.json();
+  if (!response.ok) throw new Error(`Mollie payment lookup failed: ${response.status}`);
+  return payment;
+}
+
+async function processMollieWebhook(request) {
+  const secret = configured('MOLLIE_API_KEY');
+  if (!secret) return fail('PAYMENTS_NOT_CONFIGURED', 'Webhook is niet geactiveerd.', 503);
+  const paymentId = new URLSearchParams(await request.text()).get('id');
+  if (!/^tr_[A-Za-z0-9]+$/.test(paymentId || '')) return fail('INVALID_PAYMENT_ID', 'Ongeldig betalingskenmerk.', 400);
+  const payment = await fetchMolliePayment(paymentId, secret);
+  const productKey = payment?.metadata?.product_key;
+  const userId = payment?.metadata?.clerk_user_id;
+  const product = MOLLIE_PRODUCTS[productKey];
+  const amountMatches = payment?.amount?.currency === 'EUR' && payment?.amount?.value === product?.amount;
+  if (!product || !userId || !amountMatches) return fail('PAYMENT_MISMATCH', 'Betalingsgegevens komen niet overeen.', 400);
+  const sql = getSql();
+  const safePayload = { id: payment.id, status: payment.status, amount: payment.amount, product_key: productKey };
+  await sql`INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at) VALUES('mollie',${payment.id},${`payment.${payment.status}`},${JSON.stringify(safePayload)}::jsonb,NOW()) ON CONFLICT(provider,provider_event_id) DO UPDATE SET event_type=EXCLUDED.event_type,payload=EXCLUDED.payload,processed_at=NOW()`;
+  if (payment.status === 'paid') {
+    await ensureUser(sql, userId);
+    await sql`INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status,starts_at,ends_at) VALUES(${userId},${productKey},'web',${payment.id},'active',NOW(),NOW()+INTERVAL '30 days') ON CONFLICT(source,external_reference) DO UPDATE SET status='active',product_key=EXCLUDED.product_key,ends_at=COALESCE(entitlements.ends_at,EXCLUDED.ends_at),updated_at=NOW()`;
+  }
+  return ok({ received: true });
 }
 
 function verifyStripeSignature(payload, header, secret) {
@@ -191,6 +228,10 @@ export default {
     if (!['GET', 'POST'].includes(request.method)) return fail('METHOD_NOT_ALLOWED', 'Methode niet toegestaan.', 405);
     const url = new URL(request.url);
     const resource = url.searchParams.get('resource');
+    if (request.method === 'POST' && resource === 'mollie-webhook') {
+      try { return await processMollieWebhook(request); }
+      catch (error) { console.error('Mollie webhook failed', error); return fail('WEBHOOK_ERROR', 'Webhook kon niet worden verwerkt.', 400); }
+    }
     if (request.method === 'POST' && resource === 'stripe-webhook') {
       try { return await processStripeWebhook(request); }
       catch (error) { console.error('Stripe webhook failed', error); return fail('WEBHOOK_ERROR', 'Webhook kon niet worden verwerkt.', 400); }
@@ -205,11 +246,14 @@ export default {
         return checkErrorAnswer(sql, auth.userId, request, locale(url.searchParams.get('locale')));
       }
       if (request.method === 'POST' && resource === 'checkout') {
+        const body = await parseBody(request);
+        const productKey = typeof body?.productKey === 'string' ? body.productKey : '';
+        if (!MOLLIE_PRODUCTS[productKey]) return fail('INVALID_PRODUCT', 'Kies een geldig taalpakket.', 422);
         const entitlements = await loadEntitlements(sql, auth.userId);
         if (accessSummary(entitlements, hasCourseAccess(user)).hasAccess) {
           return fail('ACCESS_ALREADY_ACTIVE', 'Dit account heeft al volledige toegang.', 409);
         }
-        return createCheckout(auth.userId);
+        return createCheckout(auth.userId, productKey);
       }
       if (request.method !== 'GET') return fail('VALIDATION_ERROR', 'Ongeldige betaalactie.', 422);
       if (url.searchParams.get('resource') === 'results') return examHistory(sql, auth.userId, url);
