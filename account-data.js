@@ -251,8 +251,11 @@
     });
   };
 
-  window.mtStartCheckout = async function () {
-    const result = await apiRequest('/api/v1/access?resource=checkout', { method: 'POST' });
+  window.mtStartCheckout = async function (productKey) {
+    const result = await apiRequest('/api/v1/access?resource=checkout', {
+      method: 'POST',
+      body: JSON.stringify({ productKey })
+    });
     if (!result.checkoutUrl) throw new Error('CHECKOUT_URL_MISSING');
     window.location.assign(result.checkoutUrl);
   };
