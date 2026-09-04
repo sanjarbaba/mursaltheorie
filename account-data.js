@@ -75,12 +75,12 @@
         method: 'PUT',
         body: JSON.stringify({ name: user.name, email: user.email })
       });
-      await registerDevice();
+      const access = await apiRequest('/api/v1/access'); if (!access.access?.hasAccess) { window.dispatchEvent(new CustomEvent('mt-account-data', { detail: { profile: profile.user, completedLessons: [], trainingProgress: null, access: access.access || null, results: [], resultSummary: null, topicStats: [], content: null } })); return; } await registerDevice();
       await flushProgressQueue();
-      const [progress, training, access, content, history, topicStats] = await Promise.all([
+      const [progress, training, content, history, topicStats] = await Promise.all([
         apiRequest('/api/v1/progress'),
         apiRequest('/api/v1/progress?resource=training'),
-        apiRequest('/api/v1/access'),
+
         loadV1Content(),
         loadExamResults(),
         apiRequest('/api/v1/access?resource=topic-stats')
