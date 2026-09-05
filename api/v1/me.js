@@ -25,7 +25,7 @@ async function deleteAccount(sql, userId) {
   await clerk.users.deleteUser(userId);
 }
 
-export default async function handler(request) {
+async function handler(request) {
     if (!['GET', 'PUT', 'DELETE'].includes(request.method)) return fail('METHOD_NOT_ALLOWED', 'Methode niet toegestaan.', 405);
     const auth = await authenticate(request);
     if (auth.error) return fail('UNAUTHORIZED', 'Inloggen is vereist.', 401);
@@ -57,3 +57,7 @@ export default async function handler(request) {
       return fail('SERVICE_UNAVAILABLE', 'Database tijdelijk niet beschikbaar.', 503);
     }
 }
+
+export const GET = handler;
+export const PUT = handler;
+export const DELETE = handler;
