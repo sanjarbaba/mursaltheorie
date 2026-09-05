@@ -498,6 +498,9 @@ const endpoint = {
   }
 };
 
-export default async function handler(request) {
+async function handler(request) {
   return endpoint.fetch(request);
 }
+
+export const GET = handler;
+export const POST = handler;
