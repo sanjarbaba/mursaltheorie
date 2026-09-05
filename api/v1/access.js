@@ -439,7 +439,7 @@ async function checkErrorAnswer(sql, userId, request, language) {
   } });
 }
 
-export default {
+const endpoint = {
   async fetch(request) {
     if (!['GET', 'POST'].includes(request.method)) return fail('METHOD_NOT_ALLOWED', 'Methode niet toegestaan.', 405);
     const url = new URL(request.url);
@@ -497,3 +497,7 @@ export default {
     }
   }
 };
+
+export default async function handler(request) {
+  return endpoint.fetch(request);
+}
