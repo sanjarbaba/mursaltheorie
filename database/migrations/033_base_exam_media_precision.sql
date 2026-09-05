@@ -42,6 +42,11 @@ WITH media_map(external_key, image_src) AS (VALUES
 ('cbr2025-q112','/images/theory-038-breakdown-shoulder.webp'))
 UPDATE exam_questions_v1 q SET media=jsonb_build_array(jsonb_build_object('type','image','src',m.image_src,'alt',q.prompt->>'nl')), updated_at=NOW()
 FROM media_map m WHERE q.release_id=(SELECT id FROM content_releases WHERE version=1) AND q.external_key=m.external_key;
+UPDATE exam_questions_v1
+SET media=jsonb_set(media,'{0,alt}',to_jsonb(prompt->>'nl'),true), updated_at=NOW()
+WHERE release_id=(SELECT id FROM content_releases WHERE version=1) AND published=true
+  AND jsonb_typeof(media)='array' AND jsonb_array_length(media)>0
+  AND (media->0->>'alt' IS NULL OR btrim(media->0->>'alt')='');
 INSERT INTO schema_migrations(version,name) VALUES(33,'base_exam_media_precision') ON CONFLICT(version) DO UPDATE SET name=EXCLUDED.name;
 COMMIT;
 SELECT version,name FROM schema_migrations WHERE version=33;
