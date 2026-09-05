@@ -49,7 +49,7 @@ export function purchaseConfirmationEmail({ email, orderId, description, amount,
       <p>Je toegang is nog niet gestart. Open Mursaltheorie en kies <strong>Start mijn 30 dagen toegang</strong>. Op dat moment begint de levering en vervalt het wettelijke herroepingsrecht voor deze digitale inhoud.</p>
       <p><a href="${escapeHtml(activationUrl)}" style="display:inline-block;background:#6b42dc;color:white;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:bold">Naar mijn aankoop</a></p>
       <p>Wil je vóór activatie van de koop af? Gebruik dan in je account de knop <strong>Koop ongedaan maken</strong> of mail naar <a href="mailto:mursalsadat@proton.me">mursalsadat@proton.me</a>.</p>
-      <hr><p style="font-size:13px;color:#6e6877">Mursal Taalcoach · KvK 42145630 · Asterstraat 263, 6708 DS Wageningen</p>
+      <hr><p style="font-size:13px;color:#6e6877">Mursal Taalcoach · KvK 42145630</p>
     </div>`
   });
 }
