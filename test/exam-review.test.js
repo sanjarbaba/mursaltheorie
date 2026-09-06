@@ -24,3 +24,16 @@ test('exam scene map covers specialized question categories', () => {
   assert.match(html, /alcohol:'\/images\/Beginnende bestuurder met alcoholgrens 0,2‰\.jpg'/);
 });
 
+test('topic statistics show localized names instead of database codes', () => {
+  for (const [code, label] of [
+    ['merge', 'Invoegen en rijstroken'],
+    ['parking', 'Stilstaan en parkeren'],
+    ['procession', 'Colonnes en uitvaartstoeten'],
+    ['traffic-light', 'Verkeerslichten'],
+    ['road-marking', 'Wegmarkering']
+  ]) {
+    assert.ok(html.includes(`${code.includes('-') ? `'${code}'` : code}:['${label}'`));
+  }
+  assert.match(html, /function topicLabel\(category\)/);
+  assert.match(html, /aria-label="\$\{esc\(label\)\}"/);
+});
