@@ -17,6 +17,15 @@ test('mobile exam stays in one viewport and keeps answer scroll position', () =>
   assert.match(learn, />← \$\{tr\('Vorige'/);
 });
 
+test('completed exam review navigates through every question', () => {
+  assert.match(learn, /function moveReview\(delta\)/);
+  assert.match(learn, /r\.questions\.length-1/);
+  assert.match(learn, /moveReview\(-1\)/);
+  assert.match(learn, /moveReview\(1\)/);
+  assert.match(learn, /i===r\.questions\.length-1/);
+  assert.match(learn, /Klaar/);
+});
+
 test('lesson, exercise, exam and book buttons have explicit actions', () => {
   assert.match(learn, /Naar lessen/);
   assert.match(learn, /Naar oefeningen/);
