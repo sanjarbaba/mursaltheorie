@@ -54,6 +54,23 @@ export function purchaseConfirmationEmail({ email, orderId, description, amount,
   });
 }
 
+export function bookOrderConfirmationEmail({ email, orderId, description, amount, shipping }) {
+  return sendEmail({
+    to: email,
+    subject: 'Bestelling ontvangen: Mursaltheorie B-boek',
+    idempotencyKey: `book-order-confirmation-${orderId}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#17131f;line-height:1.6">
+      <h1>Bedankt voor je bestelling</h1>
+      <p>We hebben je betaling voor <strong>${escapeHtml(description)}</strong> ontvangen.<br>€${escapeHtml(amount)} · eenmalige betaling</p>
+      <h2 style="font-size:18px">Afleveradres</h2>
+      <p>${escapeHtml(shipping.name)}<br>${escapeHtml(shipping.street)}<br>${escapeHtml(shipping.postcode)} ${escapeHtml(shipping.city)}<br>${escapeHtml(shipping.country)}</p>
+      <p>Orderkenmerk: ${escapeHtml(orderId)}</p>
+      <p>Klopt het afleveradres niet? Mail zo snel mogelijk naar <a href="mailto:mursalsadat@proton.me">mursalsadat@proton.me</a> of bel <a href="tel:+31612604593">+31 6 12 60 45 93</a>.</p>
+      <hr><p style="font-size:13px;color:#6e6877">Mursal Taalcoach · KvK 42145630</p>
+    </div>`
+  });
+}
+
 export function withdrawalConfirmationEmail({ email, orderId, description, requestedAt }) {
   return sendEmail({
     to: email,
