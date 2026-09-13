@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const home = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../learn5.html', import.meta.url), 'utf8');
 const source = fs.readFileSync(new URL('../learn5.source.html', import.meta.url), 'utf8');
-const logo = new URL('../images/mursal-logo.png', import.meta.url);
+const logo = new URL('../images/mursal-logo.jpg', import.meta.url);
 
 test('Dari/Farsi language controls use their own script', () => {
   assert.match(home, /id="langBtn" lang="fa" dir="rtl">دری\/فارسی</);
