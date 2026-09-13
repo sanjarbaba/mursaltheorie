@@ -139,18 +139,19 @@ if (typeof document !== 'undefined') {
   const mobileBrandStyle = document.createElement('style');
   mobileBrandStyle.id = 'mobile-brand-layout';
   mobileBrandStyle.textContent = `@media (max-width:560px){
-    .top{display:grid;grid-template-columns:minmax(125px,1fr) minmax(92px,auto) 40px;grid-template-rows:auto auto;gap:5px 6px;overflow:hidden}
-    .top>.logo{grid-column:1;grid-row:1 / span 2;width:132px!important;height:38px!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:hidden}
-    .top>.logo img{width:132px!important;height:38px!important;border-radius:0!important;object-fit:contain!important}
-    .top>.lang{grid-column:2;grid-row:2;min-width:0;width:100%;overflow:hidden;display:flex;flex:0 0 auto}
+    .top{display:grid;grid-template-columns:minmax(145px,1fr) minmax(92px,auto) 40px;grid-template-rows:auto;gap:5px 6px;overflow:visible;position:relative}
+    .top>.logo{grid-column:1;grid-row:1;width:145px!important;height:48px!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:hidden}
+    .top>.logo img{width:145px!important;height:48px!important;border-radius:0!important;object-fit:contain!important}
+    .top>.lang{grid-column:2;grid-row:1;position:absolute;top:calc(100% + 4px);right:52px;min-width:92px;width:auto;overflow:visible;display:flex;flex:0 0 auto;z-index:2}
     .top>.ghost:not(.signout){grid-column:2;grid-row:1;min-width:0;width:100%;overflow:hidden;text-overflow:ellipsis}
-    .top>.signout{grid-column:3;grid-row:1 / span 2;width:40px;min-width:40px;height:40px;padding:0;font-size:0}
+    .top>.signout{grid-column:3;grid-row:1;width:40px;min-width:40px;height:40px;padding:0;font-size:0}
     .top>.signout span{display:none}
     .top>.signout::before{content:'↪';font-size:20px}
   }@media (max-width:360px){
-    .top{grid-template-columns:minmax(112px,1fr) minmax(86px,auto) 36px;gap:4px}
-    .top>.logo,.top>.logo img{width:116px!important;height:36px!important}
-    .top>.lang,.top>.ghost:not(.signout){font-size:12px;padding:8px 4px}
+    .top{grid-template-columns:minmax(124px,1fr) minmax(86px,auto) 36px;gap:4px}
+    .top>.logo,.top>.logo img{width:124px!important;height:42px!important}
+    .top>.lang{right:44px;min-width:86px;font-size:12px;padding:7px 5px}
+    .top>.ghost:not(.signout){font-size:12px;padding:8px 4px}
     .top>.signout{width:36px;min-width:36px;height:36px}
   }`;
   document.head.appendChild(mobileBrandStyle);
