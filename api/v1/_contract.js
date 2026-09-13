@@ -36,6 +36,8 @@ export function locale(value) {
 
 export function localized(value, language) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+  // Pashto must never silently receive Dari/Farsi content.
+  if (language === 'ps') return value.ps || value.nl || '';
   return value[language] || value.nl || value.fa || value.ps || '';
 }
 
