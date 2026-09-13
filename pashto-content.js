@@ -131,3 +131,28 @@ globalThis.MT_PASHTO = Object.freeze({
   'Een auto rijdt achteruit vanuit een uitrit jouw rijbaan op.': 'یو موټر له وتونکې لارې په شا ستاسو لین ته راووځي.',
   'Remmen: de auto kruist direct jouw rijlijn.': 'بریک ونیسئ: موټر نېغ ستاسو د تګ مسیر پرېکوي.'
 });
+
+// Keep the learning header clear and usable on narrow screens. The full supplied
+// wordmark remains visible, without the old white tile, while language controls
+// sit below the account/login action.
+if (typeof document !== 'undefined') {
+  const mobileBrandStyle = document.createElement('style');
+  mobileBrandStyle.id = 'mobile-brand-layout';
+  mobileBrandStyle.textContent = `@media (max-width:560px){
+    .top{display:grid;grid-template-columns:minmax(125px,1fr) minmax(92px,auto) 40px;grid-template-rows:auto auto;gap:5px 6px;overflow:hidden}
+    .top>.logo{grid-column:1;grid-row:1 / span 2;width:132px!important;height:38px!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:hidden}
+    .top>.logo img{width:132px!important;height:38px!important;border-radius:0!important;object-fit:contain!important}
+    .top>.lang{grid-column:2;grid-row:2;min-width:0;width:100%;overflow:hidden;display:flex;flex:0 0 auto}
+    .top>.ghost:not(.signout){grid-column:2;grid-row:1;min-width:0;width:100%;overflow:hidden;text-overflow:ellipsis}
+    .top>.signout{grid-column:3;grid-row:1 / span 2;width:40px;min-width:40px;height:40px;padding:0;font-size:0}
+    .top>.signout span{display:none}
+    .top>.signout::before{content:'↪';font-size:20px}
+  }@media (max-width:360px){
+    .top{grid-template-columns:minmax(112px,1fr) minmax(86px,auto) 36px;gap:4px}
+    .top>.logo,.top>.logo img{width:116px!important;height:36px!important}
+    .top>.lang,.top>.ghost:not(.signout){font-size:12px;padding:8px 4px}
+    .top>.signout{width:36px;min-width:36px;height:36px}
+  }`;
+  document.head.appendChild(mobileBrandStyle);
+}
+
