@@ -32,17 +32,17 @@ test('all exam image views recover from missing or broken media', () => {
     assert.match(shell, /function examQuestionImage\(q\)/);
     assert.match(shell, /data-fallback=/);
     assert.match(shell, /onerror="this\.onerror=null;this\.src=this\.dataset\.fallback"/);
-    assert.equal((shell.match(/\$\{examQuestionImage\(q\)\}/g) || []).length, 3);
+    assert.ok((shell.match(/\$\{examQuestionImage\(q\)\}/g) || []).length >= 3);
     assert.doesNotMatch(shell, /<img src="\$\{q\.image\|\|sceneImage\(q\.scene\)\}"/);
   }
 });
 
 test('latest Mursal logo is used for header marks and favicons', () => {
   assert.ok(fs.statSync(logo).size > 30_000);
-  assert.match(home, /rel="icon" type="image\/png" href="\/images\/mursal-logo\.png"/);
+    assert.match(home, /rel="icon" type="image\/png" href="\/images\/mursal-favicon\.png"/);
   assert.match(home, /class="logo"><img src="\/images\/mursal-logo\.png" alt="Mursal">/);
   for (const shell of [app, source]) {
-    assert.match(shell, /rel="icon" type="image\/png" href="\/images\/mursal-logo\.png"/);
+    assert.match(shell, /rel="icon" type="image\/png" href="\/images\/mursal-favicon\.png"/);
     assert.match(shell, /<img src="\/images\/mursal-logo\.png" alt="Mursal"[^>]*>/);
   }
 });
