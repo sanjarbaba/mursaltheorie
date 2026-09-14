@@ -1,4 +1,5 @@
 import access from './access.js';
+import admin from './admin.js';
 import devices from './devices.js';
 import examAttempts from './exam-attempts.js';
 import exams from './exams.js';
@@ -9,6 +10,7 @@ import { API_VERSION, fail, ok } from './_contract.js';
 
 const endpoints = Object.freeze({
   access,
+  admin,
   devices,
   'exam-attempts': examAttempts,
   exams,
@@ -29,3 +31,4 @@ export default async function handler(request) {
   if (typeof target.fetch === 'function') return target.fetch(request);
   return fail('ENDPOINT_UNAVAILABLE', 'API-endpoint niet beschikbaar.', 503);
 }
+
