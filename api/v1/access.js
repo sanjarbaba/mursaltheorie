@@ -18,7 +18,7 @@ const MOLLIE_PRODUCTS = Object.freeze({
 });
 
 const CONSENT_VERSION = 'digital-content-v2-2026-09-04';
-const CONSENT_TEXT = 'Ik geef uitdrukkelijk toestemming om de digitale inhoud na mijn eigen activatie direct te leveren. Ik verklaar dat mijn wettelijke herroepingsrecht vervalt zodra ik op “Start mijn 30 dagen toegang” klik.';
+const CONSENT_TEXT = 'Ik geef uitdrukkelijk toestemming om de digitale inhoud direct na bevestiging van mijn betaling te leveren. Ik verklaar dat mijn wettelijke herroepingsrecht vervalt zodra de digitale toegang na betaling wordt gestart.';
 const PHYSICAL_ORDER_VERSION = 'physical-book-v1-2026-09-10';
 const PHYSICAL_ORDER_TEXT = 'Ik bestel het fysieke Mursaltheorie B-boek voor €65 en bevestig dat het ingevulde afleveradres juist is.';
 
