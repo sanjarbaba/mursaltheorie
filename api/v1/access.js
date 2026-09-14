@@ -117,22 +117,24 @@ async function processMollieWebhook(request) {
   await sql`INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at) VALUES('mollie',${payment.id},${`payment.${payment.status}`},${JSON.stringify(safePayload)}::jsonb,NOW()) ON CONFLICT(provider,provider_event_id) DO UPDATE SET event_type=EXCLUDED.event_type,payload=EXCLUDED.payload,processed_at=NOW()`;
   const ensuredUser = await ensureUser(sql, userId);
   const orderStatus = payment.status === 'paid'
-    ? (isPhysical ? 'paid_awaiting_fulfillment' : 'paid_awaiting_activation')
+    ? (isPhysical ? 'paid_awaiting_fulfillment' : 'active')
     : ['canceled', 'expired'].includes(payment.status) ? 'cancelled'
       : payment.status === 'failed' ? 'failed' : 'payment_pending';
   const consentedAt = payment?.metadata?.consented_at || new Date().toISOString();
   const savedOrders = await sql`
     INSERT INTO purchase_orders(
       provider, provider_payment_id, clerk_user_id, customer_email, product_key, description,
-      amount_value, amount_currency, status, consent_version, consent_text, consented_at, paid_at
+      amount_value, amount_currency, status, consent_version, consent_text, consented_at, paid_at, activated_at
     ) VALUES(
       'mollie', ${payment.id}, ${userId}, ${ensuredUser.email || null}, ${productKey}, ${product.description},
       ${product.amount}, 'EUR', ${orderStatus}, ${payment?.metadata?.consent_version || (isPhysical ? PHYSICAL_ORDER_VERSION : CONSENT_VERSION)},
-      ${isPhysical ? PHYSICAL_ORDER_TEXT : CONSENT_TEXT}, ${consentedAt}, ${payment.status === 'paid' ? new Date().toISOString() : null}
+      ${isPhysical ? PHYSICAL_ORDER_TEXT : CONSENT_TEXT}, ${consentedAt}, ${payment.status === 'paid' ? new Date().toISOString() : null},
+      ${payment.status === 'paid' && !isPhysical ? new Date().toISOString() : null}
     )
     ON CONFLICT(provider, provider_payment_id) DO UPDATE SET
       status = CASE WHEN purchase_orders.status IN ('active','fulfilled','withdrawn') THEN purchase_orders.status ELSE EXCLUDED.status END,
       paid_at = COALESCE(purchase_orders.paid_at, EXCLUDED.paid_at),
+      activated_at = COALESCE(purchase_orders.activated_at, EXCLUDED.activated_at),
       updated_at = NOW()
     RETURNING provider_payment_id,amount_value::TEXT AS amount_value,amount_currency,status,refund_reference
   `;
@@ -147,7 +149,8 @@ async function processMollieWebhook(request) {
       return ok({ received: true, withdrawn: true });
     }
     if (!isPhysical) {
-      await sql`INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status,starts_at,ends_at) VALUES(${userId},${productKey},'web',${payment.id},'pending',NOW(),NULL) ON CONFLICT(source,external_reference) DO UPDATE SET product_key=EXCLUDED.product_key,status=CASE WHEN entitlements.status='active' THEN 'active' ELSE 'pending' END,updated_at=NOW()`;
+      await sql`INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status,starts_at,ends_at) VALUES(${userId},${productKey},'web',${payment.id},'active',NOW(),NOW()+INTERVAL '30 days') ON CONFLICT(source,external_reference) DO UPDATE SET product_key=EXCLUDED.product_key,status='active',starts_at=COALESCE(entitlements.starts_at,EXCLUDED.starts_at),ends_at=COALESCE(entitlements.ends_at,EXCLUDED.ends_at),updated_at=NOW()`;
+      await sql`UPDATE app_users SET access_status='active', access_starts_at=COALESCE(access_starts_at,NOW()), access_ends_at=GREATEST(COALESCE(access_ends_at,NOW()),NOW()+INTERVAL '30 days'), updated_at=NOW() WHERE clerk_user_id=${userId} AND access_status <> 'admin'`;
     }
     const orders = await sql`
       SELECT order_row.id, order_row.provider_payment_id, order_row.description,
@@ -564,3 +567,4 @@ async function handler(request) {
 
 export const GET = handler;
 export const POST = handler;
+
