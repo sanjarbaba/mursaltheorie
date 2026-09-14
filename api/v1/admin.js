@@ -56,7 +56,7 @@ async function listData(sql) {
   return { users, counts: counts[0] || { users: 0, admins: 0, paid_orders: 0 } };
 }
 
-export default async function handler(request) {
+async function handler(request) {
   const auth = await authenticate(request);
   if (auth.error) return auth.error;
   const sql = getSql();
@@ -93,4 +93,7 @@ export default async function handler(request) {
   }
   return fail('RESOURCE_NOT_FOUND', 'Beheeractie niet gevonden.', 404);
 }
+
+export const GET = handler;
+export const POST = handler;
 
