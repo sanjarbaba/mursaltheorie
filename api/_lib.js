@@ -103,8 +103,9 @@ export async function requireCourseAccess(sql, userId) {
 }
 
 export async function parseBody(request) {
-  if (request && request.body && typeof request.body === 'object') return request.body;
-  try { return await request.json(); } catch { return null; }
+  const raw = request?.body;
+  if (raw && typeof raw === 'object' && !(typeof Buffer !== 'undefined' && Buffer.isBuffer(raw))) return raw;
+  if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return null; } }
+  if (typeof request?.json === 'function') { try { return await request.json(); } catch { return null; } }
+  return null;
 }
-
-
