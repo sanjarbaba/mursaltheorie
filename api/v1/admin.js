@@ -63,7 +63,7 @@ export default async function handler(request) {
   const admin = await requireAdmin(sql, auth);
   if (admin.error) return admin.error;
 
-  const resource = new URL(request.url).searchParams.get('resource');
+  const resource = new URL(request.url, 'https://www.mursaltheorie.nl').searchParams.get('resource');
   if (request.method === 'GET') return ok({ ...(await listData(sql)), admin: admin.user });
   if (request.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'Methode niet toegestaan.', 405);
 
