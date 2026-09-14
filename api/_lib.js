@@ -35,7 +35,9 @@ function authorizedParties() {
 }
 
 export async function authenticate(request) {
-  const authorization = request.headers.get('authorization') || '';
+  const authorization = typeof request.headers?.get === 'function'
+    ? request.headers.get('authorization') || ''
+    : request.headers?.authorization || request.headers?.Authorization || '';
   const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
   if (!token) return { error: json({ error: 'Inloggen is vereist.' }, 401) };
   if (!process.env.CLERK_SECRET_KEY) return { error: json({ error: 'Clerk-serverconfiguratie ontbreekt.' }, 503) };
@@ -101,6 +103,8 @@ export async function requireCourseAccess(sql, userId) {
 }
 
 export async function parseBody(request) {
+  if (request && request.body && typeof request.body === 'object') return request.body;
   try { return await request.json(); } catch { return null; }
 }
+
 
