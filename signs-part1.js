@@ -27,5 +27,34 @@
   // duplicate here, and align the following C-series images with their codes.
   const fileFix = { C1: 'mt-part1-033.jpg', C3: 'mt-part1-034.jpg', C4: 'mt-part1-035.jpg', C5: 'mt-part1-036.jpg', C6: 'mt-part1-037.jpg', C7: 'mt-part1-038.jpg', C7a: 'mt-part1-039.jpg', C8: 'mt-part1-041.jpg', C9: 'mt-part1-042.jpg', C10: 'mt-part1-043.jpg', C11: 'mt-part1-044.jpg', C12: 'mt-part1-045.jpg', C13: 'mt-part1-046.jpg', C14: 'mt-part1-054.jpg', C17: 'mt-part1-047.jpg', C22: 'mt-part1-048.jpg', C21: 'mt-part1-049.jpg', C16: 'mt-part1-050.jpg', C18: 'mt-part1-051.jpg', C19: 'mt-part1-052.jpg', C22a: 'mt-part1-053.jpg', C15: 'mt-part1-055.jpg' };
   window.MT_SIGNS_PART1 = rows.filter(([code]) => code !== 'C20' && code !== 'C7b-truckbus').map(([code, category, name, file]) => [code, category, `part1-${code}`, name, faName(name), info(name), faInfo(name), `/images/signs/part1/${fileFix[code] || file}`]);
+  // Replace the synthetic suffix entries with the official owner-supplied
+  // boards and add the newly supplied C20, C22c/d and C23 images.
+  const ownerFiles = {
+    C7b: 'mt-owner-c7b.jpg',
+    C20: 'mt-owner-c20.jpg',
+    C22c: 'mt-owner-c22c.jpg',
+    C22d: 'mt-owner-c22d.jpg',
+    'C23-01': 'mt-owner-c23-01.jpg',
+    'C23-02': 'mt-owner-c23-02.jpg',
+    'C23-03': 'mt-owner-c23-03.jpg'
+  };
+  const removeCodes = new Set(['C7b-end', 'C7b-tram', 'C13-tram', 'C14-ban']);
+  const addedRows = [
+    ['C20', 'prohibition', 'Gesloten voor voertuigen met aslast hoger dan 4,8 ton'],
+    ['C22c', 'prohibition', "Gesloten voor bedrijfs- en vrachtauto's vanwege nul-emissiezone"],
+    ['C22d', 'information', 'Einde nul-emissiezone'],
+    ['C23-01', 'information', 'Aan de rijbaan is een spitsstrook toegevoegd'],
+    ['C23-02', 'information', 'De spitsstrook moet worden vrijgemaakt'],
+    ['C23-03', 'information', 'Einde van de spitsstrook']
+  ];
+  window.MT_SIGNS_PART1 = window.MT_SIGNS_PART1
+    .filter(([code]) => !removeCodes.has(code))
+    .map((sign) => ownerFiles[sign[0]]
+      ? [...sign.slice(0, 7), `/images/signs/part1/${ownerFiles[sign[0]]}`]
+      : sign)
+    .concat(addedRows.map(([code, category, name]) => [
+      code, category, `part1-${code}`, name, faName(name), info(name), faInfo(name), `/images/signs/part1/${ownerFiles[code]}`
+    ]));
 })();
+
 
