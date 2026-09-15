@@ -374,11 +374,14 @@
         if (list) {
           const imported = document.createElement('template');
           imported.innerHTML = cards;
-          const allCards = [...list.children, ...imported.content.children];
-          allCards.sort((a, b) => {
-            const code = (card) => (card.querySelector('small')?.textContent || '').split('·')[0].trim();
-            return code(a).localeCompare(code(b), 'nl-NL', { numeric: true, sensitivity: 'base' });
-          });
+          const codeOf = (card) => (card.querySelector('small')?.textContent || '').split('·')[0].trim().toUpperCase();
+  const byCode = new Map();
+  for (const card of [...list.children, ...imported.content.children]) byCode.set(codeOf(card), card);
+  const allCards = [...byCode.values()];
+  allCards.sort((a, b) => {
+    const code = (card) => (card.querySelector('small')?.textContent || '').split('·')[0].trim();
+    return code(a).localeCompare(code(b), 'nl-NL', { numeric: true, sensitivity: 'base' });
+  });
           list.replaceChildren(...allCards);
           return template.innerHTML;
         }
