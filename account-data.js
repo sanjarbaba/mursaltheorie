@@ -358,7 +358,7 @@
       try { selected = window.eval('S.signCat') || 'all'; } catch (_) { /* static preview */ }
       const cards = window.MT_SIGNS_PART1
         .filter((sign) => selected === 'all' || sign[1] === selected)
-        .sort((a, b) => a[3].localeCompare(b[3], 'nl-NL'))
+        .sort((a, b) => a[0].localeCompare(b[0], 'nl-NL', { numeric: true, sensitivity: 'base' }))
         .map((sign) => {
           let rtl = false; let language = 'nl';
           try { rtl = Boolean(window.eval('isRtl()')); language = window.eval('S.lang') || 'nl'; } catch (_) { /* static preview */ }
@@ -366,7 +366,7 @@
           return `<article class="card sign-info-card"><div class="sign-icon"><img src="${sign[7]}" alt="${sign[3]}" loading="lazy"></div><div class="sign-copy"><small>${sign[0]} · ${category}</small><h3>${sign[3]}</h3>${rtl ? `<div class="sign-fa-title" lang="${language}">${sign[4]}</div>` : ''}<p>${sign[5]}</p>${rtl ? `<p class="sign-fa" lang="${language}">${sign[6]}</p>` : ''}</div></article>`;
         }).join('');
       // In the Alle-tab, merge the imported cards with the existing cards and
-      // sort the complete list by the Dutch board name.
+      // sort the complete list by category letter and number (A1, A2, … B1, …).
       if (selected === 'all') {
         const template = document.createElement('template');
         template.innerHTML = base;
