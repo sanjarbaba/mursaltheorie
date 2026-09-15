@@ -344,5 +344,37 @@
   window.addEventListener('online', () => {
     flushProgressQueue().catch((error) => console.warn('Offline voortgang blijft in de wachtrij.', error));
   });
+
+  // Load the owner-supplied sign set after the main static page has booted.
+  // This keeps the first paint fast while making the extended catalogue
+  // available without changing the existing exam/lesson data flow.
+  function mountPart1Signs() {
+    if (window.__mtPart1SignsMounted || !window.signsView || !Array.isArray(window.MT_SIGNS_PART1)) return;
+    window.__mtPart1SignsMounted = true;
+    const baseSignsView = window.signsView;
+    window.signsView = function signsViewWithPart1() {
+      const base = baseSignsView();
+      let selected = 'all';
+      try { selected = window.eval('S.signCat') || 'all'; } catch (_) { /* static preview */ }
+      const cards = window.MT_SIGNS_PART1
+        .filter((sign) => selected === 'all' || sign[1] === selected)
+        .map((sign) => {
+          let rtl = false; let language = 'nl';
+          try { rtl = Boolean(window.eval('isRtl()')); language = window.eval('S.lang') || 'nl'; } catch (_) { /* static preview */ }
+          const category = { priority: 'Voorrang', prohibition: 'Verbod', mandatory: 'Gebod', warning: 'Waarschuwing', information: 'Informatie' }[sign[1]] || 'Bord';
+          return `<article class="card sign-info-card"><div class="sign-icon"><img src="${sign[7]}" alt="${sign[3]}" loading="lazy"></div><div class="sign-copy"><small>${sign[0]} · ${category}</small><h3>${sign[3]}</h3>${rtl ? `<div class="sign-fa-title" lang="${language}">${sign[4]}</div>` : ''}<p>${sign[5]}</p>${rtl ? `<p class="sign-fa" lang="${language}">${sign[6]}</p>` : ''}</div></article>`;
+        }).join('');
+      const marker = '</div></main>';
+      const at = base.lastIndexOf(marker);
+      return at < 0 ? base : `${base.slice(0, at)}${cards}${base.slice(at)}`;
+    };
+    if (typeof window.render === 'function') window.render();
+  }
+
+  const part1Script = document.createElement('script');
+  part1Script.src = '/signs-part1.js?v=1';
+  part1Script.onload = mountPart1Signs;
+  document.head.appendChild(part1Script);
 }());
+
 
