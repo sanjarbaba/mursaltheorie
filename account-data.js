@@ -367,7 +367,7 @@
         }).join('');
       // In the Alle-tab, merge the imported cards with the existing cards and
       // sort the complete list by category letter and number (A1, A2, … B1, …).
-      if (selected === 'all') {
+      {
         const template = document.createElement('template');
         template.innerHTML = base;
         const list = template.content.querySelector('.sign-list');
