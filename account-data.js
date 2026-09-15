@@ -358,12 +358,28 @@
       try { selected = window.eval('S.signCat') || 'all'; } catch (_) { /* static preview */ }
       const cards = window.MT_SIGNS_PART1
         .filter((sign) => selected === 'all' || sign[1] === selected)
+        .sort((a, b) => a[3].localeCompare(b[3], 'nl-NL'))
         .map((sign) => {
           let rtl = false; let language = 'nl';
           try { rtl = Boolean(window.eval('isRtl()')); language = window.eval('S.lang') || 'nl'; } catch (_) { /* static preview */ }
           const category = { priority: 'Voorrang', prohibition: 'Verbod', mandatory: 'Gebod', warning: 'Waarschuwing', information: 'Informatie' }[sign[1]] || 'Bord';
           return `<article class="card sign-info-card"><div class="sign-icon"><img src="${sign[7]}" alt="${sign[3]}" loading="lazy"></div><div class="sign-copy"><small>${sign[0]} · ${category}</small><h3>${sign[3]}</h3>${rtl ? `<div class="sign-fa-title" lang="${language}">${sign[4]}</div>` : ''}<p>${sign[5]}</p>${rtl ? `<p class="sign-fa" lang="${language}">${sign[6]}</p>` : ''}</div></article>`;
         }).join('');
+      // In the Alle-tab, merge the imported cards with the existing cards and
+      // sort the complete list by the Dutch board name.
+      if (selected === 'all') {
+        const template = document.createElement('template');
+        template.innerHTML = base;
+        const list = template.content.querySelector('.sign-list');
+        if (list) {
+          const imported = document.createElement('template');
+          imported.innerHTML = cards;
+          const allCards = [...list.children, ...imported.content.children];
+          allCards.sort((a, b) => (a.querySelector('h3')?.textContent || '').localeCompare(b.querySelector('h3')?.textContent || '', 'nl-NL'));
+          list.replaceChildren(...allCards);
+          return template.innerHTML;
+        }
+      }
       const marker = '</div></main>';
       const at = base.lastIndexOf(marker);
       return at < 0 ? base : `${base.slice(0, at)}${cards}${base.slice(at)}`;

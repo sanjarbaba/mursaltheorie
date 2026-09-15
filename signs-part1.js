@@ -25,7 +25,7 @@
   // The source pack contains the existing B7 stop sign and omits a separate
   // C20 image. Keep the existing board in the static catalogue, skip that
   // duplicate here, and align the following C-series images with their codes.
-  const fileFix = { C1: 'mt-part1-033.jpg', C3: 'mt-part1-034.jpg', C4: 'mt-part1-035.jpg', C5: 'mt-part1-036.jpg', C6: 'mt-part1-037.jpg', C7: 'mt-part1-038.jpg', C7a: 'mt-part1-039.jpg', 'C7b-truckbus': 'mt-part1-040.jpg', C8: 'mt-part1-041.jpg', C9: 'mt-part1-042.jpg', C10: 'mt-part1-043.jpg', C11: 'mt-part1-044.jpg', C12: 'mt-part1-045.jpg', C13: 'mt-part1-046.jpg', C14: 'mt-part1-047.jpg', C17: 'mt-part1-048.jpg', C22: 'mt-part1-049.jpg', C21: 'mt-part1-050.jpg', C16: 'mt-part1-051.jpg', C18: 'mt-part1-052.jpg', C19: 'mt-part1-053.jpg', C22a: 'mt-part1-054.jpg', C15: 'mt-part1-055.jpg' };
-  window.MT_SIGNS_PART1 = rows.filter(([code]) => code !== 'C20').map(([code, category, name, file]) => [code, category, `part1-${code}`, name, faName(name), info(name), faInfo(name), `/images/signs/part1/${fileFix[code] || file}`]);
+  const fileFix = { C1: 'mt-part1-033.jpg', C3: 'mt-part1-034.jpg', C4: 'mt-part1-035.jpg', C5: 'mt-part1-036.jpg', C6: 'mt-part1-037.jpg', C7: 'mt-part1-038.jpg', C7a: 'mt-part1-039.jpg', C8: 'mt-part1-041.jpg', C9: 'mt-part1-042.jpg', C10: 'mt-part1-043.jpg', C11: 'mt-part1-044.jpg', C12: 'mt-part1-045.jpg', C13: 'mt-part1-046.jpg', C14: 'mt-part1-054.jpg', C17: 'mt-part1-047.jpg', C22: 'mt-part1-048.jpg', C21: 'mt-part1-049.jpg', C16: 'mt-part1-050.jpg', C18: 'mt-part1-051.jpg', C19: 'mt-part1-052.jpg', C22a: 'mt-part1-053.jpg', C15: 'mt-part1-055.jpg' };
+  window.MT_SIGNS_PART1 = rows.filter(([code]) => code !== 'C20' && code !== 'C7b-truckbus').map(([code, category, name, file]) => [code, category, `part1-${code}`, name, faName(name), info(name), faInfo(name), `/images/signs/part1/${fileFix[code] || file}`]);
 })();
 
