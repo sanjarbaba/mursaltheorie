@@ -375,7 +375,10 @@
           const imported = document.createElement('template');
           imported.innerHTML = cards;
           const allCards = [...list.children, ...imported.content.children];
-          allCards.sort((a, b) => (a.querySelector('h3')?.textContent || '').localeCompare(b.querySelector('h3')?.textContent || '', 'nl-NL'));
+          allCards.sort((a, b) => {
+            const code = (card) => (card.querySelector('small')?.textContent || '').split('·')[0].trim();
+            return code(a).localeCompare(code(b), 'nl-NL', { numeric: true, sensitivity: 'base' });
+          });
           list.replaceChildren(...allCards);
           return template.innerHTML;
         }
