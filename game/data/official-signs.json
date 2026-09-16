@@ -1,0 +1,137 @@
+[
+  {
+    "code": "A1",
+    "description": "Maximumsnelheid",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269359.png"
+  },
+  {
+    "code": "A2",
+    "description": "Einde maximumsnelheid",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27594.png"
+  },
+  {
+    "code": "A4",
+    "description": "Adviessnelheid",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27597.png"
+  },
+  {
+    "code": "B1",
+    "description": "Voorrangsweg",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269361.png"
+  },
+  {
+    "code": "B2",
+    "description": "Einde voorrangsweg",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269362.png"
+  },
+  {
+    "code": "B6",
+    "description": "Verleen voorrang aan bestuurders op de kruisende weg",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269367.png"
+  },
+  {
+    "code": "B7",
+    "description": "Stop; verleen voorrang aan bestuurders op de kruisende weg",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27605.png"
+  },
+  {
+    "code": "C1",
+    "description": "Gesloten in beide richtingen voor voertuigen, ruiters en geleiders van rij- of trekdieren of vee",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269369.png"
+  },
+  {
+    "code": "C2",
+    "description": "Eenrichtingsweg, in deze richting gesloten voor voertuigen, ruiters en geleiders van rij- of trekdieren of vee",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269370.png"
+  },
+  {
+    "code": "C3",
+    "description": "Eenrichtingsweg",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27608.png"
+  },
+  {
+    "code": "C6",
+    "description": "Gesloten voor motorvoertuigen op meer dan twee wielen",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269371.png"
+  },
+  {
+    "code": "D1",
+    "description": "Rotonde; verplichte rijrichting",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27628.png"
+  },
+  {
+    "code": "D4",
+    "description": "Gebod tot het volgen van de rijrichting die op het bord is aangegeven",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27631.png"
+  },
+  {
+    "code": "E1",
+    "description": "Parkeerverbod",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269397.png"
+  },
+  {
+    "code": "E2",
+    "description": "Verbod stil te staan",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269398.png"
+  },
+  {
+    "code": "E4",
+    "description": "Parkeergelegenheid",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27638.png"
+  },
+  {
+    "code": "F5",
+    "description": "Verbod voor bestuurders door te gaan bij nadering van verkeer uit tegengestelde richting",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269402.png"
+  },
+  {
+    "code": "F6",
+    "description": "Bestuurders uit tegengestelde richting moeten verkeer dat van deze richting nadert voor laten gaan",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269403.png"
+  },
+  {
+    "code": "G1",
+    "description": "Autosnelweg",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27666.png"
+  },
+  {
+    "code": "G3",
+    "description": "Autoweg",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27668.png"
+  },
+  {
+    "code": "G5",
+    "description": "Erf",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27672.png"
+  },
+  {
+    "code": "G11",
+    "description": "Verplicht fietspad",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27680.png"
+  },
+  {
+    "code": "J16",
+    "description": "Werk in uitvoering",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269430.png"
+  },
+  {
+    "code": "J20",
+    "description": "Slipgevaar",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269434.png"
+  },
+  {
+    "code": "J21",
+    "description": "Kinderen",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269435.png"
+  },
+  {
+    "code": "J37",
+    "description": "Gevaar (de aard van het gevaar is aangegeven op het onderbord",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=269453.png"
+  },
+  {
+    "code": "L8",
+    "description": "Doodlopende weg",
+    "url": "https://wetten.overheid.nl/afbeelding?toestandid=BWBR0004825/2026-07-01_0&naam=27753.png"
+  }
+]
