@@ -1,12 +1,10 @@
-> **Integratie in deze repository:** de speelbestanden staan in `game/`; de ingang is `/game/spelen`. Na wijzigingen: `node scripts/build-game-offline.mjs`. Test: `node --test test/mursal-game.test.mjs`. De overige startinstructies hieronder beschrijven het zelfstandige opleverproject.
-
 # Mursal Theory Hero – Complete Game v1
 
-Een zelfstandige Nederlandstalige webgame/PWA. **Wereld 1: Verkeersborden is volledig speelbaar in 20 levels.** De zeven volgende werelden en de finale Theorie Examen zijn aangekondigde uitbreidingen, nog niet speelbaar.
+Een Nederlandstalige webgame/PWA. **Productie: https://www.mursaltheorie.nl/game/spelen — inbegrepen bij een betaald digitaal pakket, 30 dagen toegang.** Deze map bevat daarnaast een besloten ontwikkelpreview; publiceer `dist` niet als vrij toegankelijke game. **Wereld 1: Verkeersborden is volledig speelbaar in 20 levels.** De zeven volgende werelden en de finale Theorie Examen zijn aangekondigde uitbreidingen, nog niet speelbaar.
 
 ## Direct starten
 
-Vereist: Node.js 20 of hoger. Geen runtime-pakketten, accounts, databases of API-sleutels nodig.
+Vereist: Node.js 20 of hoger. Voor de lokale ontwikkelpreview zijn geen API-sleutels nodig. De productie-integratie gebruikt de bestaande Clerk-accounts en Neon-abonnementen van Mursaltheorie.
 
 ```sh
 node server.mjs
@@ -25,7 +23,7 @@ Voor een andere poort stel je `PORT` in. De testserver luistert op alle netwerki
 - Verkeersvisie geeft kijktips. Focus Shield beschermt één energiepunt maar wist geen fout. Kennisboost verdubbelt XP voor drie goede antwoorden. Elke power eenmaal per ronde; geen powers bij bazen.
 - Fouten en verlopen tijd krijgen uitleg en een bronlink. Meestal is 60% goed nodig, bij beide bazen 80%.
 - Alles goed geeft drie sterren; minimaal 80% twee sterren; een overige geslaagde ronde één ster. Alleen verbetering van de beste XP-score van een level voegt XP toe. Herhaling verlaagt je beste sterren niet.
-- Vrij oefenen kan altijd, ook zonder energie. Drie goede oefenantwoorden achter elkaar herstellen één energie. Automatisch herstel: één energie per tien minuten, maximaal vijf. Oefenen ontgrendelt geen levels en geeft geen XP.
+- Bij nul levens stopt de ronde. De comeback-challenge stelt vijf bonusvragen: elke vraag moet goed beantwoord worden. Foute antwoorden krijgen uitleg en een herkansing. Na de vijfde goede vraag krijg je vijf levens terug; geen XP of ontgrendeling. Wachten of voortgang resetten geeft geen levens terug. Gewoon oefenen herstelt geen levens.
 - Klok uitschakelen via **Mijn held → Zonder tijdsdruk**. Een onderbroken ronde is te hervatten; bij verlaten van het tabblad pauzeert de klok.
 
 ## PWA en lokale voortgang
@@ -38,7 +36,7 @@ De service worker bewaart alle spelbestanden, borden en Mursal lokaal. Er zijn g
 node scripts/build-offline.mjs
 ```
 
-Voortgang gebruikt `localStorage`, sleutel `mursal-theory-hero.v1`. Gebruik dezelfde browser en hetzelfde webadres. Er is nog geen accountkoppeling of synchronisatie. Wissen van browsergegevens wist ook de voortgang. Als opslag niet beschikbaar is, verschijnt een duidelijke waarschuwing. **Mijn held → Voortgang opnieuw beginnen** vraagt bevestiging voordat het spel opnieuw begint.
+Voortgang gebruikt `localStorage`, sleutel `mursal-theory-hero.v1`. Gebruik dezelfde browser en hetzelfde webadres. In productie krijgt iedere account een eigen lokale sleutel met het Clerk-gebruikers-ID. Er is geen synchronisatie tussen apparaten. Wissen van browsergegevens wist ook de voortgang. Als opslag niet beschikbaar is, verschijnt een duidelijke waarschuwing. **Mijn held → Voortgang opnieuw beginnen** vraagt bevestiging voordat het spel opnieuw begint.
 
 ## Projectstructuur en uitbreiden
 
@@ -69,7 +67,7 @@ Verkeersafbeeldingen komen uit de officiële RVV-bijlage. Mursal is een frame ui
 ## Testen
 
 ```sh
-node --test tests/engine.test.mjs
+node --test tests/engine.test.mjs tests/comeback.test.mjs
 node --check dist/app.js
 node --check dist/engine.js
 node --check dist/data/worlds.js
@@ -89,8 +87,15 @@ Dit is browsercontrole op een desktopmachine met mobiele schermmaten, geen fysie
 
 ## Vercel en Mursaltheorie
 
-Voor zelfstandige hosting staat `vercel.json` klaar: statische outputmap `dist`, geen installatie of frameworkbuild nodig. Voer na wijzigingen de offline build uit voordat je publiceert.
+De productie-integratie is opgenomen in `integration/` en in de bestaande GitHub-repository `sanjarbaba/mursaltheorie` op Vercel. De ingang is `/game/spelen`. De bestaande website bevat Game-links op desktop en mobiel.
 
-Voor integratie in Mursaltheorie worden uitsluitend de bestanden uit `dist/` onder `game/` geplaatst. De bestaande site krijgt een ingang **Game**. De speelpagina is `/game/spelen`; deze extra naam houdt relatieve bestands-URL's correct bij de bestaande Vercel-instelling `cleanUrls`. `/game` verwijst door naar `/game/spelen`. De geïntegreerde manifest start op `./spelen` en behoudt scope `./`; de service worker blijft binnen `/game/`.
+- `game/bootstrap.js` laadt de bestaande Clerk-login en vraagt `/api/v1/game` om toegang.
+- `api/v1/game.js` verifieert het token, leest bestaande digitale toegang en retourneert pas daarna de inhoud. Antwoorden worden niet door de service worker gecachet.
+- `api/v1/_game-access.js` controleert betaald digitaal product, startdatum, einddatum en intrekking. Beide bestaande digitale pakketten geven 30 dagen; een fysiek boek en een beta-vlag geven geen gameabonnement. Bestaande beheeraccounts behouden testtoegang.
+- `api/v1/_game-data.js` bevat de inhoud en bronlaag. De publieke `game/data/worlds.js` bevat alleen de vraagopbouw en gebruikt de inhoud van de beschermde API.
+- De bestaande betaal- en webhookcode blijft de bron voor aanschaf en looptijd. Er is geen extra factuur, abonnement of maandelijkse automatische incasso toegevoegd.
+- Toegang wordt bij openen, terugkeren naar het tabblad en iedere 30 seconden gecontroleerd. De einddatum blokkeert de sessie. Internet is hiervoor nodig. De PWA bewaart het installatiescherm en afbeeldingen; voortgang blijft lokaal.
 
-De prototypevoortgang blijft lokaal en los van de bestaande les-/examenvoortgang. Een latere accountkoppeling kan dezelfde score-engine gebruiken met een andere opslagadapter.
+De integratie verwacht de bestaande `api/_lib.js`, Clerk-client, database en ingestelde Vercel-omgevingsvariabelen. Kopieer deze patches dus in de bestaande site, niet naar een leeg statisch project. Na wijzigingen: `node scripts/build-game-offline.mjs`. Tests: `node --test test/mursal-game.test.mjs test/comeback.test.mjs test/game-access.test.mjs`.
+
+Een echte betaalde account is niet gebruikt voor een aankooptest. De abonnementslogica en de betaalde browserflow zijn met testgegevens gecontroleerd; de live anonieme toegang wordt apart gecontroleerd. Er zijn geen aankopen uitgevoerd.
