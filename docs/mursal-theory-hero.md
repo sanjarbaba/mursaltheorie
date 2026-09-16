@@ -1,6 +1,6 @@
 # Mursal Theory Hero – Complete Game v1
 
-Een Nederlandstalige webgame/PWA. **Productie: https://www.mursaltheorie.nl/game/spelen — inbegrepen bij een betaald digitaal pakket, 30 dagen toegang.** Deze map bevat daarnaast een besloten ontwikkelpreview; publiceer `dist` niet als vrij toegankelijke game. **Wereld 1: Verkeersborden is volledig speelbaar in 20 levels.** De zeven volgende werelden en de finale Theorie Examen zijn aangekondigde uitbreidingen, nog niet speelbaar.
+Een Nederlandstalige webgame/PWA. **Productie: https://www.mursaltheorie.nl/game/spelen — inbegrepen bij een betaald digitaal pakket, 30 dagen toegang.** Deze map bevat daarnaast een besloten ontwikkelpreview; publiceer `dist` niet als vrij toegankelijke game. **Wereld 1: Verkeersborden en Wereld 2: Voorrang zijn speelbaar, elk met 20 levels.** De zes volgende werelden en de finale Theorie Examen zijn aangekondigde uitbreidingen, nog niet speelbaar.
 
 ## Direct starten
 
@@ -16,7 +16,7 @@ Voor een andere poort stel je `PORT` in. De testserver luistert op alle netwerki
 
 ## Wat je kunt spelen
 
-- 20 oplopende levels, verdeeld over vier hoofdstukken; 27 officiële verkeersborden.
+- 40 oplopende levels in twee werelden; 27 officiële verkeersborden en 32 voorrangssituaties. Wereld 2 ontgrendelt na Wereld 1.
 - Bord herkennen, het passende bord kiezen, borden sorteren, timed challenges, schematische verkeerssituaties en een geheugenronde.
 - Mini-boss De Poortwachter op level 10; De Bordenbaas op level 20.
 - XP, maximaal 60 sterren, levelontgrendeling, vijf energiepunten en de virtuele Bordenheld-badge.
@@ -51,7 +51,7 @@ Voortgang gebruikt `localStorage`, sleutel `mursal-theory-hero.v1`. Gebruik deze
 | `scripts/build-offline.mjs` | Herbouw van het offline bestandsregister en de cacheversie |
 | `tests/` | Spelregels en browserflows |
 
-Nieuwe inhoud wordt toegevoegd via `WORLDS`, `LEVELS`, `SIGNS` en scenario's, met een eigen `worldId` en bronverwijzingen. De vraagopbouw staat los van de score-engine. Wereld 1 heeft nu twintig opeenvolgende numerieke level-ID's. Bij een volgende wereld: maak de ontgrendeling en badgeberekening wereldspecifiek, vervang de huidige Wereld-1-tellers in de interface en voeg een migratie toe als de savevorm verandert. Bestaande level-ID's niet hernummeren.
+Nieuwe inhoud wordt toegevoegd via `WORLDS`, `LEVELS`, `SIGNS` en scenario's, met een eigen `worldId` en bronverwijzingen. De vraagopbouw staat los van de score-engine. Wereld 1 gebruikt ID’s 1–20, Wereld 2 gebruikt 21–40. WORLD_CONFIG bepaalt hoofdstukken, namen en wereldbadges. Bij een volgende wereld: maak de ontgrendeling en badgeberekening wereldspecifiek, vervang de huidige Wereld-1-tellers in de interface en voeg een migratie toe als de savevorm verandert. Bestaande level-ID's niet hernummeren.
 
 ## Broncontrole
 
@@ -99,3 +99,7 @@ De productie-integratie is opgenomen in `integration/` en in de bestaande GitHub
 De integratie verwacht de bestaande `api/_lib.js`, Clerk-client, database en ingestelde Vercel-omgevingsvariabelen. Kopieer deze patches dus in de bestaande site, niet naar een leeg statisch project. Na wijzigingen: `node scripts/build-game-offline.mjs`. Tests: `node --test test/mursal-game.test.mjs test/comeback.test.mjs test/game-access.test.mjs`.
 
 Een echte betaalde account is niet gebruikt voor een aankooptest. De abonnementslogica en de betaalde browserflow zijn met testgegevens gecontroleerd; de live anonieme toegang wordt apart gecontroleerd. Er zijn geen aankopen uitgevoerd.
+
+## Uitbreiding: Wereld 2
+
+Zie `WERELD-2.md` voor de inhoud, migratie, nieuwe bronnen en testresultaten. Beide werelden vallen onder de bestaande maandtoegang.

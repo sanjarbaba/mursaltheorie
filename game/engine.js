@@ -1,7 +1,7 @@
-import {LEVELS,buildQuestions} from './data/worlds.js';
+import {LEVELS,buildQuestions,WORLD_CONFIG} from './data/worlds.js';
 export const SAVE_KEY='mursal-theory-hero.v1'+(globalThis.MURSAL_ACCOUNT?'.'+globalThis.MURSAL_ACCOUNT:'');
 export const REGEN_MS=10*60*1000;
-export function freshSave(now=Date.now()){return {version:1,xp:0,energy:5,energyAt:now,levels:{},badge:false,active:null,settings:{untimed:false},comeback:null};}
+export function freshSave(now=Date.now()){return {version:1,xp:0,energy:5,energyAt:now,levels:{},badge:false,badges:{},worldId:'signs',active:null,settings:{untimed:false},comeback:null};}
 export function normalizeSave(raw,now=Date.now()){
  const base=freshSave(now);if(!raw||raw.version!==1)return base;
  base.energy=Number.isFinite(raw.energy)?Math.max(0,Math.min(5,Math.floor(raw.energy))):5;
@@ -9,7 +9,7 @@ export function normalizeSave(raw,now=Date.now()){
  for(const l of LEVELS){const r=raw.levels?.[l.id];if(r&&Number.isInteger(r.stars)&&r.stars>=1&&r.stars<=3&&Number.isFinite(r.xp)&&r.xp>=0)base.levels[l.id]={stars:r.stars,xp:Math.min(1000,r.xp),best:Math.max(0,Math.min(100,Number(r.best)||0))};}
  // Progress must remain contiguous; corrupted or future records cannot unlock levels.
  let gap=false;for(const l of LEVELS){if(!base.levels[l.id])gap=true;if(gap)delete base.levels[l.id];}
- base.xp=Object.values(base.levels).reduce((a,b)=>a+b.xp,0);base.badge=!!base.levels[20];
+ base.xp=Object.values(base.levels).reduce((a,b)=>a+b.xp,0);base.badge=!!base.levels[20];base.badges=Object.fromEntries(Object.entries(WORLD_CONFIG).filter(([id,w])=>base.levels[w.finalLevel]).map(([id])=>[id,true]));const selected=WORLD_CONFIG[raw.worldId];base.worldId=selected&&isUnlocked(base,selected.firstLevel)?raw.worldId:'signs';
  base.settings.untimed=raw.settings?.untimed===true;
  const a=raw.active;
  if(a&&LEVELS.some(l=>l.id===a.levelId)&&Array.isArray(a.questions)&&a.questions.length===LEVELS[a.levelId-1].count&&Number.isInteger(a.index)&&a.index>=0&&a.index<a.questions.length&&a.questions.every(q=>typeof q.prompt==='string'&&Array.isArray(q.options)&&q.options.includes(q.answer))&&Number.isInteger(a.correct)&&a.correct>=0&&a.correct<=a.questions.length&&Number.isFinite(a.earned)&&a.earned>=0&&Array.isArray(a.mistakes)&&Array.isArray(a.used)&&isUnlocked(base,a.levelId))base.active=a;
@@ -19,7 +19,7 @@ export function regenerate(save){return save;}
 export function isUnlocked(save,id){return id===1||!!save.levels[id-1];}
 export function createRun(levelId,save,{practice=false,rng=Math.random}={}){
  const level=LEVELS.find(l=>l.id===levelId);if(!level||(!practice&&!isUnlocked(save,levelId)))throw Error('Dit level is nog vergrendeld.');
- if(!practice&&save.energy<=0)throw Error('Oefen om energie terug te verdienen.');
+ if(!practice&&save.energy<=0)throw Error('Beantwoord vijf bonusvragen goed om je levens terug te verdienen.');
  return {levelId,practice,questions:buildQuestions(level,rng),index:0,correct:0,earned:0,mistakes:[],feedback:null,used:[],shield:false,boost:0,hint:false,seconds:level.seconds&&!save.settings.untimed&&!practice?level.seconds:null,paused:false,memoryShown:true};
 }
 export function answerRun(run,save,answer,now=Date.now()){
@@ -42,13 +42,13 @@ export function nextQuestion(run,save){
 export function finishRun(run,save){
  const level=LEVELS[run.levelId-1],ratio=run.correct/run.questions.length;
  const passed=ratio>=level.pass&&(run.practice||save.energy>0),stars=passed?(ratio===1?3:ratio>=.8?2:1):0;
- let gain=0;if(passed&&!run.practice){const previous=save.levels[level.id]||{stars:0,xp:0,best:0};const xp=run.earned+20;gain=Math.max(0,xp-previous.xp);save.levels[level.id]={stars:Math.max(stars,previous.stars),xp:previous.xp+gain,best:Math.max(previous.best,Math.round(ratio*100))};save.xp+=gain;save.badge=!!save.levels[20];}
+ let gain=0;if(passed&&!run.practice){const previous=save.levels[level.id]||{stars:0,xp:0,best:0};const xp=run.earned+20;gain=Math.max(0,xp-previous.xp);save.levels[level.id]={stars:Math.max(stars,previous.stars),xp:previous.xp+gain,best:Math.max(previous.best,Math.round(ratio*100))};save.xp+=gain;save.badge=!!save.levels[20];save.badges=Object.fromEntries(Object.entries(WORLD_CONFIG).filter(([id,w])=>save.levels[w.finalLevel]).map(([id])=>[id,true]));}
  save.active=null;return {passed,stars,gain,correct:run.correct,total:run.questions.length,practice:run.practice,mistakes:run.mistakes.map(i=>run.questions[i]),levelId:level.id};
 }
 
 export function startComeback(save){
  if(save.energy>0)return null;
- if(!save.comeback){const codes=['B7','B6','C2','E1','J21'].sort(()=>Math.random()-.5);save.comeback={questions:buildQuestions({...LEVELS[0],codes}),index:0,feedback:null};}
+ if(!save.comeback){const level=LEVELS.find(l=>l.worldId===save.worldId)||LEVELS[0];const codes=[...level.codes].sort(()=>Math.random()-.5).slice(0,5);save.comeback={questions:buildQuestions({...level,codes}),index:0,feedback:null};}
  return save.comeback;
 }
 export function answerComeback(save,answer){
