@@ -406,7 +406,7 @@
   }
 
   const part1Script = document.createElement('script');
-  part1Script.src = '/signs-part1.js?v=2';
+  part1Script.src = '/signs-part1.js?v=3';
   part1Script.onload = mountPart1Signs;
   document.head.appendChild(part1Script);
 }());

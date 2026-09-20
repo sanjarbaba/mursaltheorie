@@ -93,6 +93,24 @@
           "value": "no-cache"
         }
       ]
+    },
+    {
+      "source": "/pashto-content.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/signs-part1.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
     }
   ]
 }
