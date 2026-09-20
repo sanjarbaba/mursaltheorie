@@ -655,4 +655,23 @@ if (typeof document !== 'undefined') {
   languageButtonStyle.id = 'language-button-placement';
   languageButtonStyle.textContent = `@media(max-width:560px){.top{overflow:visible!important}.top>.lang{min-width:168px!important;width:auto!important;max-width:none!important;display:flex!important;flex-wrap:nowrap!important;gap:4px!important;overflow:visible!important;right:44px!important}.top>.lang button{flex:0 0 auto!important;white-space:nowrap!important}}`;
   document.head.appendChild(languageButtonStyle);
+  const mobileHeaderFix = document.createElement('style');
+  mobileHeaderFix.id = 'mobile-header-no-overlap';
+  mobileHeaderFix.textContent = `@media(max-width:560px){
+    .top{display:grid!important;grid-template-columns:minmax(124px,1fr) minmax(96px,auto) 40px!important;grid-template-rows:auto auto!important;align-items:center!important;gap:7px 6px!important;height:auto!important;min-height:0!important;overflow:visible!important;padding-bottom:9px!important}
+    .top>.logo{grid-column:1!important;grid-row:1!important;position:static!important}
+    .top>.ghost:not(.signout){grid-column:2!important;grid-row:1!important;position:static!important;min-width:0!important;width:100%!important;max-width:none!important;overflow:hidden!important;text-overflow:ellipsis!important}
+    .top>.signout{grid-column:3!important;grid-row:1!important;position:static!important}
+    .top>.lang{grid-column:1 / -1!important;grid-row:2!important;position:static!important;inset:auto!important;min-width:0!important;width:100%!important;max-width:100%!important;display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:5px!important;flex-wrap:wrap!important;overflow:visible!important}
+    .top>.lang button{flex:0 0 auto!important;max-width:100%!important;white-space:nowrap!important}
+    .top + .ps-notice,.top + .wrap{margin-top:0!important;clear:both!important}
+    html[dir=rtl] .top>.lang{justify-content:flex-start!important}
+  }
+  @media(max-width:360px){
+    .top{grid-template-columns:minmax(112px,1fr) minmax(82px,auto) 36px!important}
+    .top>.logo,.top>.logo img{width:112px!important;height:40px!important}
+    .top>.lang{gap:4px!important}
+    .top>.lang button{font-size:11px!important;padding:7px 5px!important}
+  }`;
+  document.head.appendChild(mobileHeaderFix);
 }

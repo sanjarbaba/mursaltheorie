@@ -363,13 +363,19 @@
           let rtl = false; let language = 'nl';
           try { rtl = Boolean(window.eval('isRtl()')); language = window.eval('S.lang') || 'nl'; } catch (_) { /* static preview */ }
           const category = { priority: 'Voorrang', prohibition: 'Verbod', mandatory: 'Gebod', warning: 'Waarschuwing', information: 'Informatie' }[sign[1]] || 'Bord';
-          const translatedTitle = language === 'ps'
-            ? (globalThis.MT_PASHTO?.[sign[3]] || `د ${sign[0]} ترافیکي نښه`)
-            : sign[4];
-          const translatedDescription = language === 'ps'
-            ? (globalThis.MT_PASHTO?.[sign[5]] || 'دا د هالنډ یوه ترافیکي نښه ده. د نښې بڼه او هالنډي نوم په پام کې ونیسئ.')
+          const isPashto = language === 'ps';
+          const pashto = globalThis.MT_SIGN_PASHTO?.[String(sign[0])];
+          const translatedTitle = isPashto ? (pashto?.title || `د ${sign[0]} ترافیکي نښه`) : sign[4];
+          const translatedDescription = isPashto
+            ? (pashto?.description || `دا د ${sign[0]} ترافیکي نښه ده.`)
             : sign[6];
-          return `<article class="card sign-info-card"><div class="sign-icon"><img src="${sign[7]}" alt="${sign[3]}" loading="lazy"></div><div class="sign-copy"><small>${sign[0]} · ${category}</small><h3>${sign[3]}</h3>${rtl ? `<div class="sign-fa-title" lang="${language}">${translatedTitle}</div>` : ''}<p>${sign[5]}</p>${rtl ? `<p class="sign-fa" lang="${language}">${translatedDescription}</p>` : ''}</div></article>`;
+          const visibleCategory = isPashto ? (pashto?.category || 'ترافیکي نښه') : category;
+          const visibleTitle = isPashto ? translatedTitle : sign[3];
+          const visibleDescription = isPashto ? translatedDescription : sign[5];
+          const translatedBlocks = rtl && !isPashto
+            ? `<div class="sign-fa-title" lang="${language}">${translatedTitle}</div><p class="sign-fa" lang="${language}">${translatedDescription}</p>`
+            : '';
+          return `<article class="card sign-info-card"><div class="sign-icon"><img src="${sign[7]}" alt="${visibleTitle}" loading="lazy"></div><div class="sign-copy"><small>${sign[0]} · ${visibleCategory}</small><h3 lang="${isPashto ? 'ps' : 'nl'}">${visibleTitle}</h3><p lang="${isPashto ? 'ps' : 'nl'}">${visibleDescription}</p>${translatedBlocks}</div></article>`;
         }).join('');
       // In the Alle-tab, merge the imported cards with the existing cards and
       // sort the complete list by category letter and number (A1, A2, … B1, …).
@@ -400,7 +406,7 @@
   }
 
   const part1Script = document.createElement('script');
-  part1Script.src = '/signs-part1.js?v=1';
+  part1Script.src = '/signs-part1.js?v=2';
   part1Script.onload = mountPart1Signs;
   document.head.appendChild(part1Script);
 }());
