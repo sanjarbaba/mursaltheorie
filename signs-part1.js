@@ -217,15 +217,10 @@
   "J38": "د سرعت کمولو برجستګي",
   "J39": "خوځنده ستن",
   "K1": "د موټروې د لارې پرېکړه کوونکې نښه",
-  "K2.1": "د موټروې مخکینۍ لارښوونکې نښه"
+  "K2.1": "د موټروې مخکینۍ لارښوونکې نښه",
+  "L2": "د پیاده کسانو د اوښتو ځای"
 };
-  const categoryNames = {
-    priority: 'د لومړیتوب نښه',
-    prohibition: 'منع کوونکې نښه',
-    mandatory: 'اجباري نښه',
-    warning: 'د خبرداري نښه',
-    information: 'معلوماتي نښه'
-  };
+  const categoryNames = { priority:'د لومړیتوب نښه', prohibition:'منع کوونکې نښه', mandatory:'اجباري نښه', warning:'د خبرداري نښه', information:'معلوماتي نښه' };
   const describe = (title, category) => {
     if (category === 'warning') return `دا نښه د «${title}» په اړه خبرداری ورکوي. سرعت کم کړئ او د سړک حالت ته چمتو اوسئ.`;
     if (category === 'mandatory') return `دا نښه وايي: «${title}». د نښې لارښوونه اجباري ده او باید تعقیب شي.`;
@@ -234,12 +229,7 @@
     return `دا معلوماتي نښه «${title}» ښيي. د مسیر او سړک د تنظیم لپاره یې لارښوونه تعقیب کړئ.`;
   };
   const categories = Object.fromEntries((window.MT_SIGNS_PART1 || []).map((sign) => [String(sign[0]), sign[1]]));
-  window.MT_SIGN_PASHTO = Object.freeze(Object.fromEntries(
-    Object.entries(titles).map(([code, title]) => [code, Object.freeze({
-      title,
-      category: categoryNames[categories[code]] || 'ترافیکي نښه',
-      description: describe(title, categories[code])
-    })])
-  ));
+  categories.L2 = 'information';
+  window.MT_SIGN_PASHTO = Object.freeze(Object.fromEntries(Object.entries(titles).map(([code,title]) => [code,Object.freeze({title,category:categoryNames[categories[code]]||'ترافیکي نښه',description:describe(title,categories[code])})])));
 })();
 /* PASHTO_SIGN_TRANSLATIONS_END */
