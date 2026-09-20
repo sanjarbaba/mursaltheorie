@@ -3,6 +3,7 @@ import { authenticate, ensureUser, getSql, hasCourseAccess, parseBody } from '..
 import { accessSummary } from './_access.js';
 import { fail, integer, locale, localized, ok } from './_contract.js';
 import { answersEqual, normalizeAnswer, percentage, publicQuestion, questionType } from './_exam.js';
+import { pashtoExplanation } from './_pashto.js';
 import { bookOrderConfirmationEmail, purchaseConfirmationEmail, withdrawalConfirmationEmail } from './_email.js';
 import { summarizeResults } from './_results.js';
 
@@ -449,8 +450,9 @@ async function topicStats(sql, userId) {
 async function errorQuestions(sql, userId, url) {
   const language = locale(url.searchParams.get('locale'));
   const rows = await sql`
-    SELECT DISTINCT ON (q.id) q.id, q.prompt, q.options, q.category, q.question_type, q.media,
-      answer.answered_at, ROW_NUMBER() OVER (ORDER BY answer.answered_at DESC) AS sort_order
+    SELECT DISTINCT ON (q.id) q.id, q.external_key, q.prompt, q.options, q.category, q.question_type, q.media,
+      q.correct_option, q.correct_answer, answer.answered_at,
+      ROW_NUMBER() OVER (ORDER BY answer.answered_at DESC) AS sort_order
     FROM exam_attempt_answers_v1 answer
     JOIN exam_attempts_v1 attempt ON attempt.id = answer.attempt_id
     JOIN exam_questions_v1 q ON q.id = answer.question_id
@@ -470,7 +472,8 @@ async function checkErrorAnswer(sql, userId, request, language) {
   const questionId = integer(body?.questionId, { min: 1, max: Number.MAX_SAFE_INTEGER });
   if (questionId === null) return fail('VALIDATION_ERROR', 'questionId is verplicht.', 422);
   const rows = await sql`
-    SELECT q.id, q.question_type, q.options, q.correct_answer, q.correct_option, q.explanation
+    SELECT q.id, q.external_key, q.prompt, q.question_type, q.options,
+      q.correct_answer, q.correct_option, q.explanation
     FROM exam_questions_v1 q
     WHERE q.id = ${questionId} AND EXISTS (
       SELECT 1 FROM exam_attempt_answers_v1 answer
@@ -491,7 +494,7 @@ async function checkErrorAnswer(sql, userId, request, language) {
     isCorrect: answersEqual(type, answer, correctAnswer),
     correctAnswer,
     correctOption: question.correct_option,
-    explanation: localized(question.explanation, language)
+    explanation: language === 'ps' ? pashtoExplanation(question) : localized(question.explanation, language)
   } });
 }
 

@@ -1,6 +1,7 @@
 import { authenticate, ensureUser, getSql, parseBody, requireCourseAccess } from '../_lib.js';
 import { fail, integer, locale, localized, ok } from './_contract.js';
 import { answersEqual, mutationId, normalizeAnswer, percentage, publicQuestion, questionType } from './_exam.js';
+import { pashtoExplanation } from './_pashto.js';
 
 async function startAttempt(sql, userId, body, language) {
   const examNumber = integer(body?.examNumber, { min: 1, max: 9999 });
@@ -27,7 +28,8 @@ async function startAttempt(sql, userId, body, language) {
   if (Number(attempt.exam_id) !== Number(exam.id)) return fail('IDEMPOTENCY_CONFLICT', 'mutationId is al voor een ander examen gebruikt.', 409);
 
   const questions = await sql`
-    SELECT q.id, q.prompt, q.options, q.category, q.question_type, q.media, link.sort_order
+    SELECT q.id, q.external_key, q.prompt, q.options, q.category, q.question_type, q.media,
+      q.correct_option, q.correct_answer, link.sort_order
     FROM exam_definition_questions_v1 link
     JOIN exam_questions_v1 q ON q.id = link.question_id
     WHERE link.exam_id = ${exam.id} AND q.published = TRUE
@@ -42,7 +44,7 @@ async function startAttempt(sql, userId, body, language) {
       score: attempt.score,
       exam: {
         number: exam.exam_number,
-        title: localized(exam.title, language),
+        title: language === 'ps' ? (exam.title?.ps || `تمریني ازموینه ${exam.exam_number}`) : localized(exam.title, language),
         questionCount: exam.question_count,
         passScore: exam.pass_score,
         durationSeconds: exam.duration_seconds
@@ -162,7 +164,8 @@ async function submitAttempt(sql, userId, body, language) {
 
   const results = await sql`
     SELECT q.id AS question_id, q.question_type, answer.answer, answer.selected_option,
-      q.correct_answer, q.correct_option, COALESCE(answer.is_correct, FALSE) AS is_correct, q.explanation
+      q.correct_answer, q.correct_option, COALESCE(answer.is_correct, FALSE) AS is_correct,
+      q.external_key, q.prompt, q.options, q.explanation
     FROM exam_definition_questions_v1 link
     JOIN exam_questions_v1 q ON q.id = link.question_id
     LEFT JOIN exam_attempt_answers_v1 answer
@@ -185,7 +188,7 @@ async function submitAttempt(sql, userId, body, language) {
         selectedOption: row.selected_option,
         correctOption: row.correct_option,
         isCorrect: row.is_correct,
-        explanation: localized(row.explanation, language)
+        explanation: language === 'ps' ? pashtoExplanation(row) : localized(row.explanation, language)
       }))
     }
   });

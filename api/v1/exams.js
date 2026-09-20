@@ -25,7 +25,7 @@ export default {
       return ok({
         exams: rows.map((row) => ({
           number: row.exam_number,
-          title: localized(row.title, language),
+          title: language === 'ps' ? (row.title?.ps || `تمریني ازموینه ${row.exam_number}`) : localized(row.title, language),
           questionCount: row.question_count,
           passScore: row.pass_score,
           durationSeconds: row.duration_seconds,

@@ -1,3 +1,5 @@
+import { pashtoQuestion } from './_pashto.js';
+
 export function mutationId(value) {
   if (typeof value !== 'string') return null;
   const normalized = value.trim();
@@ -46,12 +48,13 @@ export function answersEqual(type, answer, correctAnswer) {
 }
 
 export function publicQuestion(row, language, localized) {
+  const pashto = language === 'ps' ? pashtoQuestion(row) : null;
   return {
     id: Number(row.id),
-    prompt: localized(row.prompt, language),
-    options: Array.isArray(row.options)
+    prompt: pashto?.prompt || localized(row.prompt, language),
+    options: pashto?.options || (Array.isArray(row.options)
       ? row.options.map((option) => typeof option === 'string' ? option : localized(option, language))
-      : [],
+      : []),
     category: row.category,
     questionType: questionType(row.question_type),
     media: Array.isArray(row.media) ? row.media : [],

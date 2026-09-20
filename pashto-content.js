@@ -584,6 +584,24 @@ globalThis.MT_PASHTO = Object.freeze({
 // wordmark remains visible, without the old white tile, while language controls
 // sit below the account/login action.
 if (typeof document !== 'undefined') {
+  const pashtoContrastStyle = document.createElement('style');
+  pashtoContrastStyle.id = 'pashto-high-contrast';
+  pashtoContrastStyle.textContent = `
+    html[lang="ps"] body{font-family:Tahoma,"Noto Naskh Arabic",Arial,sans-serif}
+    html[lang="ps"] .bi-fa{background:#0b2452!important;color:#fff!important;border-color:#2f72c9!important;font-size:17px!important;line-height:1.85!important}
+    html[lang="ps"] .bi-fa p,html[lang="ps"] .bi-fa small{color:#fff!important}
+    html[lang="ps"] .bi-answer .fa-answer{color:#071a3b!important;font-weight:900!important;line-height:1.7!important}
+    html[lang="ps"] .training-prompt{color:#fff!important;background:#0b2452!important;border:2px solid #2f72c9!important;border-radius:16px;padding:14px!important}
+    html[lang="ps"] .hazard-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+    html[lang="ps"] .hazard-actions button{min-height:58px!important;width:100%!important;background:#fff!important;color:#071a3b!important;border:3px solid #f4bd29!important;font-size:18px!important;font-weight:950!important;opacity:1!important;box-shadow:0 6px 0 #a66a00!important}
+    html[lang="ps"] .hazard-actions button.good{background:#087f5b!important;color:#fff!important;border-color:#5ce0ae!important;box-shadow:0 6px 0 #03543b!important}
+    html[lang="ps"] .hazard-actions button.bad{background:#c92a2a!important;color:#fff!important;border-color:#ff8787!important;box-shadow:0 6px 0 #7b1212!important}
+    html[lang="ps"] .feedback small{color:inherit!important;font-size:16px!important;line-height:1.8!important}
+    html[lang="ps"] .sign-fa,html[lang="ps"] .sign-fa-title{color:#fff!important;background:#0b2452!important;border-radius:10px;padding:8px 10px!important;line-height:1.75!important}
+    html[lang="ps"] .ps-notice{background:#0b2452!important;color:#fff!important;border:2px solid #2f72c9!important}
+    @media(max-width:560px){html[lang="ps"] .hazard-actions{grid-template-columns:1fr!important}html[lang="ps"] .hazard-actions button{min-height:54px!important}}
+  `;
+  document.head.appendChild(pashtoContrastStyle);
   const mobileBrandStyle = document.createElement('style');
   mobileBrandStyle.id = 'mobile-brand-layout';
   mobileBrandStyle.textContent = `@media (max-width:560px){

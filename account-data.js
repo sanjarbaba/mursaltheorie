@@ -33,19 +33,19 @@
         ...lesson,
         titleNl: lesson.title,
         titleFa: faLessons.get(lesson.id)?.title || lesson.title,
-        titlePs: psLessons.get(lesson.id)?.title || lesson.title,
+        titlePs: psLessons.get(lesson.id)?.title && psLessons.get(lesson.id).title !== lesson.title ? psLessons.get(lesson.id).title : null,
         summaryNl: lesson.summary,
         summaryFa: faLessons.get(lesson.id)?.summary || lesson.summary,
-        summaryPs: psLessons.get(lesson.id)?.summary || lesson.summary,
+        summaryPs: psLessons.get(lesson.id)?.summary && psLessons.get(lesson.id).summary !== lesson.summary ? psLessons.get(lesson.id).summary : null,
         moduleTitleNl: lesson.module.title,
         moduleTitleFa: faLessons.get(lesson.id)?.module?.title || lesson.module.title,
-        moduleTitlePs: psLessons.get(lesson.id)?.module?.title || lesson.module.title
+        moduleTitlePs: psLessons.get(lesson.id)?.module?.title && psLessons.get(lesson.id).module.title !== lesson.module.title ? psLessons.get(lesson.id).module.title : null
       })),
       exams: (nl.exams || []).map((exam) => ({
         ...exam,
         titleNl: exam.title,
         titleFa: faExams.get(exam.number)?.title || exam.title,
-        titlePs: psExams.get(exam.number)?.title || exam.title
+        titlePs: psExams.get(exam.number)?.title && psExams.get(exam.number).title !== exam.title ? psExams.get(exam.number).title : `تمریني ازموینه ${exam.number}`
       }))
     };
   }
@@ -363,7 +363,13 @@
           let rtl = false; let language = 'nl';
           try { rtl = Boolean(window.eval('isRtl()')); language = window.eval('S.lang') || 'nl'; } catch (_) { /* static preview */ }
           const category = { priority: 'Voorrang', prohibition: 'Verbod', mandatory: 'Gebod', warning: 'Waarschuwing', information: 'Informatie' }[sign[1]] || 'Bord';
-          return `<article class="card sign-info-card"><div class="sign-icon"><img src="${sign[7]}" alt="${sign[3]}" loading="lazy"></div><div class="sign-copy"><small>${sign[0]} · ${category}</small><h3>${sign[3]}</h3>${rtl ? `<div class="sign-fa-title" lang="${language}">${sign[4]}</div>` : ''}<p>${sign[5]}</p>${rtl ? `<p class="sign-fa" lang="${language}">${sign[6]}</p>` : ''}</div></article>`;
+          const translatedTitle = language === 'ps'
+            ? (globalThis.MT_PASHTO?.[sign[3]] || `د ${sign[0]} ترافیکي نښه`)
+            : sign[4];
+          const translatedDescription = language === 'ps'
+            ? (globalThis.MT_PASHTO?.[sign[5]] || 'دا د هالنډ یوه ترافیکي نښه ده. د نښې بڼه او هالنډي نوم په پام کې ونیسئ.')
+            : sign[6];
+          return `<article class="card sign-info-card"><div class="sign-icon"><img src="${sign[7]}" alt="${sign[3]}" loading="lazy"></div><div class="sign-copy"><small>${sign[0]} · ${category}</small><h3>${sign[3]}</h3>${rtl ? `<div class="sign-fa-title" lang="${language}">${translatedTitle}</div>` : ''}<p>${sign[5]}</p>${rtl ? `<p class="sign-fa" lang="${language}">${translatedDescription}</p>` : ''}</div></article>`;
         }).join('');
       // In the Alle-tab, merge the imported cards with the existing cards and
       // sort the complete list by category letter and number (A1, A2, … B1, …).
