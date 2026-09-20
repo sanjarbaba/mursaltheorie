@@ -633,4 +633,8 @@ if (typeof document !== 'undefined') {
   });
   new MutationObserver(updatePashtoVisibility).observe(document.documentElement, {childList:true,subtree:true});
   updatePashtoVisibility();
+  const languageButtonStyle = document.createElement('style');
+  languageButtonStyle.id = 'language-button-placement';
+  languageButtonStyle.textContent = `@media(max-width:560px){.top{overflow:visible!important}.top>.lang{min-width:168px!important;width:auto!important;max-width:none!important;display:flex!important;flex-wrap:nowrap!important;gap:4px!important;overflow:visible!important;right:44px!important}.top>.lang button{flex:0 0 auto!important;white-space:nowrap!important}}`;
+  document.head.appendChild(languageButtonStyle);
 }
