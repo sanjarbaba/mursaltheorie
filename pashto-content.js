@@ -634,21 +634,13 @@ if (typeof document !== 'undefined') {
   languagePolishStyle.textContent = `.bi-pair,.bi-title,.bi-answer{direction:ltr}.bi-pair{background:linear-gradient(145deg,rgba(19,41,93,.92),rgba(10,24,59,.98));border-color:rgba(126,181,235,.3);box-shadow:0 12px 30px rgba(2,8,30,.28)}.bi-nl{background:rgba(19,41,93,.7);color:#f7fbff}.bi-fa{background:rgba(10,24,59,.96);color:#e3edff;border-top-color:rgba(84,217,255,.3)}.bi-pair small{color:#ffcc4d}.bi-fa small{color:#54d9ff}.bi-title .fa-title,.bi-answer .fa-answer{color:#e3edff}html[dir=rtl] .bi-nl,html[dir=rtl] .nl-title,html[dir=rtl] .nl-answer{direction:ltr;text-align:left}html[dir=rtl] .bi-fa,html[dir=rtl] .fa-title,html[dir=rtl] .fa-answer{direction:rtl;text-align:right}.mhead,.examtop{background:rgba(7,18,46,.96)!important;color:#f7fbff!important;border-color:rgba(132,177,235,.35)!important}.ans.good{background:#0d473e!important;border-color:#47d39a!important;color:#eafff4!important}.ans.bad{background:#5b2330!important;border-color:#ff7180!important;color:#ffe4e8!important}.score-ring{background:#13295d!important;border-color:#ff7180!important;color:#ffcc4d!important}.score-ring.passed{background:#0d473e!important;border-color:#47d39a!important;color:#a4f4ce!important}.sign-copy p{color:#c6d4ec!important}.sign-fa{color:#e3edff!important}`;
   document.head.appendChild(languagePolishStyle);
 
-  // Pashto is a private preview for the site owner while translations are reviewed.
-  const pashtoOwnerEmail = 'sanjarsadat@gmail.com';
-  let pashtoAllowed = new URLSearchParams(location.search).get('lang') === 'ps';
+  // Pashto is live for every visitor. Paid course content remains protected by the shared access check.
   const updatePashtoVisibility = () => {
     document.querySelectorAll('.lang button[lang="ps"]').forEach(button => {
-      button.hidden = !pashtoAllowed;
-      button.setAttribute('aria-hidden', pashtoAllowed ? 'false' : 'true');
+      button.hidden = false;
+      button.setAttribute('aria-hidden', 'false');
     });
   };
-  window.addEventListener('mt-clerk-change', event => {
-    const user = event.detail?.signedIn ? (event.detail.user || {}) : {};
-    const email = String(user.email || '').trim().toLowerCase();
-    pashtoAllowed = email === pashtoOwnerEmail || user.publicMetadata?.role === 'admin' || user.publicMetadata?.isAdmin === true;
-    updatePashtoVisibility();
-  });
   new MutationObserver(updatePashtoVisibility).observe(document.documentElement, {childList:true,subtree:true});
   updatePashtoVisibility();
   const mobileHeaderFix = document.createElement('style');
