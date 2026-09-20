@@ -10,7 +10,7 @@
     script.addEventListener('load', () => { script.dataset.loaded = 'true'; resolve(); }, { once: true });
     script.addEventListener('error', reject, { once: true }); document.head.appendChild(script);
   }); }
-  function userDetails(user) { if (!user) return null; const email = user.primaryEmailAddress?.emailAddress || ''; return { id:user.id, name:user.fullName || user.firstName || email.split('@')[0] || 'Gebruiker', email }; }
+  function userDetails(user) { if (!user) return null; const email = user.primaryEmailAddress?.emailAddress || ''; return { id:user.id, name:user.fullName || user.firstName || email.split('@')[0] || 'Gebruiker', email, publicMetadata:user.publicMetadata || {} }; }
   function announceAuthState(snapshot) {
     const activeSession = snapshot?.session || window.Clerk?.session || null;
     const activeUser = snapshot?.user || activeSession?.user || window.Clerk?.user || null;
