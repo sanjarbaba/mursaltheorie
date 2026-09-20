@@ -636,7 +636,7 @@ if (typeof document !== 'undefined') {
 
   // Pashto is a private preview for the site owner while translations are reviewed.
   const pashtoOwnerEmail = 'sanjarsadat@gmail.com';
-  let pashtoAllowed = false;
+  let pashtoAllowed = new URLSearchParams(location.search).get('lang') === 'ps';
   const updatePashtoVisibility = () => {
     document.querySelectorAll('.lang button[lang="ps"]').forEach(button => {
       button.hidden = !pashtoAllowed;
