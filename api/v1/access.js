@@ -15,6 +15,7 @@ function configured(name) {
 const MOLLIE_PRODUCTS = Object.freeze({
   theory_b_nl_30d: Object.freeze({ amount: '29.99', description: 'Mursaltheorie Nederlands - 30 dagen', kind: 'digital' }),
   theory_b_nl_fa_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands + Dari/Farsi - 30 dagen', kind: 'digital' }),
+  theory_b_nl_ps_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands + Pashto - 30 dagen', kind: 'digital' }),
   theory_b_book: Object.freeze({ amount: '65.00', description: 'Mursaltheorie B-boek', kind: 'physical' })
 });
 
