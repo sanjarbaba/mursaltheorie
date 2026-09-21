@@ -23,7 +23,9 @@ export default {
           WHERE published = TRUE
           ORDER BY id
         `;
-        return json({ lessons });
+        return json({ lessons: access.locales.includes('fa')
+          ? lessons
+          : lessons.map(({ title_fa, rule_fa, tip_fa, ...lesson }) => lesson) });
       }
 
       if (resource === 'questions') {
@@ -34,7 +36,9 @@ export default {
           WHERE published = TRUE
           ORDER BY id
         `;
-        return json({ questions });
+        return json({ questions: access.locales.includes('fa')
+          ? questions
+          : questions.map(({ question_fa, answers_fa, ...question }) => question) });
       }
 
       return json({ error: 'Onbekende inhoud.' }, 400);
