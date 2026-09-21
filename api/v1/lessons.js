@@ -10,10 +10,9 @@ export default {
     try {
       const sql = getSql();
       await ensureUser(sql, auth.userId);
-      const access = await requireCourseAccess(sql, auth.userId);
-      if (access.error) return fail('ACCESS_REQUIRED', 'Geen actieve toegang.', 403);
-
       const language = locale(new URL(request.url).searchParams.get('locale'));
+      const access = await requireCourseAccess(sql, auth.userId, language);
+      if (access.error) return access.error;
       const releases = await sql`
         SELECT id, version, published_at
         FROM content_releases
@@ -36,13 +35,20 @@ export default {
         ORDER BY m.sort_order, l.sort_order
       `;
 
+      const visibleContent = (value) => {
+        if (Array.isArray(value)) return value.map(visibleContent);
+        if (!value || typeof value !== 'object') return value;
+        return Object.fromEntries(Object.entries(value)
+          .filter(([key]) => !['nl', 'fa', 'ps'].includes(key) || access.locales.includes(key))
+          .map(([key, part]) => [key, visibleContent(part)]));
+      };
       const lessons = rows.map((row) => ({
         id: row.lesson_number,
         slug: row.slug,
         title: localized(row.title, language),
         summary: localized(row.summary, language),
-        contentBlocks: row.content_blocks,
-        media: row.media,
+        contentBlocks: visibleContent(row.content_blocks),
+        media: visibleContent(row.media),
         estimatedMinutes: row.estimated_minutes,
         sortOrder: row.sort_order,
         module: {
