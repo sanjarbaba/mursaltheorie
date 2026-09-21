@@ -3,7 +3,7 @@ export const COURSE_PRODUCTS = Object.freeze({
   theory_b_access: Object.freeze({ locales: ['nl', 'fa'], legacy: true }),
   theory_b_nl_30d: Object.freeze({ locales: ['nl'] }),
   theory_b_nl_fa_30d: Object.freeze({ locales: ['nl', 'fa'] }),
-  theory_b_nl_ps_30d: Object.freeze({ locales: ['nl', 'ps'], comingSoon: true })
+  theory_b_nl_ps_30d: Object.freeze({ locales: ['nl', 'ps'] })
 });
 
 export const COURSE_PRODUCT_KEYS = Object.freeze(Object.keys(COURSE_PRODUCTS));
