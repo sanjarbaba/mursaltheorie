@@ -203,13 +203,13 @@ export default {
     try {
       const sql = getSql();
       await ensureUser(sql, auth.userId);
-      const access = await requireCourseAccess(sql, auth.userId);
-      if (access.error) return fail('ACCESS_REQUIRED', 'Geen actieve toegang.', 403);
       const body = await parseBody(request);
       if (!body || !['start', 'answer', 'submit'].includes(body.action)) {
         return fail('VALIDATION_ERROR', 'Een geldige action is verplicht.', 422);
       }
       const language = locale(body.locale);
+      const access = await requireCourseAccess(sql, auth.userId, language);
+      if (access.error) return access.error;
       if (body.action === 'start') return startAttempt(sql, auth.userId, body, language);
       if (body.action === 'answer') return saveAnswer(sql, auth.userId, body);
       return submitAttempt(sql, auth.userId, body, language);
