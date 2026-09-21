@@ -11,11 +11,12 @@ export function accessSummary(entitlements, legacyHasAccess = false, now = Date.
   const active = Array.isArray(entitlements)
     ? entitlements.filter((entitlement) => entitlementIsActive(entitlement, now))
     : [];
+  const legacy = active.length === 0 && legacyHasAccess;
   return {
-    hasAccess: active.length > 0 || legacyHasAccess,
-    source: active.length > 0 ? 'entitlement' : (legacyHasAccess ? 'legacy' : 'none'),
+    hasAccess: active.length > 0 || legacy,
+    source: active.length > 0 ? 'entitlement' : (legacy ? 'legacy' : 'none'),
     products: [...new Set(active.map((entitlement) => entitlement.product_key))],
-    locales: grantedLocales(active, legacyHasAccess),
+    locales: grantedLocales(active, legacy),
     entitlements: active
   };
 }
