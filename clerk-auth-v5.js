@@ -25,6 +25,28 @@
     await window.Clerk.load({ui:{ClerkUI:window.__internal_ClerkUICtor}}); window.Clerk.addListener(announceAuthState); announceAuthState(); return window.Clerk;
   })().catch(error => { console.error('Clerk kon niet worden geladen.', error); throw error; });
   window.mtOpenAuth = async function(mode) { try { const clerk=await window.mtClerkReady; if (clerk.session) return clerk.openUserProfile(); const result=mode==='register'?await clerk.openSignUp():await clerk.openSignIn(); announceAuthState(); return result; } catch(error) { alert('Inloggen kon niet worden geladen. Vernieuw de pagina en probeer het opnieuw.'); } };
-  window.mtSignOut = async function() { try { const clerk=await window.mtClerkReady; await clerk.signOut(); announceAuthState(); } catch(error) { alert('Uitloggen is niet gelukt. Probeer het opnieuw.'); } };
+  window.mtSignOut = async function() { try { const clerk=await window.mtClerkReady; await clerk.signOut(); announceAuthState(); } catch(error) { alert('Uitloggen is niet gelukt. Probeer het opnieuw.'); } };  async function checkoutRequest(path, body, authenticated) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authenticated) {
+      const clerk = await window.mtClerkReady;
+      if (!clerk?.session) throw new Error('AUTH_REQUIRED');
+      headers.Authorization = `Bearer ${await clerk.session.getToken()}`;
+    }
+    const response = await fetch(path, { method: 'POST', headers, body: JSON.stringify(body) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error?.message || payload.error || 'De betaalpagina kon niet worden geopend.');
+    return payload.data ?? payload;
+  }
+  window.mtCheckout = async function(productKey, immediateAccessConsent) {
+    const result = await checkoutRequest('/api/v1/access?resource=checkout', { productKey, immediateAccessConsent }, true);
+    if (!result.checkoutUrl) throw new Error('CHECKOUT_URL_MISSING');
+    window.location.assign(result.checkoutUrl);
+  };
+  window.mtGuestCheckout = async function(email, productKey, immediateAccessConsent) {
+    const result = await checkoutRequest('/api/v1/access?resource=guest-checkout', { email, productKey, immediateAccessConsent }, false);
+    if (!result.checkoutUrl) throw new Error('CHECKOUT_URL_MISSING');
+    window.location.assign(result.checkoutUrl);
+  };
+
 }());
 
