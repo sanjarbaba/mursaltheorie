@@ -1,6 +1,6 @@
 import { verifyToken } from '@clerk/backend';
 import { neon } from '@neondatabase/serverless';
-import { grantsCourseAccess } from './v1/_products.js';
+import { grantedLocales } from './v1/_products.js';
 
 const webAuthorizedParties = [
   'https://mursaltheorie.nl',
@@ -77,18 +77,17 @@ export function hasCourseAccess(user) {
   return new Date(user.access_ends_at).getTime() > Date.now();
 }
 
-export async function requireCourseAccess(sql, userId) {
+export async function requireCourseAccess(sql, userId, language = 'nl') {
+  let entitlements = [];
   try {
-    const entitlements = await sql`
-      SELECT id, product_key
+    entitlements = await sql`
+      SELECT id, product_key, status, starts_at, ends_at
       FROM entitlements
       WHERE clerk_user_id = ${userId}
         AND status IN ('active', 'grace')
         AND starts_at <= NOW()
         AND (ends_at IS NULL OR ends_at > NOW())
     `;
-    const entitlement = entitlements.find((item) => grantsCourseAccess(item.product_key));
-    if (entitlement) return { entitlement };
   } catch (error) {
     if (error?.code !== '42P01') throw error;
   }
@@ -98,8 +97,16 @@ export async function requireCourseAccess(sql, userId) {
     FROM app_users WHERE clerk_user_id = ${userId}
   `;
   const user = rows[0];
-  if (!hasCourseAccess(user)) return { error: json({ error: 'Geen actieve toegang.', code: 'ACCESS_REQUIRED' }, 403) };
-  return { user };
+  if (user?.access_status === 'blocked') {
+    return { error: json({ error: 'Geen actieve toegang.', code: 'ACCESS_REQUIRED' }, 403) };
+  }
+  const privileged = ['admin', 'beta'].includes(user?.access_status);
+  const legacy = entitlements.length === 0 && hasCourseAccess(user);
+  const locales = privileged ? ['nl', 'fa', 'ps'] : grantedLocales(entitlements, legacy);
+  if (!locales.includes(language)) {
+    return { error: json({ error: 'Geen toegang tot deze taal.', code: 'LOCALE_ACCESS_REQUIRED' }, 403) };
+  }
+  return { user, locales, entitlement: entitlements.find((item) => grantedLocales([item]).includes(language)) || null };
 }
 
 export async function parseBody(request) {
