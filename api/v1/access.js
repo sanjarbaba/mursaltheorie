@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { authenticate, ensureUser, getSql, hasCourseAccess, parseBody } from '../_lib.js';
+import { authenticate, ensureUser, getSql, hasCourseAccess, parseBody, requireCourseAccess } from '../_lib.js';
 import { accessSummary } from './_access.js';
+import { productLocales } from './_products.js';
 import { fail, integer, locale, localized, ok } from './_contract.js';
 import { answersEqual, normalizeAnswer, percentage, publicQuestion, questionType } from './_exam.js';
 import { pashtoExplanation } from './_pashto.js';
@@ -518,7 +519,10 @@ const endpoint = {
       const sql = getSql();
       const user = await ensureUser(sql, auth.userId);
       if (request.method === 'POST' && resource === 'error-answer') {
-        return checkErrorAnswer(sql, auth.userId, request, locale(url.searchParams.get('locale')));
+        const language = locale(url.searchParams.get('locale'));
+        const access = await requireCourseAccess(sql, auth.userId, language);
+        if (access.error) return access.error;
+        return checkErrorAnswer(sql, auth.userId, request, language);
       }
       if (request.method === 'POST' && resource === 'checkout') {
         const body = await parseBody(request);
@@ -534,8 +538,10 @@ const endpoint = {
           return fail('CONSENT_REQUIRED', 'Bevestig dat de digitale toegang direct mag starten.', 422);
         }
         const entitlements = await loadEntitlements(sql, auth.userId);
-        if (accessSummary(entitlements, hasCourseAccess(user)).hasAccess) {
-          return fail('ACCESS_ALREADY_ACTIVE', 'Dit account heeft al volledige toegang.', 409);
+        const summary = accessSummary(entitlements, hasCourseAccess(user));
+        const requestedLocale = productLocales(productKey).find((language) => language !== 'nl') || 'nl';
+        if (['admin', 'beta'].includes(user.access_status) || summary.locales.includes(requestedLocale)) {
+          return fail('ACCESS_ALREADY_ACTIVE', 'Dit account heeft al toegang tot deze taal.', 409);
         }
         return createCheckout(sql, auth.userId, user.email, productKey, true);
       }
@@ -550,14 +556,24 @@ const endpoint = {
       if (request.method === 'POST' && resource === 'activate') return activatePurchase(sql, auth.userId);
       if (request.method === 'POST' && resource === 'withdraw') return withdrawPurchase(sql, auth.userId);
       if (request.method !== 'GET') return fail('VALIDATION_ERROR', 'Ongeldige betaalactie.', 422);
-      if (url.searchParams.get('resource') === 'results') return examHistory(sql, auth.userId, url);
+      if (url.searchParams.get('resource') === 'results') {
+        const access = await requireCourseAccess(sql, auth.userId, locale(url.searchParams.get('locale')));
+        if (access.error) return access.error;
+        return examHistory(sql, auth.userId, url);
+      }
       if (url.searchParams.get('resource') === 'topic-stats') return topicStats(sql, auth.userId);
-      if (url.searchParams.get('resource') === 'errors') return errorQuestions(sql, auth.userId, url);
+      if (url.searchParams.get('resource') === 'errors') {
+        const access = await requireCourseAccess(sql, auth.userId, locale(url.searchParams.get('locale')));
+        if (access.error) return access.error;
+        return errorQuestions(sql, auth.userId, url);
+      }
       const entitlements = await loadEntitlements(sql, auth.userId);
       const purchase = await loadLatestPurchase(sql, auth.userId);
       const bookOrder = await loadLatestBookOrder(sql, auth.userId);
 
-      return ok({ access: { ...accessSummary(entitlements, hasCourseAccess(user)), purchase: purchaseSummary(purchase), bookOrder: bookOrderSummary(bookOrder) } });
+      const summary = accessSummary(entitlements, hasCourseAccess(user));
+      if (['admin', 'beta'].includes(user.access_status)) summary.locales = ['nl', 'fa', 'ps'];
+      return ok({ access: { ...summary, purchase: purchaseSummary(purchase), bookOrder: bookOrderSummary(bookOrder) } });
     } catch (error) {
       console.error('v1 access endpoint failed', error);
       return fail('SERVICE_UNAVAILABLE', 'Toegang kon niet worden gecontroleerd.', 503);
