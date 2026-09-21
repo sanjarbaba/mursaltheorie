@@ -259,6 +259,13 @@
     window.location.assign(result.checkoutUrl);
   };
 
+  window.mtClaimGuestPurchase = async function (token) {
+    return apiRequest('/api/v1/access?resource=claim-guest', {
+      method: 'POST',
+      body: JSON.stringify({ token })
+    });
+  };
+
   window.mtResendPurchaseConfirmation = async function () {
     return apiRequest('/api/v1/access?resource=resend-purchase-confirmation', {
       method: 'POST',
