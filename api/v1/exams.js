@@ -10,10 +10,9 @@ export default {
     try {
       const sql = getSql();
       await ensureUser(sql, auth.userId);
-      const access = await requireCourseAccess(sql, auth.userId);
-      if (access.error) return fail('ACCESS_REQUIRED', 'Geen actieve toegang.', 403);
-
       const language = locale(new URL(request.url).searchParams.get('locale'));
+      const access = await requireCourseAccess(sql, auth.userId, language);
+      if (access.error) return access.error;
       const rows = await sql`
         SELECT e.exam_number, e.title, e.question_count, e.pass_score, e.duration_seconds,
           r.version AS release_version
