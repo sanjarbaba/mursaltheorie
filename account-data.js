@@ -50,14 +50,12 @@
     };
   }
 
+  const allowedLocales = () => Array.isArray(window.mtAccountLocales) ? window.mtAccountLocales : ['nl'];
   async function loadV1Content() {
+    const request = (path, language) => allowedLocales().includes(language) ? apiRequest(`${path}?locale=${language}`) : Promise.resolve({ lessons: [], exams: [] });
     const [lessonsNl, lessonsFa, lessonsPs, examsNl, examsFa, examsPs] = await Promise.all([
-      apiRequest('/api/v1/lessons?locale=nl'),
-      apiRequest('/api/v1/lessons?locale=fa'),
-      apiRequest('/api/v1/lessons?locale=ps'),
-      apiRequest('/api/v1/exams?locale=nl'),
-      apiRequest('/api/v1/exams?locale=fa'),
-      apiRequest('/api/v1/exams?locale=ps')
+      request('/api/v1/lessons', 'nl'), request('/api/v1/lessons', 'fa'), request('/api/v1/lessons', 'ps'),
+      request('/api/v1/exams', 'nl'), request('/api/v1/exams', 'fa'), request('/api/v1/exams', 'ps')
     ]);
     const content = mergeContent(
       { lessons: lessonsNl.lessons, exams: examsNl.exams },
@@ -75,7 +73,9 @@
         method: 'PUT',
         body: JSON.stringify({ name: user.name, email: user.email })
       });
-      const access = await apiRequest('/api/v1/access'); if (!access.access?.hasAccess) { window.dispatchEvent(new CustomEvent('mt-account-data', { detail: { profile: profile.user, completedLessons: [], trainingProgress: null, access: access.access || null, results: [], resultSummary: null, topicStats: [], content: null } })); return; } await registerDevice();
+      const access = await apiRequest('/api/v1/access');
+      window.mtAccountLocales = access.access?.locales || [];
+      if (!access.access?.hasAccess) { window.dispatchEvent(new CustomEvent('mt-account-data', { detail: { profile: profile.user, completedLessons: [], trainingProgress: null, access: access.access || null, results: [], resultSummary: null, topicStats: [], content: null } })); return; } await registerDevice();
       await flushProgressQueue();
       const [progress, training, content, history, topicStats] = await Promise.all([
         apiRequest('/api/v1/progress'),
@@ -116,11 +116,10 @@
   window.mtLoadExamResults = loadExamResults;
 
   window.mtLoadErrorTraining = async function () {
-    const [nl, fa, ps] = await Promise.all([
-      apiRequest('/api/v1/access?resource=errors&locale=nl'),
-      apiRequest('/api/v1/access?resource=errors&locale=fa'),
-      apiRequest('/api/v1/access?resource=errors&locale=ps')
-    ]);
+    const request = (language) => allowedLocales().includes(language)
+      ? apiRequest(`/api/v1/access?resource=errors&locale=${language}`)
+      : Promise.resolve({ questions: [] });
+    const [nl, fa, ps] = await Promise.all([request('nl'), request('fa'), request('ps')]);
     const faQuestions = new Map((fa.questions || []).map((question) => [question.id, question]));
     const psQuestions = new Map((ps.questions || []).map((question) => [question.id, question]));
     return (nl.questions || []).map((question) => ({
@@ -287,12 +286,14 @@
       method: 'POST',
       body: JSON.stringify({ action: 'start', examNumber, mutationId, locale })
     });
-    const [nl, fa, ps] = await Promise.all([request('nl'), request('fa'), request('ps')]);
-    const faQuestions = new Map(fa.attempt.questions.map((question) => [question.id, question]));
-    const psQuestions = new Map(ps.attempt.questions.map((question) => [question.id, question]));
+    const nl = await request('nl');
+    const fa = allowedLocales().includes('fa') ? await request('fa') : null;
+    const ps = allowedLocales().includes('ps') ? await request('ps') : null;
+    const faQuestions = new Map((fa?.attempt?.questions || []).map((question) => [question.id, question]));
+    const psQuestions = new Map((ps?.attempt?.questions || []).map((question) => [question.id, question]));
     return {
       ...nl.attempt,
-      exam: { ...nl.attempt.exam, titleNl: nl.attempt.exam.title, titleFa: fa.attempt.exam.title, titlePs: ps.attempt.exam.title },
+      exam: { ...nl.attempt.exam, titleNl: nl.attempt.exam.title, titleFa: fa?.attempt?.exam?.title || nl.attempt.exam.title, titlePs: ps?.attempt?.exam?.title || nl.attempt.exam.title },
       questions: nl.attempt.questions.map((question) => ({
         ...question,
         promptNl: question.prompt,
@@ -318,10 +319,10 @@
       body: JSON.stringify({ action: 'submit', attemptId, locale })
     });
     const nl = await submit('nl');
-    const fa = await submit('fa');
-    const ps = await submit('ps');
-    const faAnswers = new Map(fa.result.answers.map((answer) => [answer.questionId, answer]));
-    const psAnswers = new Map(ps.result.answers.map((answer) => [answer.questionId, answer]));
+    const fa = allowedLocales().includes('fa') ? await submit('fa') : null;
+    const ps = allowedLocales().includes('ps') ? await submit('ps') : null;
+    const faAnswers = new Map((fa?.result?.answers || []).map((answer) => [answer.questionId, answer]));
+    const psAnswers = new Map((ps?.result?.answers || []).map((answer) => [answer.questionId, answer]));
     const result = {
       ...nl,
       result: {
