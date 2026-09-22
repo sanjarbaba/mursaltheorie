@@ -25,6 +25,43 @@
     await window.Clerk.load({ui:{ClerkUI:window.__internal_ClerkUICtor}}); window.Clerk.addListener(announceAuthState); announceAuthState(); return window.Clerk;
   })().catch(error => { console.error('Clerk kon niet worden geladen.', error); throw error; });
   window.mtOpenAuth = async function(mode) { try { const clerk=await window.mtClerkReady; if (clerk.session) return clerk.openUserProfile(); const result=mode==='register'?await clerk.openSignUp():await clerk.openSignIn(); announceAuthState(); return result; } catch(error) { alert('Inloggen kon niet worden geladen. Vernieuw de pagina en probeer het opnieuw.'); } };
+
+  const activitySessionKey = 'mt-activity-session';
+  function activitySessionId() {
+    try {
+      let value = localStorage.getItem(activitySessionKey);
+      if (!value) { value = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now()); localStorage.setItem(activitySessionKey, value); }
+      return value;
+    } catch { return Math.random().toString(36).slice(2) + Date.now(); }
+  }
+  window.mtTrackActivity = async function(eventType, details) {
+    if (location.pathname === '/admin') return;
+    try {
+      const clerk = await window.mtClerkReady;
+      if (!clerk || !clerk.session) return;
+      const token = await clerk.session.getToken();
+      await fetch('/api/v1/activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({
+          eventType,
+          sessionId: activitySessionId(),
+          path: location.pathname,
+          language: document.documentElement.lang || 'nl',
+          viewName: details && details.viewName ? details.viewName : (localStorage.getItem('mt-view') || '')
+        })
+      });
+    } catch { /* Activiteit mag de leeromgeving nooit onderbreken. */ }
+  };
+  window.addEventListener('mt-clerk-change', event => {
+    if (!event.detail || !event.detail.signedIn) return;
+    window.mtTrackActivity('page_view');
+    if (!window.__mtActivityTimer) window.__mtActivityTimer = setInterval(() => window.mtTrackActivity('heartbeat'), 300000);
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') window.mtTrackActivity('heartbeat');
+  });
+
   window.mtSignOut = async function() { try { const clerk=await window.mtClerkReady; await clerk.signOut(); announceAuthState(); } catch(error) { alert('Uitloggen is niet gelukt. Probeer het opnieuw.'); } };  async function checkoutRequest(path, body, authenticated) {
     const headers = { 'Content-Type': 'application/json' };
     if (authenticated) {
