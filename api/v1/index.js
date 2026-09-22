@@ -1,4 +1,5 @@
 import access from './access.js';
+import activity from './activity.js';
 import admin from './admin.js';
 import devices from './devices.js';
 import examAttempts from './exam-attempts.js';
@@ -10,6 +11,7 @@ import { API_VERSION, fail, ok } from './_contract.js';
 
 const endpoints = Object.freeze({
   access,
+  activity,
   admin,
   devices,
   'exam-attempts': examAttempts,
