@@ -56,6 +56,29 @@ async function listData(sql) {
   return { users, counts: counts[0] || { users: 0, admins: 0, paid_orders: 0 } };
 }
 
+
+async function ensureActivityTable(sql) {
+  await sql`CREATE TABLE IF NOT EXISTS activity_events (
+    id BIGSERIAL PRIMARY KEY,
+    clerk_user_id TEXT NOT NULL REFERENCES app_users(clerk_user_id) ON DELETE CASCADE,
+    session_id TEXT NOT NULL,
+    event_type TEXT NOT NULL CHECK (event_type IN ('page_view','heartbeat','lesson_open','signs_open','training_open','exam_start')),
+    path TEXT NOT NULL,
+    language TEXT NOT NULL DEFAULT 'nl',
+    view_name TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  await sql`CREATE INDEX IF NOT EXISTS activity_events_created_idx ON activity_events (created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS activity_events_user_created_idx ON activity_events (clerk_user_id, created_at DESC)`;
+}
+async function activityData(sql) {
+  await ensureActivityTable(sql);
+  const summaryRows = await sql`SELECT COUNT(*)::INT AS events_7d, COUNT(*) FILTER (WHERE event_type='page_view')::INT AS page_views_7d, COUNT(DISTINCT clerk_user_id)::INT AS users_7d, COUNT(DISTINCT session_id)::INT AS sessions_7d, COUNT(DISTINCT clerk_user_id) FILTER (WHERE created_at >= NOW()-INTERVAL '15 minutes')::INT AS active_now FROM activity_events WHERE created_at >= NOW()-INTERVAL '7 days'`;
+  const topPages = await sql`SELECT path, COUNT(*)::INT AS views FROM activity_events WHERE created_at >= NOW()-INTERVAL '7 days' AND event_type='page_view' GROUP BY path ORDER BY views DESC, path LIMIT 8`;
+  const recentUsers = await sql`SELECT a.clerk_user_id, u.display_name, u.email, MAX(a.created_at) AS last_seen_at, COUNT(*)::INT AS events, (ARRAY_AGG(a.path ORDER BY a.created_at DESC))[1] AS last_path, (ARRAY_AGG(a.event_type ORDER BY a.created_at DESC))[1] AS last_event FROM activity_events a JOIN app_users u ON u.clerk_user_id=a.clerk_user_id WHERE a.created_at >= NOW()-INTERVAL '7 days' GROUP BY a.clerk_user_id,u.display_name,u.email ORDER BY last_seen_at DESC LIMIT 40`;
+  return {setupRequired:false,summary:summaryRows[0]||{events_7d:0,page_views_7d:0,users_7d:0,sessions_7d:0,active_now:0},topPages,recentUsers};
+}
+
 async function handler(request) {
   const auth = await authenticate(request);
   if (auth.error) return auth.error;
@@ -64,6 +87,7 @@ async function handler(request) {
   if (admin.error) return admin.error;
 
   const resource = new URL(request.url, 'https://www.mursaltheorie.nl').searchParams.get('resource');
+  if (request.method === 'GET' && resource === 'activity') return ok({ ...(await activityData(sql)), admin: admin.user });
   if (request.method === 'GET') return ok({ ...(await listData(sql)), admin: admin.user });
   if (request.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'Methode niet toegestaan.', 405);
 
