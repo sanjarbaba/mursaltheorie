@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /learn5
+Disallow: /account
+
+Sitemap: https://www.mursaltheorie.nl/sitemap.xml
