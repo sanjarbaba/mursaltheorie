@@ -1,6 +1,6 @@
 # Mursal Theory Hero – Complete Game v1
 
-Een Nederlandstalige webgame/PWA. **Productie: https://www.mursaltheorie.nl/game/spelen — inbegrepen bij een betaald digitaal pakket, 30 dagen toegang.** Deze map bevat daarnaast een besloten ontwikkelpreview; publiceer `dist` niet als vrij toegankelijke game. **Wereld 1: Verkeersborden en Wereld 2: Voorrang zijn speelbaar, elk met 20 levels.** De zes volgende werelden en de finale Theorie Examen zijn aangekondigde uitbreidingen, nog niet speelbaar.
+Een Nederlandstalige webgame/PWA. **Productie: https://www.mursaltheorie.nl/game/spelen — inbegrepen bij een betaald digitaal pakket, 30 dagen toegang.** Deze map bevat daarnaast een besloten ontwikkelpreview; publiceer `dist` niet als vrij toegankelijke game. **Wereld 1: Verkeersborden, Wereld 2: Voorrang en Wereld 3: Snelheid & wegtypes zijn speelbaar, elk met 20 levels.** De vijf volgende werelden en de finale Theorie Examen zijn aangekondigde uitbreidingen, nog niet speelbaar.
 
 ## Direct starten
 
@@ -16,10 +16,10 @@ Voor een andere poort stel je `PORT` in. De testserver luistert op alle netwerki
 
 ## Wat je kunt spelen
 
-- 40 oplopende levels in twee werelden; 27 officiële verkeersborden en 32 voorrangssituaties. Wereld 2 ontgrendelt na Wereld 1.
+- 60 oplopende levels in drie werelden; 27 officiële verkeersborden en 32 voorrangssituaties. Wereld 2 ontgrendelt na Wereld 1; Wereld 3 na Wereld 2.
 - Bord herkennen, het passende bord kiezen, borden sorteren, timed challenges, schematische verkeerssituaties en een geheugenronde.
 - Mini-boss De Poortwachter op level 10; De Bordenbaas op level 20.
-- XP, maximaal 60 sterren, levelontgrendeling, vijf energiepunten en de virtuele Bordenheld-badge.
+- XP, maximaal 180 sterren (60 per wereld), levelontgrendeling, vijf energiepunten en de virtuele Bordenheld-badge.
 - Verkeersvisie geeft kijktips. Focus Shield beschermt één energiepunt maar wist geen fout. Kennisboost verdubbelt XP voor drie goede antwoorden. Elke power eenmaal per ronde; geen powers bij bazen.
 - Fouten en verlopen tijd krijgen uitleg en een bronlink. Meestal is 60% goed nodig, bij beide bazen 80%.
 - Alles goed geeft drie sterren; minimaal 80% twee sterren; een overige geslaagde ronde één ster. Alleen verbetering van de beste XP-score van een level voegt XP toe. Herhaling verlaagt je beste sterren niet.
@@ -102,4 +102,8 @@ Een echte betaalde account is niet gebruikt voor een aankooptest. De abonnements
 
 ## Uitbreiding: Wereld 2
 
-Zie `WERELD-2.md` voor de inhoud, migratie, nieuwe bronnen en testresultaten. Beide werelden vallen onder de bestaande maandtoegang.
+Zie `WERELD-2.md` voor de inhoud, migratie, nieuwe bronnen en testresultaten. Alle drie de werelden vallen onder de bestaande maandtoegang.
+
+## Wereld 3: Snelheid & wegtypes
+
+Zie `WERELD-3.md` voor de twintig nieuwe levels, 34 situaties, actuele broncontrole, savecompatibiliteit en testinstructies.

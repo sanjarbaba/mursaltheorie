@@ -1,7 +1,12 @@
-export const {SOURCES,SIGNS,signByCode,WORLDS,CHAPTERS,LEVELS,MODES,SCENARIOS,PRIORITY_QUESTIONS,WORLD_CONFIG}=globalThis.MURSAL_CONTENT;
+export const {SOURCES,SIGNS,signByCode,WORLDS,CHAPTERS,LEVELS,MODES,SCENARIOS,PRIORITY_QUESTIONS,SPEED_QUESTIONS,WORLD_CONFIG}=globalThis.MURSAL_CONTENT;
 function shuffle(items,rng){return items.map(v=>({v,k:rng()})).sort((a,b)=>a.k-b.k).map(x=>x.v);}
 export function buildQuestions(level,rng=Math.random){
  return level.codes.map((code,i)=>{
+  if(level.worldId==='speed'){
+   const item=SPEED_QUESTIONS[code];const judge=(level.mode==='judge'||level.mode==='mixed'&&i%2===0)&&item.numeric;
+   const proposed=judge?[item.answer,...item.wrong][Math.floor(rng()*(item.wrong.length+1))]:null;
+   return {...item,id:`${level.id}-${i}`,kind:'speed',mode:judge?'judge':'speed',prompt:item.context+(judge?` Mursal zegt: maximaal ${proposed}. Klopt dat?`:''),answer:judge?(proposed===item.answer?'Klopt':'Klopt niet'):item.answer,options:shuffle(judge?['Klopt','Klopt niet']:[item.answer,...item.wrong],rng)};
+  }
   if(level.worldId==='priority'){
    const item=PRIORITY_QUESTIONS[code];let mode=level.mode==='mixed'?['priority','rule','order'][i%3]:level.mode;
    if(!['priority','rule','order'].includes(mode))mode='priority';
