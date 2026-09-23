@@ -275,7 +275,7 @@ async function processMollieWebhook(request) {
     }
     if (!isPhysical && effectiveUserId) {
       await sql`INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status,starts_at,ends_at) VALUES(${effectiveUserId},${productKey},'web',${payment.id},'active',NOW(),NOW()+INTERVAL '30 days') ON CONFLICT(source,external_reference) DO UPDATE SET product_key=EXCLUDED.product_key,status='active',starts_at=COALESCE(entitlements.starts_at,EXCLUDED.starts_at),ends_at=COALESCE(entitlements.ends_at,EXCLUDED.ends_at),updated_at=NOW()`;
-      await sql`UPDATE app_users SET access_status='active', access_starts_at=COALESCE(access_starts_at,NOW()), access_ends_at=GREATEST(COALESCE(access_ends_at,NOW()),NOW()+INTERVAL '30 days'), updated_at=NOW() WHERE clerk_user_id=${effectiveUserId} AND access_status <> 'admin'`;
+      await sql`UPDATE app_users SET access_status='active', access_starts_at=COALESCE(access_starts_at,NOW()), access_ends_at=COALESCE((SELECT MAX(ends_at) FROM entitlements WHERE clerk_user_id=${effectiveUserId} AND status='active'),access_ends_at,NOW()), updated_at=NOW() WHERE clerk_user_id=${effectiveUserId} AND access_status <> 'admin'`;
     }
     const orders = await sql`
       SELECT order_row.id, order_row.provider_payment_id, order_row.description,
