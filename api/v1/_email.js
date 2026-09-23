@@ -35,20 +35,25 @@ async function sendEmail({ to, subject, html, idempotencyKey }) {
   return { sent: true, id: payload.id };
 }
 
-export function purchaseConfirmationEmail({ email, orderId, description, amount, consentText, appUrl, activationUrl: providedActivationUrl }) {
-  const activationUrl = providedActivationUrl || `${appUrl}/learn5?payment=return`;
+export function purchaseConfirmationEmail({ email, orderId, description, amount, consentText, appUrl, activationUrl: providedActivationUrl, activated = false }) {
+  const activationUrl = providedActivationUrl || `${appUrl}/learn5`;
+  const subject = activated ? 'Je Mursaltheorie-toegang is actief' : 'Bevestig en start je Mursaltheorie-toegang';
+  const intro = activated
+    ? 'Je betaling is ontvangen en je toegang is direct geactiveerd voor 30 dagen. Log in met hetzelfde e-mailadres dat je bij de betaling hebt gebruikt.'
+    : 'Je betaling is ontvangen. Open de link hieronder om je e-mailadres te bevestigen en je account te activeren. Je toegang start daarna automatisch voor 30 dagen.';
+  const button = activated ? 'Naar Mursaltheorie' : 'Naar mijn aankoop';
   return sendEmail({
     to: email,
-    subject: 'Bevestig en start je Mursaltheorie-toegang',
+    subject,
     idempotencyKey: `purchase-confirmation-${orderId}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#17131f;line-height:1.6">
       <h1>Je betaling is ontvangen</h1>
       <p><strong>${escapeHtml(description)}</strong><br>€${escapeHtml(amount)} · eenmalig · geen automatische verlenging</p>
       <p>Je hebt vóór betaling verklaard:</p>
       <blockquote style="border-left:4px solid #6b42dc;margin:16px 0;padding:10px 16px;background:#f7f4fb">${escapeHtml(consentText)}</blockquote>
-      <p>Je betaling is ontvangen. Open de link hieronder om je e-mailadres te bevestigen en je account te activeren. Je toegang start daarna automatisch voor 30 dagen.</p>
-      <p><a href="${escapeHtml(activationUrl)}" style="display:inline-block;background:#6b42dc;color:white;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:bold">Naar mijn aankoop</a></p>
-      <p>Wil je vóór activatie van de koop af? Gebruik dan in je account de knop <strong>Koop ongedaan maken</strong> of mail naar <a href="mailto:mursalsadat@proton.me">mursalsadat@proton.me</a>.</p>
+      <p>${escapeHtml(intro)}</p>
+      <p><a href="${escapeHtml(activationUrl)}" style="display:inline-block;background:#6b42dc;color:white;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:bold">${button}</a></p>
+      <p>Als je je aankoop wilt annuleren binnen de wettelijke bedenktijd, gebruik dan in je account de knop <strong>Koop ongedaan maken</strong> of mail naar <a href="mailto:mursalsadat@proton.me">mursalsadat@proton.me</a>.</p>
       <hr><p style="font-size:13px;color:#6e6877">Mursal Taalcoach · KvK 42145630</p>
     </div>`
   });
