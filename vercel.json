@@ -4,6 +4,9 @@
     "fra1"
   ],
   "functions": {
+    "api/v1/ai-coach.js": {
+      "maxDuration": 30
+    },
     "api/**/*.js": {
       "maxDuration": 10
     }
