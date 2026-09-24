@@ -57,15 +57,17 @@ export async function authenticate(request) {
 export async function ensureUser(sql, userId, profile = {}) {
   const email = typeof profile.email === 'string' ? profile.email.slice(0, 320) : null;
   const name = typeof profile.name === 'string' ? profile.name.slice(0, 120) : null;
+  const preferredLocale = ['nl', 'fa', 'ps'].includes(profile.preferredLocale) ? profile.preferredLocale : null;
   const rows = await sql`
-    INSERT INTO app_users (clerk_user_id, email, display_name)
-    VALUES (${userId}, ${email}, ${name})
+    INSERT INTO app_users (clerk_user_id, email, display_name, preferred_locale)
+    VALUES (${userId}, ${email}, ${name}, ${preferredLocale})
     ON CONFLICT (clerk_user_id) DO UPDATE SET
       email = COALESCE(EXCLUDED.email, app_users.email),
       display_name = COALESCE(EXCLUDED.display_name, app_users.display_name),
+      preferred_locale = COALESCE(${preferredLocale}, app_users.preferred_locale),
       updated_at = NOW()
     RETURNING clerk_user_id, email, display_name, access_status,
-      access_starts_at, access_ends_at, created_at, updated_at
+      access_starts_at, access_ends_at, preferred_locale, created_at, updated_at
   `;
   return rows[0];
 }

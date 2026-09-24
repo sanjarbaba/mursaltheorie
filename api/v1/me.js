@@ -5,7 +5,7 @@ import { accountExport, validDeletionConfirmation } from './_privacy.js';
 
 async function exportAccount(sql, userId) {
   const [profiles, progress, examAttempts, entitlements, purchases, devices] = await Promise.all([
-    sql`SELECT clerk_user_id, email, display_name, access_status, access_starts_at, access_ends_at, created_at, updated_at FROM app_users WHERE clerk_user_id = ${userId}`,
+    sql`SELECT clerk_user_id, email, display_name, access_status, access_starts_at, access_ends_at, preferred_locale, created_at, updated_at FROM app_users WHERE clerk_user_id = ${userId}`,
     sql`SELECT lesson_id, completed, progress_percent, client_updated_at, device_id, updated_at FROM lesson_progress WHERE clerk_user_id = ${userId} ORDER BY lesson_id`,
     sql`SELECT a.id, e.exam_number, a.status, a.score, a.started_at, a.submitted_at FROM exam_attempts_v1 a JOIN exam_definitions e ON e.id = a.exam_id WHERE a.clerk_user_id = ${userId} ORDER BY a.started_at DESC`,
     sql`SELECT product_key, source, status, starts_at, ends_at, created_at, updated_at FROM entitlements WHERE clerk_user_id = ${userId} ORDER BY created_at DESC`,
@@ -49,6 +49,9 @@ async function handler(request) {
       const profile = request.method === 'PUT' ? await parseBody(request) : {};
       if (request.method === 'PUT' && (!profile || typeof profile !== 'object' || Array.isArray(profile))) {
         return fail('INVALID_BODY', 'Ongeldige profielgegevens.', 400);
+      }
+      if (request.method === 'PUT' && profile.preferredLocale !== undefined && !['nl', 'fa', 'ps'].includes(profile.preferredLocale)) {
+        return fail('INVALID_LOCALE', 'Kies Nederlands, Dari/Farsi of Pashto.', 422);
       }
       const user = await ensureUser(sql, auth.userId, profile || {});
       return ok({ user: { ...user, hasAccess: hasCourseAccess(user) } });

@@ -105,6 +105,15 @@
     }
   }
 
+  window.mtSaveLanguagePreference = async function (preferredLocale) {
+    if (!['nl', 'fa', 'ps'].includes(preferredLocale)) throw new Error('INVALID_LOCALE');
+    const profile = await apiRequest('/api/v1/me', {
+      method: 'PUT',
+      body: JSON.stringify({ preferredLocale })
+    });
+    return profile.user?.preferred_locale || preferredLocale;
+  };
+
   window.mtLoadV1Content = loadV1Content;
 
   async function loadExamResults() {
