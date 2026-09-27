@@ -1,13 +1,16 @@
 {
   "name": "mursaltheorie-mobile",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:ios:preview": "npx eas-cli build --platform ios --profile preview",
+    "build:ios": "npx eas-cli build --platform ios --profile production",
+    "submit:ios": "npx eas-cli submit --platform ios --profile production"
   },
   "dependencies": {
     "@clerk/expo": "^4.2.7",
@@ -29,4 +32,3 @@
     "typescript": "~6.0.3"
   }
 }
-
