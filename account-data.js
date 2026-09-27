@@ -355,8 +355,16 @@
     return result;
   };
 
+  let lastAccountBootstrapUserId = null;
   window.addEventListener('mt-clerk-change', (event) => {
-    if (event.detail?.signedIn && event.detail.user) loadAccountData(event.detail.user);
+    if (!event.detail?.signedIn || !event.detail.user) {
+      lastAccountBootstrapUserId = null;
+      return;
+    }
+    const userId = event.detail.user.id || event.detail.user.email || event.detail.user.name || 'signed-in-user';
+    if (userId === lastAccountBootstrapUserId) return;
+    lastAccountBootstrapUserId = userId;
+    loadAccountData(event.detail.user);
   });
   window.addEventListener('online', () => {
     flushProgressQueue().catch((error) => console.warn('Offline voortgang blijft in de wachtrij.', error));
