@@ -53,9 +53,17 @@
       });
     } catch { /* Activiteit mag de leeromgeving nooit onderbreken. */ }
   };
+  let lastActivityPageViewUserId = null;
   window.addEventListener('mt-clerk-change', event => {
-    if (!event.detail || !event.detail.signedIn) return;
-    window.mtTrackActivity('page_view');
+    if (!event.detail || !event.detail.signedIn) {
+      lastActivityPageViewUserId = null;
+      return;
+    }
+    const userId = event.detail.user?.id || event.detail.user?.email || 'signed-in-user';
+    if (userId !== lastActivityPageViewUserId) {
+      lastActivityPageViewUserId = userId;
+      window.mtTrackActivity('page_view');
+    }
     if (!window.__mtActivityTimer) window.__mtActivityTimer = setInterval(() => window.mtTrackActivity('heartbeat'), 300000);
   });
   document.addEventListener('visibilitychange', () => {
