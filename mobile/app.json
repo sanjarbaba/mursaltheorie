@@ -2,14 +2,18 @@
   "expo": {
     "name": "Mursal Theorie",
     "slug": "mursaltheorie",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "scheme": "mursaltheorie",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "nl.mursaltheorie.app"
+      "supportsTablet": false,
+      "bundleIdentifier": "nl.mursaltheorie.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "CFBundleDisplayName": "Mursal Theorie"
+      }
     },
     "android": {
       "package": "nl.mursaltheorie.app"
@@ -24,4 +28,3 @@
     }
   }
 }
-
