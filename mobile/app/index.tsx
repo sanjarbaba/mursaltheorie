@@ -91,11 +91,11 @@ export default function HomeScreen() {
 
       const accessData = await request<AccessResponse>('/api/v1/access');
       const hasAccess = accessData.access.hasAccess;
-      const locales = accessData.access.locales?.length ? accessData.access.locales : ['nl'];
+      const locales: Locale[] = accessData.access.locales?.length ? accessData.access.locales : ['nl'];
       setAccess(hasAccess);
       setAllowedLocales(locales);
 
-      const effectiveLocale = locales.includes(locale) ? locale : locales[0] || 'nl';
+      const effectiveLocale: Locale = locales.includes(locale) ? locale : (locales[0] || 'nl');
       if (effectiveLocale !== locale) {
         setLocale(effectiveLocale);
         await savePreferredLocale(effectiveLocale);
