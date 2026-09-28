@@ -4,7 +4,7 @@ import { SafeAreaView, StyleSheet } from 'react-native';
 export default function SignInScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <AuthView mode="signInOrUp" />
+      <AuthView mode="signInOrUp" isDismissible={false} />
     </SafeAreaView>
   );
 }
@@ -12,4 +12,3 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f7f3ea' }
 });
-
