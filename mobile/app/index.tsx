@@ -2,7 +2,7 @@ import { useAuth, useClerk } from '@clerk/expo';
 import { Link } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { createApiClient } from '@/src/api/client';
+import { ApiError, createApiClient } from '@/src/api/client';
 import { getDeviceId } from '@/src/device';
 import {
   cacheLessons,
@@ -21,6 +21,33 @@ type AccessResponse = {
     locales?: Locale[];
   };
 };
+
+// Show only the JWT origin during preview authentication failures; never expose the token.
+function tokenOrigin(token: string): string {
+  const encoded = token.split('.')[1];
+  if (!encoded) return 'onbekend';
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let bits = 0;
+  let value = 0;
+  let decoded = '';
+  for (const character of encoded.replace(/-/g, '+').replace(/_/g, '/')) {
+    if (character === '=') break;
+    const digit = alphabet.indexOf(character);
+    if (digit < 0) return 'onbekend';
+    value = (value << 6) | digit;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      decoded += String.fromCharCode((value >> bits) & 255);
+    }
+  }
+  try {
+    const payload = JSON.parse(decoded) as { azp?: unknown };
+    return typeof payload.azp === 'string' ? payload.azp : 'ontbreekt';
+  } catch {
+    return 'onbekend';
+  }
+}
 
 const labels: Record<Locale, {
   title: string;
@@ -129,7 +156,12 @@ export default function HomeScreen() {
         setLessons(cached.lessons);
         setOffline(true);
       } else {
-        setError(cause instanceof Error ? cause.message : 'Laden mislukt.');
+        if (cause instanceof ApiError && cause.status === 401) {
+          const token = await getTokenRef.current().catch(() => null);
+          setError(`${cause.message} [${cause.code}; herkomst: ${token ? tokenOrigin(token) : 'geen token'}]`);
+        } else {
+          setError(cause instanceof Error ? cause.message : 'Laden mislukt.');
+        }
       }
     } finally {
       setLoading(false);
