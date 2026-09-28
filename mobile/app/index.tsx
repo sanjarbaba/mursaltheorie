@@ -1,6 +1,6 @@
 import { useAuth, useClerk } from '@clerk/expo';
 import { Link } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
 import { getDeviceId } from '@/src/device';
@@ -63,8 +63,10 @@ const labels: Record<Locale, {
 export default function HomeScreen() {
   const { getToken, userId } = useAuth();
   const { signOut } = useClerk();
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
   const [loading, setLoading] = useState(true);
-  const [access, setAccess] = useState(false);
+  const [access, setAccess] = useState<boolean | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [offline, setOffline] = useState(false);
   const [error, setError] = useState('');
@@ -77,9 +79,10 @@ export default function HomeScreen() {
 
   const load = useCallback(async (forceContentRefresh = false) => {
     setLoading(true);
+    setAccess(null);
     setError('');
     try {
-      const request = createApiClient(getToken);
+      const request = createApiClient(() => getTokenRef.current());
       const deviceId = await getDeviceId();
 
       await request('/api/v1/devices', {
@@ -131,7 +134,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [getToken, userId, locale]);
+  }, [userId, locale]);
 
   useEffect(() => { void load(false); }, [load]);
 
@@ -169,9 +172,11 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <Text style={[styles.status, rtl && styles.rtl]}>
-          {access ? copy.active : copy.noAccess}
-        </Text>
+        {access !== null ? (
+          <Text style={[styles.status, rtl && styles.rtl]}>
+            {access ? copy.active : copy.noAccess}
+          </Text>
+        ) : null}
         {offline ? <Text style={[styles.offline, rtl && styles.rtl]}>{copy.offline}</Text> : null}
         {error ? <Text style={[styles.error, rtl && styles.rtl]}>{error}</Text> : null}
       </View>
@@ -215,7 +220,10 @@ export default function HomeScreen() {
         />
       ) : (
         <View style={styles.noAccessCard}>
-          <Text style={[styles.noAccessTitle, rtl && styles.rtl]}>{copy.noAccess}</Text>
+          <Text style={[styles.noAccessTitle, rtl && styles.rtl]}>{access === false ? copy.noAccess : error}</Text>
+          <Pressable style={styles.primaryButton} onPress={() => void load(true)}>
+            <Text style={styles.primaryButtonText}>{copy.refresh}</Text>
+          </Pressable>
           <Pressable style={styles.secondaryButton} onPress={() => void signOut()}>
             <Text style={styles.secondaryButtonText}>{copy.signOut}</Text>
           </Pressable>
