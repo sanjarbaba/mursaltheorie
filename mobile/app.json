@@ -25,6 +25,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "22e95e24-dbd0-4287-bd12-0eecac5b5f8a"
+      }
+    },
+    "owner": "sanjarbabas-team"
   }
 }
