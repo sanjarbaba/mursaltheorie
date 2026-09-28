@@ -6,11 +6,10 @@
     "orientation": "portrait",
     "scheme": "mursaltheorie",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "nl.mursaltheorie.app",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "infoPlist": {
         "CFBundleDisplayName": "Mursal Theorie",
         "ITSAppUsesNonExemptEncryption": false
