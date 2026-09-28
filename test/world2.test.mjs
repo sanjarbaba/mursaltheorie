@@ -5,7 +5,7 @@ globalThis.MURSAL_CONTENT=data;
 const {freshSave,normalizeSave,createRun,answerRun,nextQuestion,finishRun,isUnlocked,startComeback}=await import('../game/engine.js');
 function win(id,s){const r=createRun(id,s);for(let i=0;i<r.questions.length;i++){answerRun(r,s,r.questions[r.index].answer);if(i<r.questions.length-1)nextQuestion(r,s);}return finishRun(r,s);}
 test('40 sourced levels: World 2 has 32 cases, correct modes, unique choices',()=>{
- assert.equal(data.LEVELS.length,60);assert.equal(Object.keys(data.PRIORITY_QUESTIONS).length,32);
+ assert.equal(data.LEVELS.length,80);assert.equal(Object.keys(data.PRIORITY_QUESTIONS).length,32);
  for(const l of data.LEVELS.filter(l=>l.worldId==='priority')){const qs=data.buildQuestions(l);assert.equal(qs.length,l.count);for(const q of qs){assert.ok(q.options.includes(q.answer));assert.equal(new Set(q.options).size,q.options.length);assert.equal(q.kind,'priority');for(const id of q.sourceIds)assert.ok(data.SOURCES[id]);}}
  assert.equal(data.LEVELS[29].boss,true);assert.equal(data.LEVELS[39].boss,true);
 });

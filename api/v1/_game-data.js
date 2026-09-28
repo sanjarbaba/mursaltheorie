@@ -1,5 +1,7 @@
 import {SPEED_SOURCES,SPEED_QUESTIONS,SPEED_CHAPTERS,SPEED_LEVELS} from './_speed-data.js';
 export {SPEED_QUESTIONS};
+import {HAZARD_SOURCES,HAZARD_QUESTIONS,HAZARD_CHAPTERS,HAZARD_LEVELS} from './_hazard-data.js';
+export {HAZARD_QUESTIONS};
 import {PRIORITY_SOURCES,PRIORITY_CHAPTERS,PRIORITY_QUESTIONS,PRIORITY_LEVELS} from './_priority-data.js';
 export {PRIORITY_QUESTIONS};
 // Content edition 2026-09-16. All sign definitions refer to RVV 1990, Bijlage 1.
@@ -41,7 +43,7 @@ export const signByCode=Object.fromEntries(SIGNS.map(s=>[s.code,s]));
 export const WORLDS=[
  {id:'signs',name:'Verkeersborden',subtitle:'Leer de taal van de weg',available:true},
  {id:'priority',name:'Voorrang',available:true,requires:'signs'}, {id:'speed',name:'Snelheid & wegtypes',available:true,requires:'priority'},
- {id:'hazards',name:'Gevaarherkenning'}, {id:'maneuvers',name:'Bijzondere manoeuvres'},
+ {id:'hazards',name:'Gevaarherkenning',available:true,requires:'speed'}, {id:'maneuvers',name:'Bijzondere manoeuvres'},
  {id:'vehicle',name:'Voertuigkennis'}, {id:'conditions',name:'Bijzondere omstandigheden'},
  {id:'exam',name:'Examenwereld'}
 ];
@@ -93,17 +95,26 @@ export const SCENARIOS={
  speedend:['A2','Mag je na dit bord onbeperkt hard rijden?','Nee, andere geldende maximumsnelheden blijven gelden','Ja, alle snelheidsregels vervallen','Ja, buiten de bebouwde kom altijd','A2 beëindigt de aangeduide maximumsnelheid. Het heft niet alle andere verkeersregels op.','road'],
  busystop:['B7','Je bent gestopt. Op de kruisende weg nadert een auto. Wat doe je nu?','Wachten en die auto voorrang verlenen','Direct rijden, want je hebt al gestopt','Alleen voorrang geven aan fietsers','B7 heeft twee onderdelen: stoppen én voorrang verlenen. Stoppen alleen is dus niet genoeg.','cross']
 };
-Object.assign(SOURCES,PRIORITY_SOURCES,SPEED_SOURCES);
-LEVELS.push(...PRIORITY_LEVELS,...SPEED_LEVELS);
+Object.assign(SOURCES,PRIORITY_SOURCES,SPEED_SOURCES,HAZARD_SOURCES);
+LEVELS.push(...PRIORITY_LEVELS,...SPEED_LEVELS,...HAZARD_LEVELS);
 export const WORLD_CONFIG={
+ hazards:{number:4,name:'Gevaarherkenning',badge:'Gevarenheld',finalLevel:80,firstLevel:61,chapters:HAZARD_CHAPTERS,headline:'Zie het gevaar.<br>Blijf in controle.',intro:'Kijk met Mursal vooruit, herken het risico en kies een veilige reactie.'},
  speed:{number:3,name:'Snelheid & wegtypes',badge:'Snelheidsheld',finalLevel:60,firstLevel:41,chapters:SPEED_CHAPTERS,headline:'Lees de weg.<br>Kies je snelheid.',intro:'Borden, tijdvakken en wegtypes: Mursal helpt je de juiste limiet te vinden én bewust te blijven rijden.'},
  signs:{number:1,name:'Verkeersborden',badge:'Bordenheld',finalLevel:20,firstLevel:1,chapters:CHAPTERS,headline:'Elke held begint<br>met goed kijken.',intro:'Leer de taal van de weg. Ga met Mursal op pad en word een echte Bordenheld.'},
  priority:{number:2,name:'Voorrang',badge:'Voorrangsheld',finalLevel:40,firstLevel:21,chapters:PRIORITY_CHAPTERS,headline:'Jij ziet wie<br>er eerst gaat.',intro:'Een kruispunt, een keuze. Kijk met Mursal naar de ander en word een Voorrangsheld.'}
 };
 MODES.speed='Kies de limiet';MODES.judge='Controleer Mursal';MODES.roadtype='Wegwijs';MODES.priority='Kruispuntsituatie';MODES.order='Volgorde kiezen';MODES.rule='Welke regel geldt?';
+MODES.reaction='Kies je reactie';MODES.spot='Spot het signaal';
 function shuffle(items,rng){return items.map(v=>({v,k:rng()})).sort((a,b)=>a.k-b.k).map(x=>x.v);}
 export function buildQuestions(level,rng=Math.random){
  return level.codes.map((code,i)=>{
+  if(level.worldId==='hazards'){
+   const item=HAZARD_QUESTIONS[code],spot=level.mode==='spot'||level.mode==='mixed'&&i%2===0;
+   const answer=spot?item.signal:item.action;
+   const options=spot?[item.signal,'Een tegenligger met groot licht','Een auto met lekke band op de vluchtstrook']:['Remmen','Gas loslaten','Doorrijden en blijven kijken'];
+   const situation=item.context.replace(/ Wat doe je(?: direct| nu| als eerste)?\?$/,'');
+   return {...item,id:`${level.id}-${i}`,kind:'hazard',mode:spot?'spot':'reaction',prompt:situation+(spot?' Welk signaal vraagt nu jouw aandacht?':' Wat doe je?'),answer,options:shuffle(options,rng)};
+  }
   if(level.worldId==='speed'){
    const item=SPEED_QUESTIONS[code];const judge=(level.mode==='judge'||level.mode==='mixed'&&i%2===0)&&item.numeric;
    const proposed=judge?[item.answer,...item.wrong][Math.floor(rng()*(item.wrong.length+1))]:null;

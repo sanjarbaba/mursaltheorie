@@ -1,7 +1,14 @@
-export const {SOURCES,SIGNS,signByCode,WORLDS,CHAPTERS,LEVELS,MODES,SCENARIOS,PRIORITY_QUESTIONS,SPEED_QUESTIONS,WORLD_CONFIG}=globalThis.MURSAL_CONTENT;
+export const {SOURCES,SIGNS,signByCode,WORLDS,CHAPTERS,LEVELS,MODES,SCENARIOS,PRIORITY_QUESTIONS,SPEED_QUESTIONS,HAZARD_QUESTIONS,WORLD_CONFIG}=globalThis.MURSAL_CONTENT;
 function shuffle(items,rng){return items.map(v=>({v,k:rng()})).sort((a,b)=>a.k-b.k).map(x=>x.v);}
 export function buildQuestions(level,rng=Math.random){
  return level.codes.map((code,i)=>{
+  if(level.worldId==='hazards'){
+   const item=HAZARD_QUESTIONS[code],spot=level.mode==='spot'||level.mode==='mixed'&&i%2===0;
+   const answer=spot?item.signal:item.action;
+   const options=spot?[item.signal,'Een tegenligger met groot licht','Een auto met lekke band op de vluchtstrook']:['Remmen','Gas loslaten','Doorrijden en blijven kijken'];
+   const situation=item.context.replace(/ Wat doe je(?: direct| nu| als eerste)?\?$/,'');
+   return {...item,id:`${level.id}-${i}`,kind:'hazard',mode:spot?'spot':'reaction',prompt:situation+(spot?' Welk signaal vraagt nu jouw aandacht?':' Wat doe je?'),answer,options:shuffle(options,rng)};
+  }
   if(level.worldId==='speed'){
    const item=SPEED_QUESTIONS[code];const judge=(level.mode==='judge'||level.mode==='mixed'&&i%2===0)&&item.numeric;
    const proposed=judge?[item.answer,...item.wrong][Math.floor(rng()*(item.wrong.length+1))]:null;

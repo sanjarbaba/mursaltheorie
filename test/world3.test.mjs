@@ -5,7 +5,7 @@ globalThis.MURSAL_CONTENT=data;
 const engine=await import('../game/engine.js');
 function win(id,s){const r=engine.createRun(id,s);for(let i=0;i<r.questions.length;i++){engine.answerRun(r,s,r.questions[r.index].answer);if(i<r.questions.length-1)engine.nextQuestion(r,s);}return engine.finishRun(r,s);}
 test('World 3 contains 20 levels and 34 sourced situations; all choices are valid',()=>{
- assert.equal(data.LEVELS.length,60);assert.equal(Object.keys(data.SPEED_QUESTIONS).length,34);
+ assert.equal(data.LEVELS.length,80);assert.equal(Object.keys(data.SPEED_QUESTIONS).length,34);
  for(const l of data.LEVELS.filter(l=>l.worldId==='speed'))for(const rng of [()=>0,()=>.99]){
   const qs=data.buildQuestions(l,rng);assert.equal(qs.length,l.count);
   for(const q of qs){assert.equal(q.kind,'speed');assert.ok(q.options.includes(q.answer));assert.equal(new Set(q.options).size,q.options.length);q.sourceIds.forEach(id=>assert.ok(data.SOURCES[id]));if(q.scene.sign)assert.ok(data.signByCode[q.scene.sign]);}
