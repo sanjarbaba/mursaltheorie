@@ -1,4 +1,5 @@
 import { ClerkProvider, useAuth } from '@clerk/expo';
+import { useAuthViewState } from '@clerk/expo/native';
 import { tokenCache } from '@clerk/expo/token-cache';
 import { Stack } from 'expo-router';
 
@@ -9,15 +10,17 @@ if (!publishableKey) {
 }
 
 function Routes() {
-  const { isLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false });
+  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded: isAuthViewLoaded, isAuthFlowComplete } = useAuthViewState();
   if (!isLoaded) return null;
+  const isReady = Boolean(isSignedIn && isAuthViewLoaded && isAuthFlowComplete);
 
   return (
     <Stack screenOptions={{ headerTitle: 'Mursal Theorie' }}>
-      <Stack.Protected guard={!isSignedIn}>
+      <Stack.Protected guard={!isReady}>
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={Boolean(isSignedIn)}>
+      <Stack.Protected guard={isReady}>
         <Stack.Screen name="index" options={{ title: 'Mijn cursus' }} />
         <Stack.Screen name="lesson/[id]" options={{ title: 'Les' }} />
       </Stack.Protected>
@@ -32,4 +35,3 @@ export default function RootLayout() {
     </ClerkProvider>
   );
 }
-
