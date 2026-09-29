@@ -1,0 +1,191 @@
+[
+  {
+    "code": "A1",
+    "name": "Maximumsnelheid",
+    "category": "Snelheid",
+    "explanation": "Het getal is de maximumsnelheid. Je past je snelheid verder aan de omstandigheden aan.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/A1.png"
+  },
+  {
+    "code": "A2",
+    "name": "Einde maximumsnelheid",
+    "category": "Snelheid",
+    "explanation": "De door het bord aangegeven maximumsnelheid eindigt. De overige geldende snelheidsregels blijven van toepassing.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/A2.png"
+  },
+  {
+    "code": "A4",
+    "name": "Adviessnelheid",
+    "category": "Snelheid",
+    "explanation": "Dit bord geeft een aanbevolen snelheid aan. Het is geen bord dat een maximumsnelheid oplegt.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/A4.png"
+  },
+  {
+    "code": "B1",
+    "name": "Voorrangsweg",
+    "category": "Voorrang",
+    "explanation": "Je rijdt op een voorrangsweg. Dit geeft geen vrijstelling van opletten of andere verkeersregels.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/B1.png"
+  },
+  {
+    "code": "B2",
+    "name": "Einde voorrangsweg",
+    "category": "Voorrang",
+    "explanation": "De voorrangsweg eindigt. Kijk naar de regeling van het volgende kruispunt.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/B2.png"
+  },
+  {
+    "code": "B6",
+    "name": "Verleen voorrang",
+    "category": "Voorrang",
+    "explanation": "Verleen voorrang aan bestuurders op de kruisende weg. Het bord verplicht je niet om altijd stil te staan.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/B6.png"
+  },
+  {
+    "code": "B7",
+    "name": "Stop en verleen voorrang",
+    "category": "Voorrang",
+    "explanation": "Stop volledig en verleen voorrang aan bestuurders op de kruisende weg. Staat er een stopstreep, stop dan vóór die streep.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/B7.png"
+  },
+  {
+    "code": "C1",
+    "name": "Gesloten in beide richtingen",
+    "category": "Verbod",
+    "explanation": "Deze weg is in beide richtingen gesloten voor voertuigen, ruiters en geleiders van rij- of trekdieren of vee.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/C1.png"
+  },
+  {
+    "code": "C2",
+    "name": "Eenrichtingsweg: hier niet inrijden",
+    "category": "Verbod",
+    "explanation": "Vanaf deze kant is de eenrichtingsweg gesloten voor voertuigen, ruiters en geleiders van rij- of trekdieren of vee.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/C2.png"
+  },
+  {
+    "code": "C3",
+    "name": "Eenrichtingsweg",
+    "category": "Informatie",
+    "explanation": "Dit bord geeft een eenrichtingsweg aan. Let ook op eventuele uitzonderingen op onderborden.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/C3.png"
+  },
+  {
+    "code": "C6",
+    "name": "Gesloten voor motorvoertuigen op meer dan twee wielen",
+    "category": "Verbod",
+    "explanation": "Een gewone personenauto mag deze weg niet inrijden. Een motorfiets op twee wielen valt niet onder dit specifieke verbod.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/C6.png"
+  },
+  {
+    "code": "D1",
+    "name": "Rotonde: verplichte rijrichting",
+    "category": "Gebod",
+    "explanation": "Volg de aangegeven richting rond de rotonde. Dit bord regelt op zichzelf niet de voorrang.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/D1.png"
+  },
+  {
+    "code": "D4",
+    "name": "Verplicht rechtdoor",
+    "category": "Gebod",
+    "explanation": "Volg de rijrichting die de pijl aangeeft. Hier wijst de pijl rechtdoor.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/D4.png"
+  },
+  {
+    "code": "E1",
+    "name": "Parkeerverbod",
+    "category": "Parkeren",
+    "explanation": "Je mag hier niet parkeren. Dit bord alleen verbiedt niet het onmiddellijk in- of uitstappen of onmiddellijk laden en lossen.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/E1.png"
+  },
+  {
+    "code": "E2",
+    "name": "Verbod stil te staan",
+    "category": "Parkeren",
+    "explanation": "Je mag hier niet vrijwillig stilstaan, ook niet om iemand te laten uitstappen. Stoppen omdat het verkeer dat vereist is iets anders.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/E2.png"
+  },
+  {
+    "code": "E4",
+    "name": "Parkeergelegenheid",
+    "category": "Parkeren",
+    "explanation": "Hier is parkeergelegenheid. Aanvullende voorwaarden kunnen op onderborden staan.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/E4.png"
+  },
+  {
+    "code": "F5",
+    "name": "Tegenliggers laten voorgaan",
+    "category": "Voorrang",
+    "explanation": "Je mag als bestuurder niet doorgaan bij nadering van verkeer uit de tegengestelde richting.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/F5.png"
+  },
+  {
+    "code": "F6",
+    "name": "Tegenliggers moeten jou laten voorgaan",
+    "category": "Voorrang",
+    "explanation": "Bestuurders uit de tegengestelde richting moeten verkeer dat van jouw richting nadert voor laten gaan. Blijf opletten.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/F6.png"
+  },
+  {
+    "code": "G1",
+    "name": "Autosnelweg",
+    "category": "Wegtype",
+    "explanation": "Dit bord geeft het begin van een autosnelweg aan. De geldende maximumsnelheid lees je uit de regels en eventuele snelheidsborden.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/G1.png"
+  },
+  {
+    "code": "G3",
+    "name": "Autoweg",
+    "category": "Wegtype",
+    "explanation": "Dit is een autoweg. Verwar dit symbool niet met het autosnelwegbord.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/G3.png"
+  },
+  {
+    "code": "G5",
+    "name": "Erf",
+    "category": "Wegtype",
+    "explanation": "Je rijdt een erf in. Voor een erf gelden bijzondere verkeersregels.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/G5.png"
+  },
+  {
+    "code": "G11",
+    "name": "Verplicht fietspad",
+    "category": "Gebod",
+    "explanation": "Dit bord geeft een verplicht fietspad aan. Het is geen weg voor een gewone personenauto.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/G11.png"
+  },
+  {
+    "code": "J16",
+    "name": "Werk in uitvoering",
+    "category": "Waarschuwing",
+    "explanation": "Je nadert werkzaamheden. Houd rekening met een afwijkende inrichting en met wegwerkers.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/J16.png"
+  },
+  {
+    "code": "J20",
+    "name": "Slipgevaar",
+    "category": "Waarschuwing",
+    "explanation": "Er bestaat gevaar voor slippen. Rijd beheerst en stem je snelheid en afstand af op de situatie.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/J20.png"
+  },
+  {
+    "code": "J21",
+    "name": "Kinderen",
+    "category": "Waarschuwing",
+    "explanation": "Wees alert op kinderen die de weg kunnen oversteken of onverwacht kunnen reageren.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/J21.png"
+  },
+  {
+    "code": "J37",
+    "name": "Gevaar",
+    "category": "Waarschuwing",
+    "explanation": "Het onderbord geeft aan voor welk gevaar wordt gewaarschuwd. Lees bord en onderbord samen.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/J37.png"
+  },
+  {
+    "code": "L8",
+    "name": "Doodlopende weg",
+    "category": "Informatie",
+    "explanation": "Deze weg loopt dood. Het is geen inrijverbod.",
+    "image": "https://www.mursaltheorie.nl/game/assets/signs/L8.png"
+  }
+]
