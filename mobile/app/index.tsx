@@ -1,4 +1,4 @@
-import { useAuth, useClerk } from '@clerk/expo';
+import { useAuth } from '@clerk/expo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -32,7 +32,6 @@ const labels: Record<Locale, {
   noAccess: string;
   offline: string;
   refresh: string;
-  signOut: string;
   empty: string;
 }> = {
   nl: {
@@ -41,7 +40,6 @@ const labels: Record<Locale, {
     noAccess: 'Je account heeft nog geen actieve toegang tot deze cursus.',
     offline: 'Offline - opgeslagen lessen',
     refresh: 'Vernieuwen',
-    signOut: 'Uitloggen',
     empty: 'Nog geen lessen beschikbaar.'
   },
   fa: {
@@ -50,7 +48,6 @@ const labels: Record<Locale, {
     noAccess: '???? ??? ???? ???? ?????? ???? ?? ???? ???? ?????.',
     offline: '?????? - ??????? ?????????',
     refresh: '?????????',
-    signOut: '????',
     empty: '???? ???? ????? ????.'
   },
   ps: {
@@ -59,7 +56,6 @@ const labels: Record<Locale, {
     noAccess: '?? ?? ???? ?? ?? ? ???? ???? ?????? ????.',
     offline: '?????? - ????? ??? ??????',
     refresh: '???? ???',
-    signOut: '???',
     empty: '?? ???? ?????? ????.'
   }
 };
@@ -82,7 +78,6 @@ const LessonCard = memo(function LessonCard({ lesson, locale }: { lesson: Lesson
 
 export default function HomeScreen() {
   const { getToken, userId } = useAuth();
-  const { signOut } = useClerk();
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
   const [loading, setLoading] = useState(true);
@@ -219,9 +214,6 @@ export default function HomeScreen() {
               <Pressable style={styles.primaryButton} onPress={() => void load(true)}>
                 <Text style={styles.primaryButtonText}>{copy.refresh}</Text>
               </Pressable>
-              <Pressable style={styles.secondaryButton} onPress={() => void signOut()}>
-                <Text style={styles.secondaryButtonText}>{copy.signOut}</Text>
-              </Pressable>
             </View>
           }
         />
@@ -230,9 +222,6 @@ export default function HomeScreen() {
           <Text style={[styles.noAccessTitle, rtl && styles.rtl]}>{access === false ? copy.noAccess : error}</Text>
           <Pressable style={styles.primaryButton} onPress={() => void load(true)}>
             <Text style={styles.primaryButtonText}>{copy.refresh}</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => void signOut()}>
-            <Text style={styles.secondaryButtonText}>{copy.signOut}</Text>
           </Pressable>
         </View>
       )}
@@ -277,8 +266,6 @@ const styles = StyleSheet.create({
   actions: { gap: 10, marginTop: 12 },
   primaryButton: { alignItems: 'center', paddingVertical: 14, borderRadius: 14, backgroundColor: colors.primary },
   primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  secondaryButton: { alignItems: 'center', paddingVertical: 13, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
-  secondaryButtonText: { color: colors.primary, fontSize: 15, fontWeight: '700' },
   noAccessCard: { margin: 18, gap: 18, padding: 22, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
   noAccessTitle: { color: colors.ink, fontSize: 18, lineHeight: 27, fontWeight: '700' }
 });
