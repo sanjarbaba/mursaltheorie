@@ -77,21 +77,21 @@ export default function HazardScreen() {
 
   const item = hazards[index];
   const image = mediaUrl(item.image);
-  const question = locale === 'fa' ? item.question.fa : item.question.nl;
-  const explanation = locale === 'fa' ? item.explanation.fa : item.explanation.nl;
+  const question = item.question[locale];
+  const explanation = item.explanation[locale];
   const labels: Record<Action, string> = locale === 'fa' ? { rem: 'ترمز', gas: 'رها کردن گاز', nothing: 'هیچ‌کدام' } : locale === 'ps' ? { rem: 'بریک ووهئ', gas: 'ګاز پرېږدئ', nothing: 'هېڅ مه کوئ' } : { rem: 'Remmen', gas: 'Gas los', nothing: 'Niets doen' };
   const correct = selected === item.answer;
 
   return <CourseGate locale={locale}><ScrollView contentContainerStyle={styles.container}>
     <Text style={styles.title}>{locale === 'nl' ? 'Verkeerssituaties' : locale === 'fa' ? 'موقعیت‌های ترافیکی' : 'د ترافیک حالتونه'}</Text>
-    <Text style={styles.subtitle}>{locale === 'nl' ? 'Kies: remmen, gas los of niets doen.' : locale === 'fa' ? 'انتخاب کنید: ترمز، رها کردن گاز یا هیچ‌کدام.' : 'وټاکئ: بریک، ګاز پرېښودل یا هېڅ نه کول. پوښتنې لا په هالنډي دي.'}</Text>
+    <Text style={styles.subtitle}>{locale === 'nl' ? 'Kies: remmen, gas los of niets doen.' : locale === 'fa' ? 'انتخاب کنید: ترمز، رها کردن گاز یا هیچ‌کدام.' : 'وټاکئ: بریک، ګاز پرېښودل یا هېڅ نه کول.'}</Text>
     {loading ? <ActivityIndicator color={colors.primary} /> : <>
       <View style={styles.stats}><Text style={styles.statsText}>{progress.correct} / {progress.answered} {locale === 'nl' ? 'goed' : '✓'}</Text><Text style={styles.statsText}>{index + 1} / {hazards.length}</Text></View>
       <View style={styles.card}>
         {image ? <Image source={{ uri: image }} style={styles.image} resizeMode="cover" accessibilityLabel={question} /> : null}
-        <Text style={styles.question}>{question}</Text>
+        <Text style={[styles.question, locale !== 'nl' && styles.rtl]}>{question}</Text>
         {(['rem', 'gas', 'nothing'] as Action[]).map((action) => <Pressable key={action} disabled={selected !== null} onPress={() => void choose(action)} style={[styles.option, selected && action === item.answer && styles.correct, selected === action && !correct && styles.incorrect]}><Text style={styles.optionText}>{labels[action]}</Text></Pressable>)}
-        {selected ? <View style={styles.feedback}><Text style={styles.feedbackTitle}>{correct ? (locale === 'nl' ? 'Goed antwoord' : locale === 'fa' ? 'پاسخ درست' : 'سم ځواب') : (locale === 'nl' ? 'Niet juist' : locale === 'fa' ? 'نادرست' : 'ناسم')}</Text><Text style={styles.explanation}>{explanation}</Text></View> : null}
+        {selected ? <View style={styles.feedback}><Text style={styles.feedbackTitle}>{correct ? (locale === 'nl' ? 'Goed antwoord' : locale === 'fa' ? 'پاسخ درست' : 'سم ځواب') : (locale === 'nl' ? 'Niet juist' : locale === 'fa' ? 'نادرست' : 'ناسم')}</Text><Text style={[styles.explanation, locale !== 'nl' && styles.rtl]}>{explanation}</Text></View> : null}
       </View>
       {message ? <Text style={styles.message}>{message}</Text> : null}
       {selected ? <Pressable disabled={busy} onPress={next} style={[styles.next, busy && styles.disabled]}><Text style={styles.nextText}>{locale === 'nl' ? 'Volgende situatie' : locale === 'fa' ? 'موقعیت بعدی' : 'بل حالت'} →</Text></Pressable> : null}
@@ -109,5 +109,5 @@ const styles = StyleSheet.create({
   option: { minHeight: 52, alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 13, borderWidth: 1, borderColor: colors.line }, optionText: { color: colors.ink, fontSize: 16, fontWeight: '800' },
   correct: { backgroundColor: colors.successSoft, borderColor: colors.success }, incorrect: { backgroundColor: colors.errorSoft, borderColor: colors.error },
   feedback: { gap: 6, padding: 13, borderRadius: 13, backgroundColor: colors.primarySoft }, feedbackTitle: { color: colors.primaryDeep, fontSize: 17, fontWeight: '800' }, explanation: { color: colors.ink, fontSize: 16, lineHeight: 23 },
-  message: { color: colors.muted, fontSize: 14 }, next: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: colors.primary }, nextText: { color: '#fff', fontSize: 16, fontWeight: '800' }, disabled: { opacity: 0.5 }
+  message: { color: colors.muted, fontSize: 14 }, next: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: colors.primary }, nextText: { color: '#fff', fontSize: 16, fontWeight: '800' }, disabled: { opacity: 0.5 }, rtl: { textAlign: 'right', writingDirection: 'rtl' }
 });

@@ -50,7 +50,7 @@ export default function SignsScreen() {
 
   const header = <>
     <Text style={[styles.title, rtl && styles.rtl]}>{locale === 'nl' ? 'Verkeersborden' : locale === 'fa' ? 'تابلوهای راهنمایی' : 'ترافیکي نښې'}</Text>
-    {locale === 'fa' ? <Text style={[styles.muted, styles.rtl]}>نام هلندی تابلو همیشه نمایش داده می‌شود. ترجمه‌های دری که هنوز بررسی نشده‌اند، فعلاً نمایش داده نمی‌شوند.</Text> : null}
+    {locale === 'fa' ? <Text style={[styles.muted, styles.rtl]}>نام هلندی هر تابلو در کنار ترجمهٔ دری/فارسی دیده می‌شود تا اصطلاح امتحان را هم یاد بگیرید.</Text> : null}
     <View style={styles.modeRow}>
       <Pressable onPress={() => setMode('catalog')} style={[styles.modeButton, mode === 'catalog' && styles.selected]}><Text style={[styles.buttonText, mode === 'catalog' && styles.selectedText]}>{locale === 'nl' ? 'Bekijken' : locale === 'fa' ? 'دیدن' : 'کتل'}</Text></Pressable>
       <Pressable onPress={() => { setMode('quiz'); restart(); }} style={[styles.modeButton, mode === 'quiz' && styles.selected]}><Text style={[styles.buttonText, mode === 'quiz' && styles.selectedText]}>{locale === 'nl' ? 'Borden oefenen' : locale === 'fa' ? 'تمرین تابلوها' : 'د نښو تمرین'}</Text></Pressable>
