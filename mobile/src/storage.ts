@@ -6,6 +6,7 @@ const lessonsKey = (locale: string) => `lessons:v2:${locale}`;
 const lessonsCachedAtKey = (locale: string) => `lessons:v2:cached-at:${locale}`;
 const queueKey = (userId: string) => `progress-queue:v1:${userId}`;
 const localeKey = 'app-locale:v1';
+const trainingKey = (userId: string) => `training-progress:v1:${userId}`;
 const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export async function cacheLessons(response: LessonsResponse) {
@@ -37,6 +38,18 @@ export async function readPreferredLocale(): Promise<Locale> {
 
 export async function savePreferredLocale(locale: Locale) {
   await Storage.setItem(localeKey, locale);
+}
+
+export type TrainingProgress = { answered: number; correct: number; scenarioIndex: number; clientUpdatedAt: string };
+
+export async function readTrainingProgress(userId: string): Promise<TrainingProgress | null> {
+  const value = await Storage.getItem(trainingKey(userId));
+  if (!value) return null;
+  try { return JSON.parse(value) as TrainingProgress; } catch { return null; }
+}
+
+export async function saveTrainingProgress(userId: string, progress: TrainingProgress) {
+  await Storage.setItem(trainingKey(userId), JSON.stringify(progress));
 }
 
 export async function enqueueProgress(userId: string, mutation: Omit<ProgressMutation, 'mutationId'>) {
@@ -71,3 +84,4 @@ export async function flushProgressQueue(
     await Storage.setItem(key, JSON.stringify(queue));
   }
 }
+
