@@ -1,10 +1,13 @@
 import { useAuth, useClerk } from '@clerk/expo';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
-import { Menu } from '@/src/Menu';
+import { mediaUrl } from '@/src/content';
+import { TabShell } from '@/src/Menu';
 import { getDeviceId } from '@/src/device';
+import { colors } from '@/src/theme';
 import {
   cacheLessons,
   flushProgressQueue,
@@ -36,30 +39,46 @@ const labels: Record<Locale, {
     title: 'Mijn cursus',
     active: 'Toegang actief',
     noAccess: 'Je account heeft nog geen actieve toegang tot deze cursus.',
-    offline: 'Offline — opgeslagen lessen',
+    offline: 'Offline - opgeslagen lessen',
     refresh: 'Vernieuwen',
     signOut: 'Uitloggen',
     empty: 'Nog geen lessen beschikbaar.'
   },
   fa: {
-    title: 'دوره من',
-    active: 'دسترسی فعال است',
-    noAccess: 'برای این حساب هنوز دسترسی فعال به دوره وجود ندارد.',
-    offline: 'آفلاین — درس‌های ذخیره‌شده',
-    refresh: 'تازه‌سازی',
-    signOut: 'خروج',
-    empty: 'هنوز درسی موجود نیست.'
+    title: '???? ??',
+    active: '?????? ???? ???',
+    noAccess: '???? ??? ???? ???? ?????? ???? ?? ???? ???? ?????.',
+    offline: '?????? - ??????? ?????????',
+    refresh: '?????????',
+    signOut: '????',
+    empty: '???? ???? ????? ????.'
   },
   ps: {
-    title: 'زما کورس',
-    active: 'لاسرسی فعال دی',
-    noAccess: 'په دې حساب کې لا د کورس فعال لاسرسی نشته.',
-    offline: 'آفلاین — خوندي شوي درسونه',
-    refresh: 'تازه کول',
-    signOut: 'وتل',
-    empty: 'تر اوسه درسونه نشته.'
+    title: '??? ????',
+    active: '?????? ???? ??',
+    noAccess: '?? ?? ???? ?? ?? ? ???? ???? ?????? ????.',
+    offline: '?????? - ????? ??? ??????',
+    refresh: '???? ???',
+    signOut: '???',
+    empty: '?? ???? ?????? ????.'
   }
 };
+
+const LessonCard = memo(function LessonCard({ lesson, locale }: { lesson: Lesson; locale: Locale }) {
+  const uri = mediaUrl(lesson.media[0]?.src);
+  const rtl = locale !== 'nl';
+  return <Link href={{ pathname: '/lesson/[id]', params: { id: String(lesson.id), locale } }} asChild>
+    <Pressable style={styles.lesson} accessibilityLabel={`${lesson.id}. ${lesson.title}`}>
+      {uri ? <Image source={{ uri }} style={styles.thumbnail} resizeMode="cover" /> : <View style={styles.thumbnailFallback}><Ionicons name="book-outline" size={25} color={colors.primary} /></View>}
+      <View style={styles.lessonBody}>
+        <Text numberOfLines={1} style={[styles.module, rtl && styles.rtl]}>{lesson.module.title}</Text>
+        <Text numberOfLines={2} style={[styles.lessonTitle, rtl && styles.rtl]}>{lesson.id}. {lesson.title}</Text>
+        <Text numberOfLines={2} style={[styles.summary, rtl && styles.rtl]}>{lesson.summary}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={17} color={colors.muted} />
+    </Pressable>
+  </Link>;
+});
 
 export default function HomeScreen() {
   const { getToken, userId } = useAuth();
@@ -149,10 +168,15 @@ export default function HomeScreen() {
   const rtl = locale === 'fa' || locale === 'ps';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <TabShell locale={locale} active="lessons">
       <View style={styles.header}>
-        <Text style={[styles.brand, rtl && styles.rtl]}>Mursal Theorie</Text>
+        <View style={styles.brandRow}>
+          <View style={styles.brandMark}><Text style={styles.brandMarkText}>M</Text></View>
+          <Text style={styles.brand}>MURSAL THEORIE</Text>
+          {access === true ? <View style={styles.activeBadge}><View style={styles.activeDot} /><Text style={styles.activeText}>{copy.active}</Text></View> : null}
+        </View>
         <Text style={[styles.title, rtl && styles.rtl]}>{copy.title}</Text>
+        <Text style={[styles.subtitle, rtl && styles.rtl]}>{locale === 'nl' ? 'Leer in jouw tempo, stap voor stap.' : locale === 'fa' ? '?? ???? ??????? ??? ?? ??? ??? ??????.' : '?? ??? ???? ??? ?? ??? ??? ??? ????.'}</Text>
 
         <View style={styles.languageRow}>
           {(['nl', 'fa', 'ps'] as Locale[]).map((item) => (
@@ -167,48 +191,29 @@ export default function HomeScreen() {
               ]}
             >
               <Text style={item === locale ? styles.languageTextActive : styles.languageText}>
-                {item === 'nl' ? 'NL' : item === 'fa' ? 'دری/فارسی' : 'پښتو'}
+                {item === 'nl' ? 'NL' : item === 'fa' ? '???/?????' : '????'}
               </Text>
             </Pressable>
           ))}
         </View>
-        <Menu locale={locale} active="lessons" />
-
-        {access !== null ? (
-          <Text style={[styles.status, rtl && styles.rtl]}>
-            {access ? copy.active : copy.noAccess}
-          </Text>
-        ) : null}
         {offline ? <Text style={[styles.offline, rtl && styles.rtl]}>{copy.offline}</Text> : null}
         {error ? <Text style={[styles.error, rtl && styles.rtl]}>{error}</Text> : null}
       </View>
 
       {loading ? (
-        <ActivityIndicator style={styles.loader} />
+        <ActivityIndicator style={styles.loader} color={colors.primary} />
       ) : access ? (
         <FlatList
+          style={styles.listView}
           data={lessons}
           keyExtractor={(lesson) => String(lesson.id)}
           contentContainerStyle={styles.list}
+          initialNumToRender={7}
+          maxToRenderPerBatch={7}
+          windowSize={5}
+          ListHeaderComponent={<View style={styles.listHeading}><Text style={styles.sectionTitle}>{locale === 'nl' ? 'Alle lessen' : locale === 'fa' ? '??? ??????' : '??? ??????'}</Text><Text style={styles.count}>{lessons.length}</Text></View>}
           ListEmptyComponent={<Text style={[styles.empty, rtl && styles.rtl]}>{copy.empty}</Text>}
-          renderItem={({ item }) => (
-            <Link
-              href={{ pathname: '/lesson/[id]', params: { id: String(item.id), locale } }}
-              asChild
-            >
-              <Pressable style={styles.lesson}>
-                <Text style={[styles.module, rtl && styles.rtl]}>
-                  {item.module.title}
-                </Text>
-                <Text style={[styles.lessonTitle, rtl && styles.rtl]}>
-                  {item.id}. {item.title}
-                </Text>
-                <Text numberOfLines={2} style={[styles.summary, rtl && styles.rtl]}>
-                  {item.summary}
-                </Text>
-              </Pressable>
-            </Link>
-          )}
+          renderItem={({ item }) => <LessonCard lesson={item} locale={locale} />}
           ListFooterComponent={
             <View style={styles.actions}>
               <Pressable style={styles.primaryButton} onPress={() => void load(true)}>
@@ -231,37 +236,50 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       )}
-    </SafeAreaView>
+    </TabShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0b1633' },
-  header: { gap: 8, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 12 },
-  brand: { color: '#9cc9ff', fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
-  title: { color: '#ffffff', fontSize: 30, fontWeight: '800' },
-  status: { color: '#d9e7ff', fontSize: 15, lineHeight: 22 },
+  header: { gap: 9, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
+  brandMark: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary },
+  brandMarkText: { color: '#fff', fontWeight: '900', fontSize: 19 },
+  brand: { color: colors.primary, fontSize: 12, fontWeight: '900', letterSpacing: 1.2, flex: 1 },
+  activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 99, backgroundColor: colors.successSoft },
+  activeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success },
+  activeText: { color: colors.success, fontSize: 10, fontWeight: '800' },
+  title: { color: colors.ink, fontSize: 32, fontWeight: '900', letterSpacing: -0.8 },
+  subtitle: { color: colors.muted, fontSize: 15 },
   loader: { flex: 1 },
-  list: { gap: 12, padding: 16, paddingBottom: 44 },
-  lesson: { padding: 18, borderRadius: 18, backgroundColor: '#142653', borderWidth: 1, borderColor: '#24437f' },
-  module: { marginBottom: 6, color: '#9cc9ff', fontSize: 13, fontWeight: '700' },
-  lessonTitle: { marginBottom: 7, color: '#ffffff', fontSize: 18, fontWeight: '800' },
-  summary: { color: '#d2def3', fontSize: 15, lineHeight: 22 },
-  offline: { color: '#ffd66b', fontWeight: '700' },
-  error: { color: '#ff9c9c' },
-  empty: { color: '#c7d4ec', padding: 20, textAlign: 'center' },
+  listView: { flex: 1 },
+  list: { gap: 10, paddingHorizontal: 16, paddingBottom: 28 },
+  listHeading: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingTop: 4, paddingBottom: 3 },
+  sectionTitle: { color: colors.ink, fontWeight: '800', fontSize: 19 },
+  count: { color: colors.primary, fontWeight: '800', fontSize: 12, paddingHorizontal: 9, paddingVertical: 3, backgroundColor: colors.primarySoft, borderRadius: 99 },
+  lesson: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 10, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  thumbnail: { width: 76, height: 82, borderRadius: 12, backgroundColor: colors.primarySoft },
+  thumbnailFallback: { width: 76, height: 82, borderRadius: 12, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  lessonBody: { flex: 1, gap: 3 },
+  module: { color: colors.primary, fontSize: 11, fontWeight: '800' },
+  lessonTitle: { color: colors.ink, fontSize: 16, fontWeight: '800' },
+  summary: { color: colors.muted, fontSize: 13, lineHeight: 18 },
+  offline: { color: colors.primary, fontWeight: '700' },
+  error: { color: colors.error },
+  empty: { color: colors.muted, padding: 20, textAlign: 'center' },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
-  languageRow: { flexDirection: 'row', gap: 8, marginVertical: 6 },
-  languageButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: '#152957', borderWidth: 1, borderColor: '#355795' },
-  languageButtonActive: { backgroundColor: '#e84a5f', borderColor: '#ff7b8e' },
+  languageRow: { flexDirection: 'row', gap: 7, marginTop: 5 },
+  languageButton: { paddingVertical: 8, paddingHorizontal: 11, borderRadius: 999, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  languageButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   languageButtonDisabled: { opacity: 0.35 },
-  languageText: { color: '#d9e7ff', fontWeight: '700' },
+  languageText: { color: colors.muted, fontWeight: '700' },
   languageTextActive: { color: '#ffffff', fontWeight: '800' },
-  actions: { gap: 10, marginTop: 14 },
-  primaryButton: { alignItems: 'center', paddingVertical: 14, borderRadius: 14, backgroundColor: '#e84a5f' },
+  actions: { gap: 10, marginTop: 12 },
+  primaryButton: { alignItems: 'center', paddingVertical: 14, borderRadius: 14, backgroundColor: colors.primary },
   primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  secondaryButton: { alignItems: 'center', paddingVertical: 13, borderRadius: 14, backgroundColor: '#172b59', borderWidth: 1, borderColor: '#365487' },
-  secondaryButtonText: { color: '#e9f1ff', fontSize: 15, fontWeight: '700' },
-  noAccessCard: { margin: 18, gap: 18, padding: 22, borderRadius: 20, backgroundColor: '#142653', borderWidth: 1, borderColor: '#24437f' },
-  noAccessTitle: { color: '#ffffff', fontSize: 18, lineHeight: 27, fontWeight: '700' }
+  secondaryButton: { alignItems: 'center', paddingVertical: 13, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  secondaryButtonText: { color: colors.primary, fontSize: 15, fontWeight: '700' },
+  noAccessCard: { margin: 18, gap: 18, padding: 22, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  noAccessTitle: { color: colors.ink, fontSize: 18, lineHeight: 27, fontWeight: '700' }
 });
+
