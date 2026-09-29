@@ -1,5 +1,6 @@
 import { AuthView } from '@clerk/expo/native';
 import { SafeAreaView, StyleSheet } from 'react-native';
+import { colors } from '@/src/theme';
 
 export default function SignInScreen() {
   return (
@@ -10,5 +11,7 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f7f3ea' }
+  container: { flex: 1, backgroundColor: colors.background }
 });
+
+
