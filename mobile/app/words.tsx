@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { CourseGate } from '@/src/CourseGate';
 import { colors } from '@/src/theme';
 import type { Locale } from '@/src/types';
 import { words } from '@/src/words';
@@ -11,7 +12,7 @@ export default function WordsScreen() {
   const [query, setQuery] = useState('');
   const visible = useMemo(() => words.filter((item) => `${item.nl} ${item.fa}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())), [query]);
 
-  return <FlatList data={visible} keyExtractor={(item) => item.nl} contentContainerStyle={styles.container} ItemSeparatorComponent={() => <View style={styles.separator} />}
+  return <CourseGate locale={locale}><FlatList data={visible} keyExtractor={(item) => item.nl} contentContainerStyle={styles.container} ItemSeparatorComponent={() => <View style={styles.separator} />}
     ListHeaderComponent={<View style={styles.header}>
       <Text style={styles.title}>{locale === 'nl' ? 'Verkeerswoorden' : locale === 'fa' ? 'واژه‌های ترافیکی' : 'د ترافیک کلمې'}</Text>
       <Text style={styles.subtitle}>{locale === 'nl' ? 'Nederlandse woorden met vertaling in Dari/Farsi.' : 'Nederlandse woorden · دری/فارسی'}</Text>
@@ -19,7 +20,7 @@ export default function WordsScreen() {
       <Text style={styles.count}>{visible.length} {locale === 'nl' ? 'woorden' : ''}</Text>
     </View>}
     ListEmptyComponent={<Text style={styles.subtitle}>{locale === 'nl' ? 'Geen woorden gevonden.' : 'Geen resultaat.'}</Text>}
-    renderItem={({ item }) => <View style={styles.card}><Text style={styles.dutch}>{item.nl}</Text><Text style={styles.translation}>{item.fa}</Text></View>} />;
+    renderItem={({ item }) => <View style={styles.card}><Text style={styles.dutch}>{item.nl}</Text><Text style={styles.translation}>{item.fa}</Text></View>} /></CourseGate>;
 }
 
 const styles = StyleSheet.create({
@@ -30,4 +31,3 @@ const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 62, padding: 16, borderRadius: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
   dutch: { color: colors.ink, fontSize: 17, fontWeight: '800', flex: 1 }, translation: { color: colors.primary, fontSize: 17, fontWeight: '700', textAlign: 'right', flex: 1 }
 });
-

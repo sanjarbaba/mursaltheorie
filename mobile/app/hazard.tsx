@@ -3,6 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
+import { CourseGate } from '@/src/CourseGate';
 import { mediaUrl } from '@/src/content';
 import hazards from '@/src/hazards.json';
 import { readTrainingProgress, saveTrainingProgress, type TrainingProgress } from '@/src/storage';
@@ -81,7 +82,7 @@ export default function HazardScreen() {
   const labels: Record<Action, string> = locale === 'fa' ? { rem: 'ترمز', gas: 'رها کردن گاز', nothing: 'هیچ' } : { rem: 'Remmen', gas: 'Gas los', nothing: 'Niets doen' };
   const correct = selected === item.answer;
 
-  return <ScrollView contentContainerStyle={styles.container}>
+  return <CourseGate locale={locale}><ScrollView contentContainerStyle={styles.container}>
     <Text style={styles.title}>{locale === 'nl' ? 'Verkeerssituaties' : locale === 'fa' ? 'موقعیت‌های ترافیکی' : 'د ترافیک حالتونه'}</Text>
     <Text style={styles.subtitle}>{locale === 'nl' ? 'Kies: remmen, gas los of niets doen.' : 'Remmen · Gas los · Niets doen'}</Text>
     {loading ? <ActivityIndicator color={colors.primary} /> : <>
@@ -95,7 +96,7 @@ export default function HazardScreen() {
       {message ? <Text style={styles.message}>{message}</Text> : null}
       {selected ? <Pressable disabled={busy} onPress={next} style={[styles.next, busy && styles.disabled]}><Text style={styles.nextText}>{locale === 'nl' ? 'Volgende situatie' : 'Volgende'} →</Text></Pressable> : null}
     </>}
-  </ScrollView>;
+  </ScrollView></CourseGate>;
 }
 
 const styles = StyleSheet.create({
@@ -110,4 +111,3 @@ const styles = StyleSheet.create({
   feedback: { gap: 6, padding: 13, borderRadius: 13, backgroundColor: colors.primarySoft }, feedbackTitle: { color: colors.primaryDeep, fontSize: 17, fontWeight: '800' }, explanation: { color: colors.ink, fontSize: 16, lineHeight: 23 },
   message: { color: colors.muted, fontSize: 14 }, next: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: colors.primary }, nextText: { color: '#fff', fontSize: 16, fontWeight: '800' }, disabled: { opacity: 0.5 }
 });
-

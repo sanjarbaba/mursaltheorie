@@ -190,7 +190,7 @@ export default function HomeScreen() {
     <TabShell locale={locale} active="lessons">
       <View style={styles.header}>
         <View style={styles.brandRow}>
-          <View style={styles.brandMark}><Text style={styles.brandMarkText}>M</Text></View>
+          <Image source={require('../assets/logo.jpg')} style={styles.brandMark} resizeMode="cover" accessibilityLabel="Mursal Theorie logo" />
           <Text style={styles.brand}>MURSAL THEORIE</Text>
           {access === true ? <View style={styles.activeBadge}><View style={styles.activeDot} /><Text style={styles.activeText}>{copy.active}</Text></View> : null}
         </View>
@@ -303,4 +303,3 @@ const styles = StyleSheet.create({
   noAccessCard: { margin: 18, gap: 18, padding: 22, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
   noAccessTitle: { color: colors.ink, fontSize: 18, lineHeight: 27, fontWeight: '700' }
 });
-

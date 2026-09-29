@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "nl.mursaltheorie.app",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "infoPlist": {
         "CFBundleDisplayName": "Mursal Theorie",
         "ITSAppUsesNonExemptEncryption": false
@@ -36,4 +36,3 @@
     "owner": "sanjarbabas-team"
   }
 }
-

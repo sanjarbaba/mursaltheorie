@@ -4,6 +4,7 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
+import { CourseGate } from '@/src/CourseGate';
 import { isQuiz, localizedText, mediaUrl } from '@/src/content';
 import { TabShell } from '@/src/Menu';
 import { cacheLessons, isLessonsCacheFresh, readCachedLessons } from '@/src/storage';
@@ -66,7 +67,7 @@ export default function PracticeScreen() {
 
   const imageUri = mediaUrl(current?.lesson.media[0]?.src);
 
-  return <TabShell locale={locale} active="practice"><ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+  return <TabShell locale={locale} active="practice"><CourseGate locale={locale}><ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
     <Text style={[styles.title, rtl && styles.rtl]}>{locale === 'nl' ? 'Oefenen' : locale === 'fa' ? 'تمرین' : 'تمرین'}</Text>
     <Text style={[styles.subtitle, rtl && styles.rtl]}>{locale === 'nl' ? 'Een vraag tegelijk. Leer meteen van de uitleg.' : ''}</Text>
     <Link href={{ pathname: '/hazard', params: { locale } }} asChild><Pressable style={styles.wordsLink}><Ionicons name="car-sport-outline" size={19} color={colors.primary} /><Text style={styles.wordsText}>{locale === 'nl' ? 'Verkeerssituaties oefenen' : locale === 'fa' ? 'تمرین موقعیت‌های ترافیکی' : 'د ترافیک حالتونه'}</Text><Ionicons name="chevron-forward" size={17} color={colors.primary} /></Pressable></Link>
@@ -101,7 +102,7 @@ export default function PracticeScreen() {
         <Pressable disabled={index === visible.length - 1} onPress={() => setIndex(index + 1)} style={[styles.navButton, index === visible.length - 1 && styles.disabled]}><Text style={styles.navText}>{locale === 'nl' ? 'Volgende' : ''} →</Text></Pressable>
       </View> : null}
     </>}
-  </ScrollView></TabShell>;
+  </ScrollView></CourseGate></TabShell>;
 }
 
 const styles = StyleSheet.create({
@@ -147,5 +148,4 @@ const styles = StyleSheet.create({
   error: { color: colors.error },
   rtl: { textAlign: 'right', writingDirection: 'rtl' }
 });
-
 
