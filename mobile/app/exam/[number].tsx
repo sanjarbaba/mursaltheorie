@@ -1,4 +1,5 @@
 import { useAuth } from '@clerk/expo';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Crypto from 'expo-crypto';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -31,6 +32,7 @@ export default function ExamScreen() {
   const mutationId = useRef(Crypto.randomUUID());
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'wrong'>('all');
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, Answer>>({});
   const [saved, setSaved] = useState<Record<number, boolean>>({});
@@ -110,6 +112,7 @@ export default function ExamScreen() {
         method: 'POST', body: JSON.stringify({ action: 'submit', attemptId: attempt.id, locale })
       });
       setResult(response.result);
+      setReviewFilter('all');
       setIndex(0);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Examen kon niet worden ingeleverd.');
@@ -125,17 +128,43 @@ export default function ExamScreen() {
   }
 
   const review = result && question ? result.answers.find((item) => item.questionId === question.id) : null;
+  const correctCount = result?.answers.filter((item) => item.isCorrect).length || 0;
+  const wrongIndices = result && attempt ? attempt.questions.flatMap((item, questionIndex) => result.answers.find((answer) => answer.questionId === item.id)?.isCorrect ? [] : [questionIndex]) : [];
+
+  function showWrongAnswers() {
+    if (wrongIndices.length === 0) return;
+    setReviewFilter('wrong');
+    setIndex(wrongIndices[0]);
+  }
 
   return <ScrollView contentContainerStyle={styles.container}>
     {loading ? <ActivityIndicator /> : error && !attempt ? <View style={styles.card}><Text style={styles.error}>{error}</Text><Pressable onPress={() => setRetry((value) => value + 1)} style={styles.primary}><Text style={styles.primaryText}>{locale === 'nl' ? 'Opnieuw proberen' : locale === 'fa' ? 'دوباره تلاش کنید' : 'بیا هڅه وکړئ'}</Text></Pressable></View> : attempt ? <>
       <Text style={[styles.title, rtl && styles.rtl]}>{attempt.exam.title}</Text>
-      {result ? <View style={styles.result}><Text style={styles.resultTitle}>{result.passed ? '✓' : '✕'} {result.score}%</Text><Text style={styles.body}>{locale === 'nl' ? (result.passed ? 'Geslaagd voor dit oefenexamen.' : 'Nog niet geslaagd. Bekijk hieronder je antwoorden.') : locale === 'fa' ? (result.passed ? 'در این امتحان آزمایشی قبول شدید.' : 'هنوز قبول نشدید. پاسخ‌ها را در پایین ببینید.') : (result.passed ? 'په دې تمریني ازموینه کې بریالي شوئ.' : 'لا بریالي نه شوئ. لاندې ځوابونه وګورئ.')}</Text></View> : <Text style={styles.meta}>{answered} / {attempt.questions.length} {locale === 'nl' ? 'vragen beantwoord' : locale === 'fa' ? 'سوال پاسخ داده شد' : 'پوښتنو ته ځواب ویل شوی'}{remaining !== null ? ` · ${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}` : ''}</Text>}
+      {result ? <>
+        <View style={[styles.result, !result.passed && styles.resultFailed]} accessibilityRole="summary">
+          <View style={styles.resultHeading}><Ionicons name={result.passed ? 'checkmark-circle' : 'close-circle'} size={40} color={result.passed ? colors.success : colors.error} /><Text style={[styles.resultTitle, !result.passed && styles.resultTitleFailed]}>{result.passed ? (locale === 'nl' ? 'Geslaagd' : locale === 'fa' ? 'قبول شدید' : 'بریالي شوئ') : (locale === 'nl' ? 'Niet geslaagd' : locale === 'fa' ? 'قبول نشدید' : 'بریالي نه شوئ')}</Text></View>
+          <Text style={styles.resultScore}>{result.score}% · {correctCount}/{attempt.questions.length} {locale === 'nl' ? 'goed' : locale === 'fa' ? 'درست' : 'سم'}</Text>
+          <Text style={styles.body}>{locale === 'nl' ? 'Bekijk hieronder al je antwoorden en de uitleg per vraag.' : locale === 'fa' ? 'همهٔ پاسخ‌ها و توضیح هر سؤال را در پایین ببینید.' : 'لاندې ټول ځوابونه او د هرې پوښتنې تشریح وګورئ.'}</Text>
+        </View>
+        <View style={styles.overview}>
+          <Text style={[styles.overviewTitle, rtl && styles.rtl]}>{locale === 'nl' ? 'Vragenoverzicht' : locale === 'fa' ? 'نمای کلی سؤال‌ها' : 'د پوښتنو لنډیز'}</Text>
+          <View style={styles.filterRow}>
+            <Pressable onPress={() => setReviewFilter('all')} accessibilityRole="button" accessibilityState={{ selected: reviewFilter === 'all' }} style={[styles.filterButton, reviewFilter === 'all' && styles.filterSelected]}><Text style={[styles.filterText, reviewFilter === 'all' && styles.filterTextSelected]}>{locale === 'nl' ? 'Alle vragen' : locale === 'fa' ? 'همهٔ سؤال‌ها' : 'ټولې پوښتنې'} ({attempt.questions.length})</Text></Pressable>
+            <Pressable onPress={showWrongAnswers} disabled={wrongIndices.length === 0} accessibilityRole="button" accessibilityState={{ selected: reviewFilter === 'wrong', disabled: wrongIndices.length === 0 }} style={[styles.filterButton, reviewFilter === 'wrong' && styles.filterSelected, wrongIndices.length === 0 && styles.disabled]}><Text style={[styles.filterText, reviewFilter === 'wrong' && styles.filterTextSelected]}>{locale === 'nl' ? 'Mijn fouten' : locale === 'fa' ? 'اشتباه‌های من' : 'زما تېروتنې'} ({wrongIndices.length})</Text></Pressable>
+          </View>
+          <View style={styles.questionGrid}>{attempt.questions.map((item, questionIndex) => {
+            const correct = result.answers.find((answer) => answer.questionId === item.id)?.isCorrect === true;
+            if (reviewFilter === 'wrong' && correct) return null;
+            return <Pressable key={item.id} onPress={() => setIndex(questionIndex)} accessibilityRole="button" accessibilityLabel={`${locale === 'nl' ? 'Vraag' : locale === 'fa' ? 'سؤال' : 'پوښتنه'} ${questionIndex + 1}: ${correct ? (locale === 'nl' ? 'goed' : locale === 'fa' ? 'درست' : 'سم') : (locale === 'nl' ? 'fout' : locale === 'fa' ? 'نادرست' : 'ناسم')}`} style={[styles.questionChip, correct ? styles.questionChipCorrect : styles.questionChipWrong, index === questionIndex && styles.questionChipActive]}><Ionicons name={correct ? 'checkmark' : 'close'} size={17} color={correct ? colors.success : colors.error} /><Text style={styles.questionChipText}>{questionIndex + 1}</Text></Pressable>;
+          })}</View>
+        </View>
+      </> : <Text style={styles.meta}>{answered} / {attempt.questions.length} {locale === 'nl' ? 'vragen beantwoord' : locale === 'fa' ? 'سوال پاسخ داده شد' : 'پوښتنو ته ځواب ویل شوی'}{remaining !== null ? ` · ${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}` : ''}</Text>}
       {timeExpired && !result ? <View style={styles.card}><Text style={styles.error}>{locale === 'nl' ? 'De tijd is voorbij. Start een nieuw examen.' : locale === 'fa' ? 'وقت تمام شد. امتحان جدیدی شروع کنید.' : 'وخت پای ته ورسېد. نوې ازموینه پیل کړئ.'}</Text><Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.primary}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examens' : locale === 'fa' ? 'امتحان‌ها' : 'ازموینې'}</Text></Pressable></Link></View> : question ? <View style={styles.card}>
         <Text style={styles.meta}>{locale === 'nl' ? 'Vraag' : locale === 'fa' ? 'سوال' : 'پوښتنه'} {index + 1} / {attempt.questions.length} · {question.category}</Text>
         {question.media?.map((item, mediaIndex) => { const uri = mediaUrl(item.src); return uri ? <Image key={`${uri}-${mediaIndex}`} source={{ uri }} style={styles.image} resizeMode="contain" accessibilityLabel={item.alt || question.prompt} /> : null; })}
         <Text style={[styles.question, rtl && styles.rtl]}>{question.prompt}</Text>
         {result ? <View style={styles.review}>
-          <Text style={styles.reviewTitle}>{review?.isCorrect ? (locale === 'nl' ? 'Goed beantwoord' : locale === 'fa' ? 'پاسخ درست' : 'سم ځواب') : (locale === 'nl' ? 'Niet goed beantwoord' : locale === 'fa' ? 'پاسخ نادرست' : 'ناسم ځواب')}</Text>
+          <Text style={[styles.reviewTitle, !review?.isCorrect && styles.reviewTitleWrong]}>{review?.isCorrect ? '✓ ' : '✕ '}{review?.isCorrect ? (locale === 'nl' ? 'Goed beantwoord' : locale === 'fa' ? 'پاسخ درست' : 'سم ځواب') : (locale === 'nl' ? 'Niet goed beantwoord' : locale === 'fa' ? 'پاسخ نادرست' : 'ناسم ځواب')}</Text>
           <Text style={styles.body}>{locale === 'nl' ? 'Jouw antwoord: ' : locale === 'fa' ? 'پاسخ شما: ' : 'ستاسو ځواب: '}{answerText(question, review?.selectedAnswer)}</Text>
           <Text style={styles.body}>{locale === 'nl' ? 'Juiste antwoord: ' : locale === 'fa' ? 'پاسخ درست: ' : 'سم ځواب: '}{answerText(question, review?.correctAnswer)}</Text>
           <Text style={styles.body}>{review?.explanation}</Text>
@@ -182,9 +211,27 @@ const styles = StyleSheet.create({
   navButton: { flex: 1, alignItems: 'center', padding: 13, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.line },
   navText: { color: colors.primary, fontWeight: '800' },
   submit: { alignItems: 'center', padding: 16, borderRadius: 12, backgroundColor: colors.primary },
-  result: { padding: 18, gap: 6, borderRadius: 16, backgroundColor: colors.successSoft },
-  resultTitle: { color: colors.success, fontSize: 32, fontWeight: '900' },
+  result: { padding: 18, gap: 8, borderRadius: 16, backgroundColor: colors.successSoft },
+  resultFailed: { backgroundColor: colors.errorSoft },
+  resultHeading: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  resultTitle: { color: colors.success, fontSize: 27, fontWeight: '900', flexShrink: 1 },
+  resultTitleFailed: { color: colors.error },
+  resultScore: { color: colors.ink, fontSize: 20, fontWeight: '800' },
+  overview: { gap: 12, padding: 16, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  overviewTitle: { color: colors.ink, fontSize: 18, fontWeight: '800' },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  filterButton: { paddingVertical: 9, paddingHorizontal: 12, borderRadius: 11, backgroundColor: colors.background },
+  filterSelected: { backgroundColor: colors.primary },
+  filterText: { color: colors.primary, fontWeight: '800' },
+  filterTextSelected: { color: '#fff' },
+  questionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  questionChip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, minWidth: 50, minHeight: 45, paddingHorizontal: 7, borderRadius: 10, borderWidth: 1 },
+  questionChipCorrect: { backgroundColor: colors.successSoft, borderColor: colors.success },
+  questionChipWrong: { backgroundColor: colors.errorSoft, borderColor: colors.error },
+  questionChipActive: { borderWidth: 3 },
+  questionChipText: { color: colors.ink, fontWeight: '800' },
   review: { gap: 8, padding: 13, borderRadius: 12, backgroundColor: colors.primarySoft },
   reviewTitle: { color: colors.primaryDeep, fontSize: 17, fontWeight: '800' },
+  reviewTitleWrong: { color: colors.error },
   rtl: { textAlign: 'right', writingDirection: 'rtl' }
 });

@@ -2,15 +2,17 @@
 
 De website verkoopt nu 30 dagen toegang via Mollie. De mobiele app herkent die bestaande toegang na inloggen via de centrale `entitlements`-tabel. De app start geen Mollie-checkout.
 
-Voor aankoop **in de iPhone-app** komen drie niet-verlengende aankopen in App Store Connect die overeenkomen met de huidige taalpakketten:
+De gekozen looptijd voor aankoop **in de iPhone-app** is 30 dagen zonder automatische verlenging. Het gewenste bedrag is €49,99 voor ieder van de drie taalpakketten, ook voor de Nederlandse versie. Deze keuze wijzigt de huidige websiteprijs niet.
 
-| Bestaand pakket | Voorlopig Apple-product-ID |
-| --- | --- |
-| `theory_b_nl_30d` | `nl.mursaltheorie.course.nl.30d` |
-| `theory_b_nl_fa_30d` | `nl.mursaltheorie.course.nl.fa.30d` |
-| `theory_b_nl_ps_30d` | `nl.mursaltheorie.course.nl.ps.30d` |
+In App Store Connect komen drie niet-verlengende aankopen die overeenkomen met de huidige taalpakketten:
 
-De eigenaar moet de product-ID's en prijzen in App Store Connect goedkeuren en de betaalovereenkomst, bank- en belastinggegevens afronden. Tot die tijd verschijnt geen koopknop in de app. De vermelde prijzen op de website worden niet automatisch Apple-prijzen.
+| Bestaand pakket | Voorlopig Apple-product-ID | Gewenste prijs in Nederland |
+| --- | --- | --- |
+| `theory_b_nl_30d` | `nl.mursaltheorie.course.nl.30d` | €49,99 |
+| `theory_b_nl_fa_30d` | `nl.mursaltheorie.course.nl.fa.30d` | €49,99 |
+| `theory_b_nl_ps_30d` | `nl.mursaltheorie.course.nl.ps.30d` | €49,99 |
+
+De eigenaar moet de product-ID's en de beschikbare Apple-prijscategorie in App Store Connect goedkeuren en de betaalovereenkomst, bank- en belastinggegevens afronden. Tot die tijd verschijnt geen koopknop in de app. De vermelde prijzen op de website worden niet automatisch Apple-prijzen.
 
 Na die stap:
 

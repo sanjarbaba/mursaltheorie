@@ -8,9 +8,10 @@
     "scheme": "mursaltheorie",
     "userInterfaceStyle": "light",
     "ios": {
+      "icon": "./assets/ios-icon.png",
       "supportsTablet": false,
       "bundleIdentifier": "nl.mursaltheorie.app",
-      "buildNumber": "13",
+      "buildNumber": "14",
       "infoPlist": {
         "CFBundleDisplayName": "Mursal Theorie",
         "ITSAppUsesNonExemptEncryption": false
