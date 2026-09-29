@@ -46,7 +46,7 @@ export default function HazardScreen() {
         else await saveTrainingProgress(userId, remote);
         if (active) { setProgress(latest); setIndex(latest.scenarioIndex % hazards.length); }
       } catch {
-        if (active && !local) setMessage('Voortgang kon niet worden geladen. Je kunt wel oefenen.');
+        if (active && !local) setMessage(locale === 'nl' ? 'Voortgang kon niet worden geladen. Je kunt wel oefenen.' : locale === 'fa' ? 'پیشرفت بارگذاری نشد. می‌توانید تمرین کنید.' : 'پرمختګ پورته نه شو. تمرین کولای شئ.');
       } finally { if (active) setLoading(false); }
     })();
     return () => { active = false; };
@@ -69,7 +69,7 @@ export default function HazardScreen() {
       await saveTrainingProgress(userId, updated);
       await createApiClient(() => getTokenRef.current())('/api/v1/progress?resource=training', { method: 'PUT', body: JSON.stringify(updated) });
     } catch {
-      setMessage(locale === 'nl' ? 'Voortgang is op dit toestel bewaard en wordt later gesynchroniseerd.' : 'Voortgang lokaal bewaard.');
+      setMessage(locale === 'nl' ? 'Voortgang is op dit toestel bewaard en wordt later gesynchroniseerd.' : locale === 'fa' ? 'پیشرفت در این دستگاه ذخیره شد و بعداً همگام می‌شود.' : 'پرمختګ په دې وسیله خوندي شو او وروسته به همغږی شي.');
     } finally { setBusy(false); }
   }
 
@@ -79,22 +79,22 @@ export default function HazardScreen() {
   const image = mediaUrl(item.image);
   const question = locale === 'fa' ? item.question.fa : item.question.nl;
   const explanation = locale === 'fa' ? item.explanation.fa : item.explanation.nl;
-  const labels: Record<Action, string> = locale === 'fa' ? { rem: 'ترمز', gas: 'رها کردن گاز', nothing: 'هیچ' } : { rem: 'Remmen', gas: 'Gas los', nothing: 'Niets doen' };
+  const labels: Record<Action, string> = locale === 'fa' ? { rem: 'ترمز', gas: 'رها کردن گاز', nothing: 'هیچ‌کدام' } : locale === 'ps' ? { rem: 'بریک ووهئ', gas: 'ګاز پرېږدئ', nothing: 'هېڅ مه کوئ' } : { rem: 'Remmen', gas: 'Gas los', nothing: 'Niets doen' };
   const correct = selected === item.answer;
 
   return <CourseGate locale={locale}><ScrollView contentContainerStyle={styles.container}>
     <Text style={styles.title}>{locale === 'nl' ? 'Verkeerssituaties' : locale === 'fa' ? 'موقعیت‌های ترافیکی' : 'د ترافیک حالتونه'}</Text>
-    <Text style={styles.subtitle}>{locale === 'nl' ? 'Kies: remmen, gas los of niets doen.' : 'Remmen · Gas los · Niets doen'}</Text>
+    <Text style={styles.subtitle}>{locale === 'nl' ? 'Kies: remmen, gas los of niets doen.' : locale === 'fa' ? 'انتخاب کنید: ترمز، رها کردن گاز یا هیچ‌کدام.' : 'وټاکئ: بریک، ګاز پرېښودل یا هېڅ نه کول. پوښتنې لا په هالنډي دي.'}</Text>
     {loading ? <ActivityIndicator color={colors.primary} /> : <>
       <View style={styles.stats}><Text style={styles.statsText}>{progress.correct} / {progress.answered} {locale === 'nl' ? 'goed' : '✓'}</Text><Text style={styles.statsText}>{index + 1} / {hazards.length}</Text></View>
       <View style={styles.card}>
         {image ? <Image source={{ uri: image }} style={styles.image} resizeMode="cover" accessibilityLabel={question} /> : null}
         <Text style={styles.question}>{question}</Text>
         {(['rem', 'gas', 'nothing'] as Action[]).map((action) => <Pressable key={action} disabled={selected !== null} onPress={() => void choose(action)} style={[styles.option, selected && action === item.answer && styles.correct, selected === action && !correct && styles.incorrect]}><Text style={styles.optionText}>{labels[action]}</Text></Pressable>)}
-        {selected ? <View style={styles.feedback}><Text style={styles.feedbackTitle}>{correct ? (locale === 'nl' ? 'Goed antwoord' : '✓') : (locale === 'nl' ? 'Niet juist' : '✕')}</Text><Text style={styles.explanation}>{explanation}</Text></View> : null}
+        {selected ? <View style={styles.feedback}><Text style={styles.feedbackTitle}>{correct ? (locale === 'nl' ? 'Goed antwoord' : locale === 'fa' ? 'پاسخ درست' : 'سم ځواب') : (locale === 'nl' ? 'Niet juist' : locale === 'fa' ? 'نادرست' : 'ناسم')}</Text><Text style={styles.explanation}>{explanation}</Text></View> : null}
       </View>
       {message ? <Text style={styles.message}>{message}</Text> : null}
-      {selected ? <Pressable disabled={busy} onPress={next} style={[styles.next, busy && styles.disabled]}><Text style={styles.nextText}>{locale === 'nl' ? 'Volgende situatie' : 'Volgende'} →</Text></Pressable> : null}
+      {selected ? <Pressable disabled={busy} onPress={next} style={[styles.next, busy && styles.disabled]}><Text style={styles.nextText}>{locale === 'nl' ? 'Volgende situatie' : locale === 'fa' ? 'موقعیت بعدی' : 'بل حالت'} →</Text></Pressable> : null}
     </>}
   </ScrollView></CourseGate>;
 }

@@ -10,17 +10,17 @@ export default function WordsScreen() {
   const { locale: rawLocale } = useLocalSearchParams<{ locale?: string }>();
   const locale: Locale = rawLocale === 'fa' || rawLocale === 'ps' ? rawLocale : 'nl';
   const [query, setQuery] = useState('');
-  const visible = useMemo(() => words.filter((item) => `${item.nl} ${item.fa}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())), [query]);
+  const visible = useMemo(() => words.filter((item) => `${item.nl} ${item.fa} ${item.ps}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())), [query]);
 
   return <CourseGate locale={locale}><FlatList data={visible} keyExtractor={(item) => item.nl} contentContainerStyle={styles.container} ItemSeparatorComponent={() => <View style={styles.separator} />}
     ListHeaderComponent={<View style={styles.header}>
       <Text style={styles.title}>{locale === 'nl' ? 'Verkeerswoorden' : locale === 'fa' ? 'واژه‌های ترافیکی' : 'د ترافیک کلمې'}</Text>
-      <Text style={styles.subtitle}>{locale === 'nl' ? 'Nederlandse woorden met vertaling in Dari/Farsi.' : 'Nederlandse woorden · دری/فارسی'}</Text>
-      <TextInput value={query} onChangeText={setQuery} placeholder={locale === 'nl' ? 'Zoek een woord' : 'Zoeken'} placeholderTextColor={colors.muted} autoCapitalize="none" style={styles.search} />
-      <Text style={styles.count}>{visible.length} {locale === 'nl' ? 'woorden' : ''}</Text>
+      <Text style={styles.subtitle}>{locale === 'nl' ? 'Nederlandse woorden met vertaling in Dari/Farsi en Pashto.' : locale === 'fa' ? 'واژه‌های هلندی با ترجمهٔ دری/فارسی.' : 'هالنډي ټکي له پښتو ژباړې سره.'}</Text>
+      <TextInput value={query} onChangeText={setQuery} placeholder={locale === 'nl' ? 'Zoek een woord' : locale === 'fa' ? 'جست‌وجوی واژه' : 'کلمه ولټوئ'} placeholderTextColor={colors.muted} autoCapitalize="none" style={styles.search} />
+      <Text style={styles.count}>{visible.length} {locale === 'nl' ? 'woorden' : locale === 'fa' ? 'واژه' : 'کلمې'}</Text>
     </View>}
-    ListEmptyComponent={<Text style={styles.subtitle}>{locale === 'nl' ? 'Geen woorden gevonden.' : 'Geen resultaat.'}</Text>}
-    renderItem={({ item }) => <View style={styles.card}><Text style={styles.dutch}>{item.nl}</Text><Text style={styles.translation}>{item.fa}</Text></View>} /></CourseGate>;
+    ListEmptyComponent={<Text style={styles.subtitle}>{locale === 'nl' ? 'Geen woorden gevonden.' : locale === 'fa' ? 'واژه‌ای پیدا نشد.' : 'کلمه ونه موندل شوه.'}</Text>}
+    renderItem={({ item }) => <View style={styles.card}><Text style={styles.dutch}>{item.nl}</Text><Text style={styles.translation}>{locale === 'ps' ? item.ps : item.fa}</Text></View>} /></CourseGate>;
 }
 
 const styles = StyleSheet.create({

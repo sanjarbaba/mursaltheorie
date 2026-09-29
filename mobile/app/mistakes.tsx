@@ -56,7 +56,7 @@ export default function MistakesScreen() {
   const question = questions[index];
   return <ScrollView contentContainerStyle={styles.container}>
     <Text style={[styles.title, rtl && styles.rtl]}>{locale === 'nl' ? 'Oefen mijn fouten' : locale === 'fa' ? 'تمرین اشتباه‌ها' : 'تېروتنې تمرین کړئ'}</Text>
-    {loading ? <ActivityIndicator color={colors.primary} /> : error && !question ? <Text style={styles.error}>{error}</Text> : !question ? <Text style={styles.muted}>{locale === 'nl' ? 'Je hebt nog geen fout beantwoorde examenvragen om te oefenen.' : 'Geen vragen beschikbaar.'}</Text> : <>
+    {loading ? <ActivityIndicator color={colors.primary} /> : error && !question ? <Text style={styles.error}>{error}</Text> : !question ? <Text style={styles.muted}>{locale === 'nl' ? 'Je hebt nog geen fout beantwoorde examenvragen om te oefenen.' : locale === 'fa' ? 'هنوز پاسخ نادرستی برای تمرین ندارید.' : 'تاسو لا د تمرین لپاره ناسم ځوابونه نه لرئ.'}</Text> : <>
       <View style={styles.progressRow}><Text style={styles.muted}>{index + 1} / {questions.length}</Text><Text style={styles.muted}>{question.category}</Text></View>
       <View style={styles.card}>
         {question.media?.map((item, imageIndex) => { const uri = mediaUrl(item.src); return uri ? <Image key={`${uri}-${imageIndex}`} source={{ uri }} style={styles.image} resizeMode="contain" accessibilityLabel={item.alt || question.prompt} /> : null; })}
@@ -65,10 +65,10 @@ export default function MistakesScreen() {
           <Text style={styles.optionLetter}>{String.fromCharCode(65 + optionIndex)}</Text><Text style={[styles.optionText, rtl && styles.rtl]}>{option}</Text>
         </Pressable>)}
         {busy ? <ActivityIndicator color={colors.primary} /> : null}
-        {result ? <View style={styles.feedback}><Text style={styles.feedbackTitle}>{result.isCorrect ? (locale === 'nl' ? 'Goed antwoord' : '✓') : (locale === 'nl' ? 'Niet juist' : '✕')}</Text><Text style={styles.optionText}>{result.explanation}</Text></View> : null}
+        {result ? <View style={styles.feedback}><Text style={styles.feedbackTitle}>{result.isCorrect ? (locale === 'nl' ? 'Goed antwoord' : locale === 'fa' ? 'پاسخ درست' : 'سم ځواب') : (locale === 'nl' ? 'Niet juist' : locale === 'fa' ? 'نادرست' : 'ناسم')}</Text><Text style={styles.optionText}>{result.explanation}</Text></View> : null}
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      {result && index + 1 < questions.length ? <Pressable onPress={next} style={styles.next}><Text style={styles.nextText}>{locale === 'nl' ? 'Volgende vraag' : 'Volgende'} →</Text></Pressable> : result ? <Text style={styles.done}>{locale === 'nl' ? 'Klaar! Je hebt al je fouten opnieuw geoefend.' : 'Klaar!'}</Text> : null}
+      {result && index + 1 < questions.length ? <Pressable onPress={next} style={styles.next}><Text style={styles.nextText}>{locale === 'nl' ? 'Volgende vraag' : locale === 'fa' ? 'سوال بعدی' : 'بله پوښتنه'} →</Text></Pressable> : result ? <Text style={styles.done}>{locale === 'nl' ? 'Klaar! Je hebt al je fouten opnieuw geoefend.' : locale === 'fa' ? 'تمام شد! همهٔ اشتباه‌ها را دوباره تمرین کردید.' : 'پای ته ورسېد! ټولې تېروتنې مو بیا تمرین کړې.'}</Text> : null}
     </>}
   </ScrollView>;
 }
@@ -88,4 +88,3 @@ const styles = StyleSheet.create({
   error: { color: colors.error, lineHeight: 22 }, next: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: colors.primary }, nextText: { color: '#fff', fontSize: 16, fontWeight: '800' }, done: { color: colors.success, fontWeight: '800' },
   rtl: { textAlign: 'right', writingDirection: 'rtl' }
 });
-

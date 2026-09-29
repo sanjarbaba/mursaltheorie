@@ -38,9 +38,9 @@ export default function LessonScreen() {
     });
     try {
       await flushProgressQueue(userId, request);
-      setMessage(locale === 'nl' ? 'Les voltooid en gesynchroniseerd.' : locale === 'fa' ? '??? ???? ?? ? ?????????? ??.' : '??? ???? ?? ?? ????? ??.');
+      setMessage(locale === 'nl' ? 'Les voltooid en gesynchroniseerd.' : locale === 'fa' ? 'درس کامل شد و همگام‌سازی شد.' : 'درس بشپړ شو او همغږی شو.');
     } catch {
-      setMessage(locale === 'nl' ? 'Les voltooid. Synchronisatie volgt zodra je online bent.' : locale === 'fa' ? '??? ???? ??. ?????????? ????? ????? ????? ??????.' : '??? ???? ??. ??? ?? ?????? ?? ????? ?? ???.');
+      setMessage(locale === 'nl' ? 'Les voltooid. Synchronisatie volgt zodra je online bent.' : locale === 'fa' ? 'درس کامل شد. همگام‌سازی هنگام اتصال انجام می‌شود.' : 'درس بشپړ شو. کله چې آنلاین شئ همغږي به وشي.');
     } finally {
       setSaving(false);
     }
@@ -62,7 +62,7 @@ export default function LessonScreen() {
       {lesson.contentBlocks.map((block, index) => {
         const answer = answers[index];
         return <View key={`${block.type}-${index}`} style={styles.block}>
-          <Text style={[styles.blockType, rtl && styles.rtl]}>{block.type === 'quiz' ? (locale === 'nl' ? 'Oefenvraag' : locale === 'fa' ? '???? ??????' : '?????? ??????') : block.type.replaceAll('_', ' ')}</Text>
+          <Text style={[styles.blockType, rtl && styles.rtl]}>{block.type === 'quiz' ? (locale === 'nl' ? 'Oefenvraag' : locale === 'fa' ? 'سؤال تمرینی' : 'تمریني پوښتنه') : block.type.replaceAll('_', ' ')}</Text>
           {isQuiz(block) ? <>
             <Text style={[styles.question, rtl && styles.rtl]}>{localizedText(block.question, locale)}</Text>
             {block.options.map((option, optionIndex) => <Pressable
@@ -73,8 +73,8 @@ export default function LessonScreen() {
               <Text style={[styles.blockText, rtl && styles.rtl]}>{localizedText(option, locale)}</Text>
             </Pressable>)}
             {answer !== undefined ? <View style={styles.feedback}>
-              <Text style={styles.feedbackTitle}>{answer === block.correctOption ? (locale === 'nl' ? 'Goed gedaan' : 'V') : (locale === 'nl' ? 'Niet juist' : '?')}</Text>
-              {answer !== block.correctOption ? <Text style={[styles.blockText, rtl && styles.rtl]}>{locale === 'nl' ? 'Juiste antwoord: ' : ''}{localizedText(block.options[block.correctOption], locale)}</Text> : null}
+              <Text style={styles.feedbackTitle}>{answer === block.correctOption ? (locale === 'nl' ? 'Goed gedaan' : locale === 'fa' ? 'آفرین' : 'ښه مو وکړل') : (locale === 'nl' ? 'Niet juist' : locale === 'fa' ? 'نادرست' : 'ناسم')}</Text>
+              {answer !== block.correctOption ? <Text style={[styles.blockText, rtl && styles.rtl]}>{locale === 'nl' ? 'Juiste antwoord: ' : locale === 'fa' ? 'پاسخ درست: ' : 'سم ځواب: '}{localizedText(block.options[block.correctOption], locale)}</Text> : null}
               <Text style={[styles.blockText, rtl && styles.rtl]}>{localizedText(block.explanation, locale)}</Text>
             </View> : null}
           </> : <>
@@ -87,8 +87,8 @@ export default function LessonScreen() {
       <Pressable disabled={saving} onPress={() => void completeLesson()} style={[styles.completeButton, saving && styles.disabled]}>
         <Text style={styles.completeButtonText}>
           {saving
-            ? (locale === 'nl' ? 'Opslaan.' : locale === 'fa' ? '?????.' : '????? ???.')
-            : (locale === 'nl' ? 'Markeer als voltooid' : locale === 'fa' ? '??????????? ???????? ?????????' : '? ???? ??? ?? ???? ??? ???')}
+            ? (locale === 'nl' ? 'Opslaan…' : locale === 'fa' ? 'ذخیره…' : 'خوندي کول…')
+            : (locale === 'nl' ? 'Markeer als voltooid' : locale === 'fa' ? 'علامت‌گذاری به‌عنوان تکمیل‌شده' : 'د بشپړ شوي په توګه نښه کول')}
         </Text>
       </Pressable>
 
@@ -119,4 +119,3 @@ const styles = StyleSheet.create({
   message: { color: colors.success, textAlign: 'center', fontWeight: '700', lineHeight: 22 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' }
 });
-

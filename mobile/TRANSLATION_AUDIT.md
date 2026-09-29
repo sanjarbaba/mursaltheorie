@@ -1,0 +1,7 @@
+# Vertaalcontrole voor de mobiele testversie
+
+- De websitebron bevat 147 verkeersborden. Alle 147 hebben een Nederlandse naam en uitleg en een Pashto-titel en uitleg. De mobiele lijst gebruikt dezelfde codes en afbeeldingen; voor alle 147 bestaat het afbeeldingsbestand in de repository.
+- Van de 147 Dari/Farsi-bordnamen zijn er 114 zichtbaar vermengd met Nederlandse woorden door automatische vervanging. Deze namen en bijbehorende uitleg worden in de app niet als Dari/Farsi getoond. De Nederlandse tekst blijft zichtbaar, zodat de betekenis niet verkeerd wordt voorgesteld. De overige 33 namen komen uit de websitebron.
+- De 24 verkeerswoorden tonen nu aparte Dari/Farsi- en Pashto-teksten. De zichtbare knoppen, foutmeldingen en navigatie in lessen, oefeningen en examens zijn op ontbrekende vertalingen gecontroleerd en waar nodig aangevuld.
+- De 30 verkeerssituaties hebben in de websitebron Nederlands en Dari/Farsi, maar geen Pashto. In Pashto-modus worden de Nederlandse vragen daarom zichtbaar als Nederlands gepresenteerd; de actieknoppen zijn vertaald.
+- Een taalkundige controle door een moedertaalspreker en een inhoudelijke controle van bordnamen tegen de actuele verkeersregels blijven nodig voordat alle vertalingen als definitief kunnen worden beschouwd. De huidige controles meten dekking en voorkomen de aangetroffen gemengde taal, maar bewijzen geen volledige vertaalnauwkeurigheid.

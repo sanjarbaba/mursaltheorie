@@ -48,9 +48,9 @@ export default function ExamsScreen() {
     {summary && summary.total > 0 ? <View style={styles.historyCard}>
       <Text style={styles.historyTitle}>{locale === 'nl' ? 'Mijn resultaten' : locale === 'fa' ? 'نتایج من' : 'زما پایلې'}</Text>
       <View style={styles.statsRow}>
-        <View style={styles.stat}><Text style={styles.statValue}>{summary.total}</Text><Text style={styles.statLabel}>{locale === 'nl' ? 'pogingen' : 'Totaal'}</Text></View>
-        <View style={styles.stat}><Text style={styles.statValue}>{summary.passed}</Text><Text style={styles.statLabel}>{locale === 'nl' ? 'behaald' : '✓'}</Text></View>
-        <View style={styles.stat}><Text style={styles.statValue}>{summary.bestScore ?? 0}%</Text><Text style={styles.statLabel}>{locale === 'nl' ? 'beste score' : 'Score'}</Text></View>
+        <View style={styles.stat}><Text style={styles.statValue}>{summary.total}</Text><Text style={styles.statLabel}>{locale === 'nl' ? 'pogingen' : locale === 'fa' ? 'تلاش‌ها' : 'هڅې'}</Text></View>
+        <View style={styles.stat}><Text style={styles.statValue}>{summary.passed}</Text><Text style={styles.statLabel}>{locale === 'nl' ? 'behaald' : locale === 'fa' ? 'قبول‌شده' : 'بریالۍ'}</Text></View>
+        <View style={styles.stat}><Text style={styles.statValue}>{summary.bestScore ?? 0}%</Text><Text style={styles.statLabel}>{locale === 'nl' ? 'beste score' : locale === 'fa' ? 'بهترین نمره' : 'غوره نمره'}</Text></View>
       </View>
       {history.slice(0, 3).map((item) => <View key={item.attemptId} style={styles.historyRow}><Text numberOfLines={1} style={styles.historyName}>{item.title}</Text><Text style={[styles.historyScore, item.passed && styles.passed]}>{item.score}%</Text></View>)}
       <Link href={{ pathname: '/mistakes', params: { locale } }} asChild><Pressable style={styles.mistakesButton}><Text style={styles.mistakesText}>{locale === 'nl' ? 'Oefen mijn fouten' : locale === 'fa' ? 'تمرین اشتباه‌ها' : 'تېروتنې تمرین کړئ'}</Text></Pressable></Link>
@@ -59,9 +59,9 @@ export default function ExamsScreen() {
   </View>;
   return <TabShell locale={locale} active="exams"><FlatList data={loading || error ? [] : exams} keyExtractor={(exam) => String(exam.number)} ListHeaderComponent={header} contentContainerStyle={styles.container} ItemSeparatorComponent={() => <View style={{ height: 12 }} />} renderItem={({ item: exam }) => <View style={styles.card}>
       <Text style={[styles.examTitle, rtl && styles.rtl]}>{exam.title}</Text>
-      <Text style={[styles.meta, rtl && styles.rtl]}>{exam.questionCount} {locale === 'nl' ? 'vragen' : 'سوال'} · {exam.durationSeconds ? `${Math.ceil(exam.durationSeconds / 60)} min` : (locale === 'nl' ? 'zonder tijdslimiet' : 'بدون محدودیت زمان')} · {locale === 'nl' ? 'slagen vanaf' : '✓'} {exam.passScore}%</Text>
+      <Text style={[styles.meta, rtl && styles.rtl]}>{exam.questionCount} {locale === 'nl' ? 'vragen' : locale === 'fa' ? 'سوال' : 'پوښتنې'} · {exam.durationSeconds ? `${Math.ceil(exam.durationSeconds / 60)} min` : (locale === 'nl' ? 'zonder tijdslimiet' : locale === 'fa' ? 'بدون محدودیت زمان' : 'بې له وخت محدودیت')} · {locale === 'nl' ? 'slagen vanaf' : locale === 'fa' ? 'نمرهٔ قبولی از' : 'د بریا نمره له'} {exam.passScore}%</Text>
       <Link href={{ pathname: '/exam/[number]', params: { number: String(exam.number), locale } }} asChild><Pressable style={styles.start}><Text style={styles.startText}>{locale === 'nl' ? 'Start examen' : locale === 'fa' ? 'شروع امتحان' : 'ازموینه پیل کړئ'}</Text></Pressable></Link>
-    </View>} ListEmptyComponent={loading ? <ActivityIndicator color={colors.primary} /> : error ? <Text style={styles.error}>{error}</Text> : <Text style={styles.intro}>{locale === 'nl' ? 'Er zijn nog geen gepubliceerde examens beschikbaar.' : 'Geen examens'}</Text>} /></TabShell>;
+    </View>} ListEmptyComponent={loading ? <ActivityIndicator color={colors.primary} /> : error ? <Text style={styles.error}>{error}</Text> : <Text style={styles.intro}>{locale === 'nl' ? 'Er zijn nog geen gepubliceerde examens beschikbaar.' : locale === 'fa' ? 'هنوز امتحانی منتشر نشده است.' : 'لا کومه ازموینه نه ده خپره شوې.'}</Text>} /></TabShell>;
 }
 
 const styles = StyleSheet.create({
@@ -84,4 +84,3 @@ const styles = StyleSheet.create({
   startText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' }
 });
-

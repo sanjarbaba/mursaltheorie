@@ -14,7 +14,7 @@ type Attempt = { id: number; status: string; startedAt: string; exam: { title: s
 type Result = { score: number; passed: boolean; answers: Array<{ questionId: number; selectedAnswer: Answer | null; correctAnswer: Answer; isCorrect: boolean; explanation: string }> };
 
 function answerText(question: Question, answer: Answer | null | undefined): string {
-  if (answer === null || answer === undefined) return '-';
+  if (answer === null || answer === undefined) return '—';
   if (Array.isArray(answer)) return answer.map((value) => question.options[value] || String(value)).join(', ');
   if (typeof answer === 'number' && question.questionType !== 'numeric') return question.options[answer] || String(answer);
   return String(answer);
@@ -118,47 +118,47 @@ export default function ExamScreen() {
 
   function confirmSubmit() {
     const unanswered = (attempt?.questions.length || 0) - answered;
-    Alert.alert(locale === 'nl' ? 'Examen inleveren?' : 'Exam', unanswered ? `${unanswered} ${locale === 'nl' ? 'vragen zijn nog niet beantwoord.' : 'vragen'}` : (locale === 'nl' ? 'Je kunt je antwoorden daarna bekijken.' : ''), [
-      { text: locale === 'nl' ? 'Verder oefenen' : 'Terug', style: 'cancel' },
-      { text: locale === 'nl' ? 'Inleveren' : 'V', onPress: () => void submit() }
+    Alert.alert(locale === 'nl' ? 'Examen inleveren?' : locale === 'fa' ? 'امتحان را ثبت می‌کنید؟' : 'ازموینه سپارئ؟', unanswered ? `${unanswered} ${locale === 'nl' ? 'vragen zijn nog niet beantwoord.' : locale === 'fa' ? 'سوال هنوز پاسخ داده نشده است.' : 'پوښتنې لا بې ځوابه دي.'}` : (locale === 'nl' ? 'Je kunt je antwoorden daarna bekijken.' : locale === 'fa' ? 'بعد از ثبت می‌توانید پاسخ‌ها را ببینید.' : 'له سپارلو وروسته ځوابونه کتلای شئ.'), [
+      { text: locale === 'nl' ? 'Verder oefenen' : locale === 'fa' ? 'ادامهٔ تمرین' : 'تمرین ته دوام', style: 'cancel' },
+      { text: locale === 'nl' ? 'Inleveren' : locale === 'fa' ? 'ثبت' : 'وسپارئ', onPress: () => void submit() }
     ]);
   }
 
   const review = result && question ? result.answers.find((item) => item.questionId === question.id) : null;
 
   return <ScrollView contentContainerStyle={styles.container}>
-    {loading ? <ActivityIndicator /> : error && !attempt ? <View style={styles.card}><Text style={styles.error}>{error}</Text><Pressable onPress={() => setRetry((value) => value + 1)} style={styles.primary}><Text style={styles.primaryText}>Opnieuw proberen</Text></Pressable></View> : attempt ? <>
+    {loading ? <ActivityIndicator /> : error && !attempt ? <View style={styles.card}><Text style={styles.error}>{error}</Text><Pressable onPress={() => setRetry((value) => value + 1)} style={styles.primary}><Text style={styles.primaryText}>{locale === 'nl' ? 'Opnieuw proberen' : locale === 'fa' ? 'دوباره تلاش کنید' : 'بیا هڅه وکړئ'}</Text></Pressable></View> : attempt ? <>
       <Text style={[styles.title, rtl && styles.rtl]}>{attempt.exam.title}</Text>
-      {result ? <View style={styles.result}><Text style={styles.resultTitle}>{result.passed ? 'V' : '?'} {result.score}%</Text><Text style={styles.body}>{locale === 'nl' ? (result.passed ? 'Geslaagd voor dit oefenexamen.' : 'Nog niet geslaagd. Bekijk hieronder je antwoorden.') : result.passed ? 'V' : '?'}</Text></View> : <Text style={styles.meta}>{answered} / {attempt.questions.length} {locale === 'nl' ? 'vragen beantwoord' : 'V'}{remaining !== null ? ` � ${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}` : ''}</Text>}
-      {timeExpired && !result ? <View style={styles.card}><Text style={styles.error}>{locale === 'nl' ? 'De tijd is voorbij. Start een nieuw examen.' : 'Tijd voorbij'}</Text><Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.primary}><Text style={styles.primaryText}>Examens</Text></Pressable></Link></View> : question ? <View style={styles.card}>
-        <Text style={styles.meta}>{locale === 'nl' ? 'Vraag' : '????'} {index + 1} / {attempt.questions.length} � {question.category}</Text>
+      {result ? <View style={styles.result}><Text style={styles.resultTitle}>{result.passed ? '✓' : '✕'} {result.score}%</Text><Text style={styles.body}>{locale === 'nl' ? (result.passed ? 'Geslaagd voor dit oefenexamen.' : 'Nog niet geslaagd. Bekijk hieronder je antwoorden.') : locale === 'fa' ? (result.passed ? 'در این امتحان آزمایشی قبول شدید.' : 'هنوز قبول نشدید. پاسخ‌ها را در پایین ببینید.') : (result.passed ? 'په دې تمریني ازموینه کې بریالي شوئ.' : 'لا بریالي نه شوئ. لاندې ځوابونه وګورئ.')}</Text></View> : <Text style={styles.meta}>{answered} / {attempt.questions.length} {locale === 'nl' ? 'vragen beantwoord' : locale === 'fa' ? 'سوال پاسخ داده شد' : 'پوښتنو ته ځواب ویل شوی'}{remaining !== null ? ` · ${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}` : ''}</Text>}
+      {timeExpired && !result ? <View style={styles.card}><Text style={styles.error}>{locale === 'nl' ? 'De tijd is voorbij. Start een nieuw examen.' : locale === 'fa' ? 'وقت تمام شد. امتحان جدیدی شروع کنید.' : 'وخت پای ته ورسېد. نوې ازموینه پیل کړئ.'}</Text><Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.primary}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examens' : locale === 'fa' ? 'امتحان‌ها' : 'ازموینې'}</Text></Pressable></Link></View> : question ? <View style={styles.card}>
+        <Text style={styles.meta}>{locale === 'nl' ? 'Vraag' : locale === 'fa' ? 'سوال' : 'پوښتنه'} {index + 1} / {attempt.questions.length} · {question.category}</Text>
         {question.media?.map((item, mediaIndex) => { const uri = mediaUrl(item.src); return uri ? <Image key={`${uri}-${mediaIndex}`} source={{ uri }} style={styles.image} resizeMode="contain" accessibilityLabel={item.alt || question.prompt} /> : null; })}
         <Text style={[styles.question, rtl && styles.rtl]}>{question.prompt}</Text>
         {result ? <View style={styles.review}>
-          <Text style={styles.reviewTitle}>{review?.isCorrect ? (locale === 'nl' ? 'Goed beantwoord' : 'V') : (locale === 'nl' ? 'Niet goed beantwoord' : '?')}</Text>
-          <Text style={styles.body}>{locale === 'nl' ? 'Jouw antwoord: ' : ''}{answerText(question, review?.selectedAnswer)}</Text>
-          <Text style={styles.body}>{locale === 'nl' ? 'Juiste antwoord: ' : ''}{answerText(question, review?.correctAnswer)}</Text>
+          <Text style={styles.reviewTitle}>{review?.isCorrect ? (locale === 'nl' ? 'Goed beantwoord' : locale === 'fa' ? 'پاسخ درست' : 'سم ځواب') : (locale === 'nl' ? 'Niet goed beantwoord' : locale === 'fa' ? 'پاسخ نادرست' : 'ناسم ځواب')}</Text>
+          <Text style={styles.body}>{locale === 'nl' ? 'Jouw antwoord: ' : locale === 'fa' ? 'پاسخ شما: ' : 'ستاسو ځواب: '}{answerText(question, review?.selectedAnswer)}</Text>
+          <Text style={styles.body}>{locale === 'nl' ? 'Juiste antwoord: ' : locale === 'fa' ? 'پاسخ درست: ' : 'سم ځواب: '}{answerText(question, review?.correctAnswer)}</Text>
           <Text style={styles.body}>{review?.explanation}</Text>
         </View> : <>
-          {question.questionType === 'multiple_response' ? <Text style={styles.meta}>{locale === 'nl' ? 'Kies alle juiste antwoorden.' : '??? ????'}</Text> : null}
-          {question.questionType === 'numeric' ? <TextInput value={typeof selected === 'string' ? selected : ''} onChangeText={choose} keyboardType="decimal-pad" placeholder={locale === 'nl' ? 'Vul je antwoord in' : 'Antwoord'} placeholderTextColor="#a9c2ea" style={styles.input} /> : question.options.map((option, optionIndex) => {
+          {question.questionType === 'multiple_response' ? <Text style={styles.meta}>{locale === 'nl' ? 'Kies alle juiste antwoorden.' : locale === 'fa' ? 'همهٔ پاسخ‌های درست را انتخاب کنید.' : 'ټول سم ځوابونه وټاکئ.'}</Text> : null}
+          {question.questionType === 'numeric' ? <TextInput value={typeof selected === 'string' ? selected : ''} onChangeText={choose} keyboardType="decimal-pad" placeholder={locale === 'nl' ? 'Vul je antwoord in' : locale === 'fa' ? 'پاسخ را وارد کنید' : 'ځواب ولیکئ'} placeholderTextColor="#a9c2ea" style={styles.input} /> : question.options.map((option, optionIndex) => {
             const isSelected = Array.isArray(selected) ? selected.includes(optionIndex) : selected === optionIndex;
             return <Pressable key={optionIndex} onPress={() => {
               if (question.questionType === 'multiple_response') {
                 const values = Array.isArray(selected) ? selected : [];
                 choose(isSelected ? values.filter((value) => value !== optionIndex) : [...values, optionIndex].sort((a, b) => a - b));
               } else choose(optionIndex);
-            }} style={[styles.option, isSelected && styles.optionSelected]}><Text style={styles.body}>{question.questionType === 'multiple_response' ? (isSelected ? '? ' : '? ') : `${String.fromCharCode(65 + optionIndex)}. `}{option}</Text></Pressable>;
+            }} style={[styles.option, isSelected && styles.optionSelected]}><Text style={styles.body}>{question.questionType === 'multiple_response' ? (isSelected ? '☑ ' : '□ ') : `${String.fromCharCode(65 + optionIndex)}. `}{option}</Text></Pressable>;
           })}
         </>}
       </View> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {!timeExpired || result ? <View style={styles.nav}>
-        <Pressable disabled={busy || index === 0} onPress={() => void goToQuestion(index - 1)} style={[styles.navButton, (busy || index === 0) && styles.disabled]}><Text style={styles.navText}> {locale === 'nl' ? 'Vorige' : ''}</Text></Pressable>
-        <Pressable disabled={busy || index === attempt.questions.length - 1} onPress={() => void goToQuestion(index + 1)} style={[styles.navButton, (busy || index === attempt.questions.length - 1) && styles.disabled]}><Text style={styles.navText}>{busy ? 'Opslaan.' : locale === 'nl' ? 'Volgende' : ''} </Text></Pressable>
+        <Pressable disabled={busy || index === 0} onPress={() => void goToQuestion(index - 1)} style={[styles.navButton, (busy || index === 0) && styles.disabled]}><Text style={styles.navText}>← {locale === 'nl' ? 'Vorige' : locale === 'fa' ? 'قبلی' : 'مخکینۍ'}</Text></Pressable>
+        <Pressable disabled={busy || index === attempt.questions.length - 1} onPress={() => void goToQuestion(index + 1)} style={[styles.navButton, (busy || index === attempt.questions.length - 1) && styles.disabled]}><Text style={styles.navText}>{busy ? (locale === 'nl' ? 'Opslaan…' : locale === 'fa' ? 'ذخیره…' : 'ساتل…') : locale === 'nl' ? 'Volgende' : locale === 'fa' ? 'بعدی' : 'بله'} →</Text></Pressable>
       </View> : null}
-      {!result && !timeExpired ? <Pressable disabled={busy} onPress={confirmSubmit} style={[styles.submit, busy && styles.disabled]}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examen inleveren' : locale === 'fa' ? '??? ??????' : '??????? ??????'}</Text></Pressable> : null}
-      {result ? <Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.submit}><Text style={styles.primaryText}>{locale === 'nl' ? 'Terug naar examens' : 'Examens'}</Text></Pressable></Link> : null}
+      {!result && !timeExpired ? <Pressable disabled={busy} onPress={confirmSubmit} style={[styles.submit, busy && styles.disabled]}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examen inleveren' : locale === 'fa' ? 'ثبت امتحان' : 'ازموینه وسپارئ'}</Text></Pressable> : null}
+      {result ? <Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.submit}><Text style={styles.primaryText}>{locale === 'nl' ? 'Terug naar examens' : locale === 'fa' ? 'بازگشت به امتحان‌ها' : 'ازموینو ته بېرته'}</Text></Pressable></Link> : null}
     </> : null}
   </ScrollView>;
 }
@@ -188,4 +188,3 @@ const styles = StyleSheet.create({
   reviewTitle: { color: colors.primaryDeep, fontSize: 17, fontWeight: '800' },
   rtl: { textAlign: 'right', writingDirection: 'rtl' }
 });
-
