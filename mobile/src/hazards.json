@@ -1,0 +1,363 @@
+[
+  {
+    "question": {
+      "nl": "Een kind staat vlak bij de rijbaan en kijkt naar de overkant.",
+      "fa": "یک کودک نزدیک جاده ایستاده و به سوی دیگر نگاه می‌کند."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: een kind kan plotseling de rijbaan oplopen.",
+      "fa": "ترمز کنید: کودک ممکن است ناگهان وارد جاده شود."
+    },
+    "image": "/images/Langzaam rijden langs spelende kinderen.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je ziet ruim vooruit een rood verkeerslicht en er rijdt niemand direct achter je.",
+      "fa": "در فاصله دور چراغ سرخ را می‌بینید و کسی درست پشت سر شما نیست."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: je kunt rustig snelheid verminderen en verder vooruit kijken.",
+      "fa": "گاز را رها کنید: می‌توانید آرام سرعت را کم کنید و جلو را زیر نظر بگیرید."
+    },
+    "image": "/images/Twee auto's rechtdoor op gelijkwaardig kruispunt.jpg"
+  },
+  {
+    "question": {
+      "nl": "De weg is vrij, je rijdt met veilige snelheid en er is geen direct gevaar.",
+      "fa": "جاده آزاد است، سرعت شما ایمن است و خطر فوری وجود ندارد."
+    },
+    "answer": "nothing",
+    "explanation": {
+      "nl": "Niets doen: blijf kijken en houd je snelheid stabiel.",
+      "fa": "کاری نکنید: به مشاهده ادامه دهید و سرعت را ثابت نگه دارید."
+    },
+    "image": "/images/Reactie en remweg bij een obstakel.jpg"
+  },
+  {
+    "question": {
+      "nl": "De auto voor je remt plotseling hard.",
+      "fa": "موتر جلویی ناگهان شدید ترمز می‌کند."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: het gevaar is direct en de afstand wordt snel kleiner.",
+      "fa": "ترمز کنید: خطر فوری است و فاصله به‌سرعت کم می‌شود."
+    },
+    "image": "/images/Reactie en remweg bij een obstakel.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je nadert een drukke rotonde en ziet verkeer op de rotonde.",
+      "fa": "به میدان شلوغ نزدیک می‌شوید و در میدان موتر می‌بینید."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: verlaag tijdig je snelheid en beoordeel of je moet stoppen.",
+      "fa": "گاز را رها کنید: به‌موقع سرعت را کم و نیاز به توقف را ارزیابی کنید."
+    },
+    "image": "/images/Rotonde verlaten met rechter richtingaanwijzer.jpg"
+  },
+  {
+    "question": {
+      "nl": "Een fietser naast je wijkt onverwacht richting jouw rijstrook.",
+      "fa": "دوچرخه‌سوار کنار شما ناگهان به خط شما منحرف می‌شود."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: er ontstaat direct botsingsgevaar.",
+      "fa": "ترمز کنید: خطر مستقیم تصادف ایجاد شده است."
+    },
+    "image": "/images/Dode hoek_ twee fietsposities naast vrachtwagen.jpg"
+  },
+  {
+    "question": {
+      "nl": "Het begint hard te regenen en je zicht wordt minder.",
+      "fa": "باران شدید آغاز می‌شود و دید شما کمتر می‌گردد."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: pas je snelheid geleidelijk aan en vergroot de afstand.",
+      "fa": "گاز را رها کنید: سرعت را تدریجی کم و فاصله را بیشتر کنید."
+    },
+    "image": "/images/Grote volgafstand in zware regen.jpg"
+  },
+  {
+    "question": {
+      "nl": "Een voetganger staat bij het zebrapad en wil oversteken.",
+      "fa": "یک پیاده کنار گذرگاه ایستاده و می‌خواهد عبور کند."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: geef de voetganger veilig gelegenheid om over te steken.",
+      "fa": "ترمز کنید و به پیاده فرصت عبور ایمن بدهید."
+    },
+    "image": "/images/Voetganger nadert zebrapad, auto stopt.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je rijdt op de snelweg en ziet dat jouw rijstrook verderop ophoudt.",
+      "fa": "در بزرگراه می‌بینید خط شما در جلو پایان می‌یابد."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: creëer ruimte, kijk goed en bereid het invoegen voor.",
+      "fa": "گاز را رها کنید، فضا بسازید و برای یک‌جا شدن آماده شوید."
+    },
+    "image": "/images/Veilig invoegen vanaf de acceleratiestrook.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je ziet een ambulance met zwaailicht en sirene achter je naderen.",
+      "fa": "آمبولانس با چراغ و آژیر از پشت نزدیک می‌شود."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: maak gecontroleerd ruimte zonder plotselinge bewegingen.",
+      "fa": "گاز را رها کنید و بدون حرکت ناگهانی، کنترل‌شده راه باز کنید."
+    },
+    "image": "/images/Veilig ruimte maken voor de ambulance.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je rijdt in dichte mist en kunt veel minder ver vooruit kijken.",
+      "fa": "در مه غلیظ می‌رانید و دید بسیار کوتاه شده است."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: pas je snelheid aan de korte zichtafstand aan.",
+      "fa": "گاز را رها کنید و سرعت را با فاصله دید هماهنگ سازید."
+    },
+    "image": "/images/Mistachterlicht bij 50 meter zicht.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je rijdt langs een school en kinderen spelen dicht bij de straat.",
+      "fa": "از کنار مکتب می‌گذرید و کودکان نزدیک سرک بازی می‌کنند."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: verlaag je snelheid en wees voorbereid op onverwacht gedrag.",
+      "fa": "گاز را رها کنید و برای رفتار ناگهانی آماده باشید."
+    },
+    "image": "/images/Langzaam rijden langs spelende kinderen.jpg"
+  },
+  {
+    "question": {
+      "nl": "Tussen geparkeerde auto’s stapt plotseling een voetganger de rijbaan op.",
+      "fa": "از میان موترهای پارک‌شده ناگهان یک عابر وارد جاده می‌شود."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: de voetganger bevindt zich direct in jouw rijlijn.",
+      "fa": "ترمز کنید: عابر مستقیماً در مسیر شما قرار گرفته است."
+    },
+    "image": "/images/Voetganger nadert zebrapad, auto stopt.jpg"
+  },
+  {
+    "question": {
+      "nl": "Meerdere auto’s verderop gaan de remlichten aan, maar jouw voorganger rijdt nog door.",
+      "fa": "چراغ ترمز چند موتر در دوردست روشن می‌شود، اما موتر جلوی شما هنوز حرکت می‌کند."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: anticipeer op de afremmende verkeersstroom en vergroot je veiligheidsmarge.",
+      "fa": "گاز را رها کنید: کاهش سرعت ترافیک را پیش‌بینی و فاصله ایمنی را بیشتر کنید."
+    },
+    "image": "/images/Reactie en remweg bij een obstakel.jpg"
+  },
+  {
+    "question": {
+      "nl": "Het verkeerslicht is groen, het kruispunt is vrij en je rijdt met aangepaste snelheid.",
+      "fa": "چراغ سبز است، تقاطع آزاد است و با سرعت مناسب می‌رانید."
+    },
+    "answer": "nothing",
+    "explanation": {
+      "nl": "Niets doen: er is geen direct gevaar; blijf wel het kruispunt controleren.",
+      "fa": "کاری نکنید: خطر فوری نیست، اما تقاطع را همچنان بررسی کنید."
+    },
+    "image": "/images/Twee auto's rechtdoor op gelijkwaardig kruispunt.jpg"
+  },
+  {
+    "question": {
+      "nl": "Naast je begint iemand het portier van een geparkeerde auto te openen.",
+      "fa": "در کنار شما کسی شروع به باز کردن درِ موتر پارک‌شده می‌کند."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: een openslaand portier vormt onmiddellijk botsingsgevaar.",
+      "fa": "ترمز کنید: باز شدن در فوراً خطر برخورد ایجاد می‌کند."
+    },
+    "image": "/images/Parkeerafstand bij de hoek_ 5 meter.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je nadert een scherpe bocht en merkt dat je snelheid te hoog is.",
+      "fa": "به پیچ تند نزدیک می‌شوید و متوجه می‌شوید سرعت‌تان زیاد است."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: verminder vóór de bocht rustig snelheid en houd de auto stabiel.",
+      "fa": "گاز را رها کنید: پیش از پیچ آرام سرعت را کم و موتر را پایدار نگه دارید."
+    },
+    "image": "/images/Blauwe auto bij 50-km-bord.jpg"
+  },
+  {
+    "question": {
+      "nl": "Een bal rolt tussen geparkeerde auto’s de weg op.",
+      "fa": "یک توپ از میان موترهای پارک‌شده وارد جاده می‌شود."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: er kan direct een kind achter de bal aan komen.",
+      "fa": "ترمز کنید: ممکن است کودکی فوراً دنبال توپ بیاید."
+    },
+    "image": "/images/Langzaam rijden langs spelende kinderen.jpg"
+  },
+  {
+    "question": {
+      "nl": "Een fietser rijdt stabiel op een afgescheiden fietspad en er is voldoende afstand.",
+      "fa": "دوچرخه‌سوار با ثبات در مسیر جداگانه می‌راند و فاصله کافی است."
+    },
+    "answer": "nothing",
+    "explanation": {
+      "nl": "Niets doen: er is geen direct gevaar; blijf de fietser volgen met je blik.",
+      "fa": "کاری نکنید: خطر فوری نیست، اما دوچرخه‌سوار را زیر نظر نگه دارید."
+    },
+    "image": "/images/Dode hoek_ twee fietsposities naast vrachtwagen.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je rijdt te dicht achter een auto die met constante snelheid rijdt.",
+      "fa": "بیش از حد نزدیک پشت موتر جلویی با سرعت ثابت می‌رانید."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: vergroot geleidelijk de volgafstand zonder onnodig hard te remmen.",
+      "fa": "گاز را رها کنید: بدون ترمز شدید، فاصله تعقیب را تدریجی بیشتر کنید."
+    },
+    "image": "/images/Reactie en remweg bij een obstakel.jpg"
+  },
+  {
+    "question": {
+      "nl": "Verderop versmalt de rijbaan door wegwerkzaamheden en het verkeer rijdt nog door.",
+      "fa": "در جلو به‌دلیل کار جاده مسیر باریک می‌شود و ترافیک هنوز روان است."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: pas tijdig je snelheid aan en zoek rustig de juiste positie.",
+      "fa": "گاز را رها کنید: به‌موقع سرعت را تنظیم و آرام جای درست را انتخاب کنید."
+    },
+    "image": "/images/Veilig invoegen vanaf de acceleratiestrook.jpg"
+  },
+  {
+    "question": {
+      "nl": "Een tegenligger komt gedeeltelijk op jouw weghelft terecht.",
+      "fa": "موتر روبه‌رو بخشی از خط شما را اشغال می‌کند."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: de beschikbare ruimte wordt direct kleiner en er is botsingsgevaar.",
+      "fa": "ترمز کنید: فضای موجود فوراً کمتر شده و خطر برخورد وجود دارد."
+    },
+    "image": "/images/Reactie en remweg bij een obstakel.jpg"
+  },
+  {
+    "question": {
+      "nl": "Het verkeerslicht wordt geel en je kunt nog veilig vóór de stopstreep stoppen.",
+      "fa": "چراغ زرد می‌شود و هنوز می‌توانید ایمن پیش از خط توقف بایستید."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: bij geel stop je wanneer dat nog veilig kan.",
+      "fa": "ترمز کنید: در چراغ زرد وقتی ایمن ممکن باشد باید توقف کنید."
+    },
+    "image": "/images/Twee auto's rechtdoor op gelijkwaardig kruispunt.jpg"
+  },
+  {
+    "question": {
+      "nl": "Vlak langs de weg staat een dier dat richting de rijbaan beweegt.",
+      "fa": "کنار جاده حیوانی به‌سوی مسیر حرکت می‌کند."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: verlaag je snelheid en houd rekening met onverwacht oversteken.",
+      "fa": "گاز را رها کنید: سرعت را کم و احتمال ورود ناگهانی حیوان را در نظر بگیرید."
+    },
+    "image": "/images/Langzaam rijden langs spelende kinderen.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je rijdt naast een vrachtwagen die richting aangeeft om rechtsaf te slaan.",
+      "fa": "کنار لاری می‌رانید و لاری برای گردش به راست راهنما می‌زند."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: blijf uit de dode hoek en laat de vrachtwagen afslaan.",
+      "fa": "ترمز کنید: از نقطه کور دور بمانید و اجازه دهید لاری بپیچد."
+    },
+    "image": "/images/Dode hoek_ twee fietsposities naast vrachtwagen.jpg"
+  },
+  {
+    "question": {
+      "nl": "Je nadert bij vorst een brugdek en ziet een waarschuwing voor gladheid.",
+      "fa": "در هوای یخبندان به پل نزدیک می‌شوید و هشدار لغزندگی می‌بینید."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: brugdekken kunnen eerder glad worden; verminder rustig snelheid.",
+      "fa": "گاز را رها کنید: سطح پل زودتر یخ می‌زند؛ آرام سرعت را کم کنید."
+    },
+    "image": "/images/Grote volgafstand in zware regen.jpg"
+  },
+  {
+    "question": {
+      "nl": "Voor je ontstaat plotseling een stilstaande file.",
+      "fa": "در جلو ناگهان صف موترهای متوقف‌شده تشکیل می‌شود."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: het snelheidsverschil met de file vormt onmiddellijk gevaar.",
+      "fa": "ترمز کنید: تفاوت سرعت با صف فوراً خطر ایجاد می‌کند."
+    },
+    "image": "/images/Reactie en remweg bij een obstakel.jpg"
+  },
+  {
+    "question": {
+      "nl": "Op de snelweg is de rijbaan vrij, je afstand is ruim en je snelheid is toegestaan.",
+      "fa": "در بزرگراه مسیر آزاد، فاصله کافی و سرعت شما مجاز است."
+    },
+    "answer": "nothing",
+    "explanation": {
+      "nl": "Niets doen: houd koers en snelheid stabiel en blijf ver vooruit kijken.",
+      "fa": "کاری نکنید: مسیر و سرعت را ثابت نگه دارید و دوردست را ببینید."
+    },
+    "image": "/images/Blauwe auto bij 50-km-bord.jpg"
+  },
+  {
+    "question": {
+      "nl": "Een bus staat bij een halte en passagiers lopen dicht langs de rijbaan.",
+      "fa": "بس در ایستگاه است و مسافران نزدیک جاده راه می‌روند."
+    },
+    "answer": "gas",
+    "explanation": {
+      "nl": "Gas los: houd rekening met passagiers die onverwacht kunnen oversteken.",
+      "fa": "گاز را رها کنید: ممکن است مسافری ناگهان از جاده عبور کند."
+    },
+    "image": "/images/Voetganger nadert zebrapad, auto stopt.jpg"
+  },
+  {
+    "question": {
+      "nl": "Een auto rijdt achteruit vanuit een uitrit jouw rijbaan op.",
+      "fa": "یک موتر از خروجی با دنده‌عقب وارد خط شما می‌شود."
+    },
+    "answer": "rem",
+    "explanation": {
+      "nl": "Remmen: de auto kruist direct jouw rijlijn.",
+      "fa": "ترمز کنید: موتر مستقیماً مسیر شما را قطع می‌کند."
+    },
+    "image": "/images/Parkeerafstand bij de hoek_ 5 meter.jpg"
+  }
+]
+
