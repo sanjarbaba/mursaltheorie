@@ -23,6 +23,10 @@ function Routes() {
       <Stack.Protected guard={isReady}>
         <Stack.Screen name="index" options={{ title: 'Mijn cursus' }} />
         <Stack.Screen name="lesson/[id]" options={{ title: 'Les' }} />
+        <Stack.Screen name="practice" options={{ title: 'Oefenen' }} />
+        <Stack.Screen name="signs" options={{ title: 'Verkeersborden' }} />
+        <Stack.Screen name="exams" options={{ title: 'Oefenexamens' }} />
+        <Stack.Screen name="exam/[number]" options={{ title: 'Oefenexamen' }} />
       </Stack.Protected>
     </Stack>
   );
@@ -35,3 +39,4 @@ export default function RootLayout() {
     </ClerkProvider>
   );
 }
+
