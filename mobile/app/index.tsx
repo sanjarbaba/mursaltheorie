@@ -1,6 +1,6 @@
 import { useAuth } from '@clerk/expo';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
@@ -13,6 +13,7 @@ import {
   flushProgressQueue,
   isLessonsCacheFresh,
   readCachedLessons,
+  readProgressQueue,
   readPreferredLocale,
   savePreferredLocale
 } from '@/src/storage';
@@ -38,29 +39,29 @@ const labels: Record<Locale, {
     title: 'Mijn cursus',
     active: 'Toegang actief',
     noAccess: 'Je account heeft nog geen actieve toegang tot deze cursus.',
-    offline: 'Offline - opgeslagen lessen',
+    offline: 'Offline — opgeslagen lessen',
     refresh: 'Vernieuwen',
     empty: 'Nog geen lessen beschikbaar.'
   },
   fa: {
-    title: '???? ??',
-    active: '?????? ???? ???',
-    noAccess: '???? ??? ???? ???? ?????? ???? ?? ???? ???? ?????.',
-    offline: '?????? - ??????? ?????????',
-    refresh: '?????????',
-    empty: '???? ???? ????? ????.'
+    title: 'دوره من',
+    active: 'دسترسی فعال است',
+    noAccess: 'برای این حساب هنوز دسترسی فعال به دوره وجود ندارد.',
+    offline: 'آفلاین — درس‌های ذخیره‌شده',
+    refresh: 'تازه‌سازی',
+    empty: 'هنوز درسی موجود نیست.'
   },
   ps: {
-    title: '??? ????',
-    active: '?????? ???? ??',
-    noAccess: '?? ?? ???? ?? ?? ? ???? ???? ?????? ????.',
-    offline: '?????? - ????? ??? ??????',
-    refresh: '???? ???',
-    empty: '?? ???? ?????? ????.'
+    title: 'زما کورس',
+    active: 'لاسرسی فعال دی',
+    noAccess: 'په دې حساب کې لا د کورس فعال لاسرسی نشته.',
+    offline: 'آفلاین — خوندي شوي درسونه',
+    refresh: 'تازه کول',
+    empty: 'تر اوسه درسونه نشته.'
   }
 };
 
-const LessonCard = memo(function LessonCard({ lesson, locale }: { lesson: Lesson; locale: Locale }) {
+const LessonCard = memo(function LessonCard({ lesson, locale, completed }: { lesson: Lesson; locale: Locale; completed: boolean }) {
   const uri = mediaUrl(lesson.media[0]?.src);
   const rtl = locale !== 'nl';
   return <Link href={{ pathname: '/lesson/[id]', params: { id: String(lesson.id), locale } }} asChild>
@@ -71,7 +72,7 @@ const LessonCard = memo(function LessonCard({ lesson, locale }: { lesson: Lesson
         <Text numberOfLines={2} style={[styles.lessonTitle, rtl && styles.rtl]}>{lesson.id}. {lesson.title}</Text>
         <Text numberOfLines={2} style={[styles.summary, rtl && styles.rtl]}>{lesson.summary}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={17} color={colors.muted} />
+      <Ionicons name={completed ? 'checkmark-circle' : 'chevron-forward'} size={completed ? 20 : 17} color={completed ? colors.success : colors.muted} />
     </Pressable>
   </Link>;
 });
@@ -87,6 +88,7 @@ export default function HomeScreen() {
   const [error, setError] = useState('');
   const [locale, setLocale] = useState<Locale>('nl');
   const [allowedLocales, setAllowedLocales] = useState<Locale[]>(['nl']);
+  const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     void readPreferredLocale().then(setLocale);
@@ -153,6 +155,28 @@ export default function HomeScreen() {
 
   useEffect(() => { void load(false); }, [load]);
 
+  useFocusEffect(useCallback(() => {
+    if (!userId || access !== true) return;
+    let active = true;
+    void (async () => {
+      try {
+        const request = createApiClient(() => getTokenRef.current());
+        const data = await request<{ progress: Array<{ lesson_id: number; completed: boolean }> }>('/api/v1/progress');
+        const completed = new Set(data.progress.filter((item) => item.completed).map((item) => Number(item.lesson_id)));
+        const queued = await readProgressQueue(userId);
+        for (const item of queued) {
+          if (item.completed) completed.add(item.lessonId);
+          else completed.delete(item.lessonId);
+        }
+        if (active) setCompletedIds(completed);
+      } catch {
+        const queued = await readProgressQueue(userId);
+        if (active && queued.length) setCompletedIds((previous) => new Set([...previous, ...queued.filter((item) => item.completed).map((item) => item.lessonId)]));
+      }
+    })();
+    return () => { active = false; };
+  }, [userId, access]));
+
   async function chooseLocale(next: Locale) {
     if (!allowedLocales.includes(next)) return;
     await savePreferredLocale(next);
@@ -171,7 +195,7 @@ export default function HomeScreen() {
           {access === true ? <View style={styles.activeBadge}><View style={styles.activeDot} /><Text style={styles.activeText}>{copy.active}</Text></View> : null}
         </View>
         <Text style={[styles.title, rtl && styles.rtl]}>{copy.title}</Text>
-        <Text style={[styles.subtitle, rtl && styles.rtl]}>{locale === 'nl' ? 'Leer in jouw tempo, stap voor stap.' : locale === 'fa' ? '?? ???? ??????? ??? ?? ??? ??? ??????.' : '?? ??? ???? ??? ?? ??? ??? ??? ????.'}</Text>
+        <Text style={[styles.subtitle, rtl && styles.rtl]}>{locale === 'nl' ? 'Leer in jouw tempo, stap voor stap.' : locale === 'fa' ? 'با سرعت خودتان، گام به گام یاد بگیرید.' : 'په خپل وخت، ګام په ګام زده کړه وکړئ.'}</Text>
 
         <View style={styles.languageRow}>
           {(['nl', 'fa', 'ps'] as Locale[]).map((item) => (
@@ -186,11 +210,15 @@ export default function HomeScreen() {
               ]}
             >
               <Text style={item === locale ? styles.languageTextActive : styles.languageText}>
-                {item === 'nl' ? 'NL' : item === 'fa' ? '???/?????' : '????'}
+                {item === 'nl' ? 'NL' : item === 'fa' ? 'دری/فارسی' : 'پښتو'}
               </Text>
             </Pressable>
           ))}
         </View>
+        {access === true && lessons.length ? <View style={styles.progressCard}>
+          <View style={styles.progressRow}><Text style={styles.progressLabel}>{locale === 'nl' ? 'Mijn voortgang' : locale === 'fa' ? 'پیشرفت من' : 'زما پرمختګ'}</Text><Text style={styles.progressCount}>{completedIds.size} / {lessons.length}</Text></View>
+          <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(100, completedIds.size / lessons.length * 100)}%` }]} /></View>
+        </View> : null}
         {offline ? <Text style={[styles.offline, rtl && styles.rtl]}>{copy.offline}</Text> : null}
         {error ? <Text style={[styles.error, rtl && styles.rtl]}>{error}</Text> : null}
       </View>
@@ -206,9 +234,9 @@ export default function HomeScreen() {
           initialNumToRender={7}
           maxToRenderPerBatch={7}
           windowSize={5}
-          ListHeaderComponent={<View style={styles.listHeading}><Text style={styles.sectionTitle}>{locale === 'nl' ? 'Alle lessen' : locale === 'fa' ? '??? ??????' : '??? ??????'}</Text><Text style={styles.count}>{lessons.length}</Text></View>}
+          ListHeaderComponent={<View style={styles.listHeading}><Text style={styles.sectionTitle}>{locale === 'nl' ? 'Alle lessen' : locale === 'fa' ? 'همه درس‌ها' : 'ټول درسونه'}</Text><Text style={styles.count}>{lessons.length}</Text></View>}
           ListEmptyComponent={<Text style={[styles.empty, rtl && styles.rtl]}>{copy.empty}</Text>}
-          renderItem={({ item }) => <LessonCard lesson={item} locale={locale} />}
+          renderItem={({ item }) => <LessonCard lesson={item} locale={locale} completed={completedIds.has(item.id)} />}
           ListFooterComponent={
             <View style={styles.actions}>
               <Pressable style={styles.primaryButton} onPress={() => void load(true)}>
@@ -258,6 +286,12 @@ const styles = StyleSheet.create({
   empty: { color: colors.muted, padding: 20, textAlign: 'center' },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
   languageRow: { flexDirection: 'row', gap: 7, marginTop: 5 },
+  progressCard: { gap: 8, marginTop: 5, padding: 12, borderRadius: 14, backgroundColor: colors.primarySoft },
+  progressRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  progressLabel: { color: colors.primaryDeep, fontWeight: '800', fontSize: 13 },
+  progressCount: { color: colors.primary, fontWeight: '900', fontSize: 13 },
+  progressTrack: { height: 6, backgroundColor: colors.line, borderRadius: 99, overflow: 'hidden' },
+  progressFill: { height: 6, backgroundColor: colors.primary, borderRadius: 99 },
   languageButton: { paddingVertical: 8, paddingHorizontal: 11, borderRadius: 999, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
   languageButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   languageButtonDisabled: { opacity: 0.35 },
