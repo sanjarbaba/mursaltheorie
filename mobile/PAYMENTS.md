@@ -16,8 +16,10 @@ Na die stap:
 
 1. Toon de Apple-producten met hun live StoreKit-prijs in het accountscherm.
 2. Start de aankoop met StoreKit en stuur de transactie-ID naar de API.
-3. Verifieer de ondertekende transactie bij Apple op de server, controleer app-ID, product-ID en terugbetaling en koppel de aankoop aan het ingelogde Clerk-account.
-4. Maak of verleng de 30-daagse toegang in `entitlements` met bron `app_store`, zodat `/api/v1/access` voor web en app dezelfde uitkomst geeft.
-5. Verwerk App Store Server Notifications V2 voor terugbetalingen en statuswijzigingen. Voeg 'Herstel aankopen' toe en test in Apple's sandbox.
+3. Verifieer de ondertekende transactie bij Apple op de server, controleer app-ID, product-ID, transactiestatus en terugbetaling en koppel de aankoop eenmalig aan het ingelogde Clerk-account. Gebruik een stabiele Apple `appAccountToken` om verwisseling van accounts te voorkomen.
+4. Maak of verleng de 30-daagse toegang in `entitlements` met bron `apple` (de bestaande databasewaarde), zodat `/api/v1/access` voor web en app dezelfde uitkomst geeft.
+5. Verwerk App Store Server Notifications V2 voor terugbetalingen en statuswijzigingen. Voeg 'Herstel aankopen' toe via het ingelogde account en test in Apple's sandbox. Bij niet-verlengende abonnementen beheert onze server de 30-dageneinddatum en het herstel op andere toestellen.
+
+Apple documenteert [niet-verlengende abonnementen](https://developer.apple.com/app-store/business-models/), [serververificatie](https://developer.apple.com/documentation/appstoreserverapi) en [herstel van aankopen](https://developer.apple.com/documentation/storekit/restoring-purchased-products).
 
 Fysieke boeken blijven via de website verkocht. Dit plan wijzigt geen live betalingen of websitecode.

@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "nl.mursaltheorie.app",
-      "buildNumber": "12",
+      "buildNumber": "13",
       "infoPlist": {
         "CFBundleDisplayName": "Mursal Theorie",
         "ITSAppUsesNonExemptEncryption": false
