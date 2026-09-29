@@ -60,7 +60,10 @@ export default function ExamScreen() {
 
   const question = attempt?.questions[index];
   const selected = question ? answers[question.id] : undefined;
-  const answered = attempt?.questions.filter((item) => saved[item.id]).length || 0;
+  const answered = attempt?.questions.filter((item) => {
+    const value = answers[item.id];
+    return value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0);
+  }).length || 0;
   const remaining = attempt?.exam.durationSeconds
     ? Math.max(0, Math.ceil((new Date(attempt.startedAt).getTime() + attempt.exam.durationSeconds * 1000 - now) / 1000))
     : null;
@@ -73,17 +76,27 @@ export default function ExamScreen() {
     setError('');
   }
 
-  async function saveAnswer() {
-    if (!attempt || !question || selected === undefined || selected === '' || timeExpired) return;
-    setBusy(true);
-    setError('');
+  async function persistCurrentAnswer(): Promise<boolean> {
+    if (!attempt || !question || result || saved[question.id] || selected === undefined || selected === '' || (Array.isArray(selected) && selected.length === 0)) return true;
+    if (timeExpired) return false;
     try {
       await createApiClient(() => getTokenRef.current())('/api/v1/exam-attempts', {
         method: 'POST', body: JSON.stringify({ action: 'answer', attemptId: attempt.id, questionId: question.id, answer: selected, locale })
       });
       setSaved((current) => ({ ...current, [question.id]: true }));
+      return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Antwoord kon niet worden opgeslagen.');
+      return false;
+    }
+  }
+
+  async function goToQuestion(nextIndex: number) {
+    if (!attempt || busy || nextIndex < 0 || nextIndex >= attempt.questions.length) return;
+    setBusy(true);
+    setError('');
+    try {
+      if (await persistCurrentAnswer()) setIndex(nextIndex);
     } finally { setBusy(false); }
   }
 
@@ -92,6 +105,7 @@ export default function ExamScreen() {
     setBusy(true);
     setError('');
     try {
+      if (!await persistCurrentAnswer()) return;
       const response = await createApiClient(() => getTokenRef.current())<{ result: Result }>('/api/v1/exam-attempts', {
         method: 'POST', body: JSON.stringify({ action: 'submit', attemptId: attempt.id, locale })
       });
@@ -115,7 +129,7 @@ export default function ExamScreen() {
   return <ScrollView contentContainerStyle={styles.container}>
     {loading ? <ActivityIndicator /> : error && !attempt ? <View style={styles.card}><Text style={styles.error}>{error}</Text><Pressable onPress={() => setRetry((value) => value + 1)} style={styles.primary}><Text style={styles.primaryText}>Opnieuw proberen</Text></Pressable></View> : attempt ? <>
       <Text style={[styles.title, rtl && styles.rtl]}>{attempt.exam.title}</Text>
-      {result ? <View style={styles.result}><Text style={styles.resultTitle}>{result.passed ? 'V' : '?'} {result.score}%</Text><Text style={styles.body}>{locale === 'nl' ? (result.passed ? 'Geslaagd voor dit oefenexamen.' : 'Nog niet geslaagd. Bekijk hieronder je antwoorden.') : result.passed ? 'V' : '?'}</Text></View> : <Text style={styles.meta}>{answered} / {attempt.questions.length} {locale === 'nl' ? 'antwoorden opgeslagen' : 'V'}{remaining !== null ? ` � ${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}` : ''}</Text>}
+      {result ? <View style={styles.result}><Text style={styles.resultTitle}>{result.passed ? 'V' : '?'} {result.score}%</Text><Text style={styles.body}>{locale === 'nl' ? (result.passed ? 'Geslaagd voor dit oefenexamen.' : 'Nog niet geslaagd. Bekijk hieronder je antwoorden.') : result.passed ? 'V' : '?'}</Text></View> : <Text style={styles.meta}>{answered} / {attempt.questions.length} {locale === 'nl' ? 'vragen beantwoord' : 'V'}{remaining !== null ? ` � ${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}` : ''}</Text>}
       {timeExpired && !result ? <View style={styles.card}><Text style={styles.error}>{locale === 'nl' ? 'De tijd is voorbij. Start een nieuw examen.' : 'Tijd voorbij'}</Text><Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.primary}><Text style={styles.primaryText}>Examens</Text></Pressable></Link></View> : question ? <View style={styles.card}>
         <Text style={styles.meta}>{locale === 'nl' ? 'Vraag' : '????'} {index + 1} / {attempt.questions.length} � {question.category}</Text>
         {question.media?.map((item, mediaIndex) => { const uri = mediaUrl(item.src); return uri ? <Image key={`${uri}-${mediaIndex}`} source={{ uri }} style={styles.image} resizeMode="contain" accessibilityLabel={item.alt || question.prompt} /> : null; })}
@@ -136,15 +150,14 @@ export default function ExamScreen() {
               } else choose(optionIndex);
             }} style={[styles.option, isSelected && styles.optionSelected]}><Text style={styles.body}>{question.questionType === 'multiple_response' ? (isSelected ? '? ' : '? ') : `${String.fromCharCode(65 + optionIndex)}. `}{option}</Text></Pressable>;
           })}
-          {selected !== undefined && selected !== '' ? <Pressable disabled={busy || saved[question.id]} onPress={() => void saveAnswer()} style={[styles.primary, (busy || saved[question.id]) && styles.disabled]}><Text style={styles.primaryText}>{saved[question.id] ? (locale === 'nl' ? 'Antwoord opgeslagen V' : 'V') : (locale === 'nl' ? 'Antwoord opslaan' : '?????')}</Text></Pressable> : null}
         </>}
       </View> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {!timeExpired || result ? <View style={styles.nav}>
-        <Pressable disabled={index === 0} onPress={() => setIndex(index - 1)} style={[styles.navButton, index === 0 && styles.disabled]}><Text style={styles.navText}> {locale === 'nl' ? 'Vorige' : ''}</Text></Pressable>
-        <Pressable disabled={index === attempt.questions.length - 1 || (!result && selected !== undefined && !saved[question?.id || 0])} onPress={() => setIndex(index + 1)} style={[styles.navButton, (index === attempt.questions.length - 1 || (!result && selected !== undefined && !saved[question?.id || 0])) && styles.disabled]}><Text style={styles.navText}>{locale === 'nl' ? 'Volgende' : ''} </Text></Pressable>
+        <Pressable disabled={busy || index === 0} onPress={() => void goToQuestion(index - 1)} style={[styles.navButton, (busy || index === 0) && styles.disabled]}><Text style={styles.navText}> {locale === 'nl' ? 'Vorige' : ''}</Text></Pressable>
+        <Pressable disabled={busy || index === attempt.questions.length - 1} onPress={() => void goToQuestion(index + 1)} style={[styles.navButton, (busy || index === attempt.questions.length - 1) && styles.disabled]}><Text style={styles.navText}>{busy ? 'Opslaan.' : locale === 'nl' ? 'Volgende' : ''} </Text></Pressable>
       </View> : null}
-      {!result && !timeExpired ? <Pressable disabled={busy || (selected !== undefined && !saved[question?.id || 0])} onPress={confirmSubmit} style={[styles.submit, (busy || (selected !== undefined && !saved[question?.id || 0])) && styles.disabled]}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examen inleveren' : locale === 'fa' ? '??? ??????' : '??????? ??????'}</Text></Pressable> : null}
+      {!result && !timeExpired ? <Pressable disabled={busy} onPress={confirmSubmit} style={[styles.submit, busy && styles.disabled]}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examen inleveren' : locale === 'fa' ? '??? ??????' : '??????? ??????'}</Text></Pressable> : null}
       {result ? <Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.submit}><Text style={styles.primaryText}>{locale === 'nl' ? 'Terug naar examens' : 'Examens'}</Text></Pressable></Link> : null}
     </> : null}
   </ScrollView>;
