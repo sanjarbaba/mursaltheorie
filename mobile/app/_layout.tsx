@@ -29,6 +29,9 @@ function Routes() {
         <Stack.Screen name="exams" options={{ headerShown: false }} />
         <Stack.Screen name="account" options={{ headerShown: false }} />
         <Stack.Screen name="exam/[number]" options={{ title: 'Oefenexamen' }} />
+        <Stack.Screen name="mistakes" options={{ title: 'Foutentraining' }} />
+        <Stack.Screen name="words" options={{ title: 'Woorden' }} />
+        <Stack.Screen name="hazard" options={{ title: 'Verkeerssituaties' }} />
       </Stack.Protected>
     </Stack>
   );
