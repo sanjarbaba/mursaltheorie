@@ -6,6 +6,10 @@ export type ContentBlock = {
   type: string;
   text?: LocalizedContent;
   title?: LocalizedContent;
+  question?: LocalizedContent;
+  options?: LocalizedContent[];
+  correctOption?: number;
+  explanation?: LocalizedContent;
   [key: string]: unknown;
 };
 
