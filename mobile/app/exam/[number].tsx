@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
 import { mediaUrl } from '@/src/content';
+import { colors } from '@/src/theme';
 import type { Locale } from '@/src/types';
 
 type Answer = number | number[] | string;
@@ -13,7 +14,7 @@ type Attempt = { id: number; status: string; startedAt: string; exam: { title: s
 type Result = { score: number; passed: boolean; answers: Array<{ questionId: number; selectedAnswer: Answer | null; correctAnswer: Answer; isCorrect: boolean; explanation: string }> };
 
 function answerText(question: Question, answer: Answer | null | undefined): string {
-  if (answer === null || answer === undefined) return '—';
+  if (answer === null || answer === undefined) return '-';
   if (Array.isArray(answer)) return answer.map((value) => question.options[value] || String(value)).join(', ');
   if (typeof answer === 'number' && question.questionType !== 'numeric') return question.options[answer] || String(answer);
   return String(answer);
@@ -105,7 +106,7 @@ export default function ExamScreen() {
     const unanswered = (attempt?.questions.length || 0) - answered;
     Alert.alert(locale === 'nl' ? 'Examen inleveren?' : 'Exam', unanswered ? `${unanswered} ${locale === 'nl' ? 'vragen zijn nog niet beantwoord.' : 'vragen'}` : (locale === 'nl' ? 'Je kunt je antwoorden daarna bekijken.' : ''), [
       { text: locale === 'nl' ? 'Verder oefenen' : 'Terug', style: 'cancel' },
-      { text: locale === 'nl' ? 'Inleveren' : '✓', onPress: () => void submit() }
+      { text: locale === 'nl' ? 'Inleveren' : 'V', onPress: () => void submit() }
     ]);
   }
 
@@ -114,18 +115,18 @@ export default function ExamScreen() {
   return <ScrollView contentContainerStyle={styles.container}>
     {loading ? <ActivityIndicator /> : error && !attempt ? <View style={styles.card}><Text style={styles.error}>{error}</Text><Pressable onPress={() => setRetry((value) => value + 1)} style={styles.primary}><Text style={styles.primaryText}>Opnieuw proberen</Text></Pressable></View> : attempt ? <>
       <Text style={[styles.title, rtl && styles.rtl]}>{attempt.exam.title}</Text>
-      {result ? <View style={styles.result}><Text style={styles.resultTitle}>{result.passed ? '✓' : '✕'} {result.score}%</Text><Text style={styles.body}>{locale === 'nl' ? (result.passed ? 'Geslaagd voor dit oefenexamen.' : 'Nog niet geslaagd. Bekijk hieronder je antwoorden.') : result.passed ? '✓' : '✕'}</Text></View> : <Text style={styles.meta}>{answered} / {attempt.questions.length} {locale === 'nl' ? 'antwoorden opgeslagen' : '✓'}{remaining !== null ? ` · ${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}` : ''}</Text>}
+      {result ? <View style={styles.result}><Text style={styles.resultTitle}>{result.passed ? 'V' : '?'} {result.score}%</Text><Text style={styles.body}>{locale === 'nl' ? (result.passed ? 'Geslaagd voor dit oefenexamen.' : 'Nog niet geslaagd. Bekijk hieronder je antwoorden.') : result.passed ? 'V' : '?'}</Text></View> : <Text style={styles.meta}>{answered} / {attempt.questions.length} {locale === 'nl' ? 'antwoorden opgeslagen' : 'V'}{remaining !== null ? ` � ${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}` : ''}</Text>}
       {timeExpired && !result ? <View style={styles.card}><Text style={styles.error}>{locale === 'nl' ? 'De tijd is voorbij. Start een nieuw examen.' : 'Tijd voorbij'}</Text><Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.primary}><Text style={styles.primaryText}>Examens</Text></Pressable></Link></View> : question ? <View style={styles.card}>
-        <Text style={styles.meta}>{locale === 'nl' ? 'Vraag' : 'سوال'} {index + 1} / {attempt.questions.length} · {question.category}</Text>
+        <Text style={styles.meta}>{locale === 'nl' ? 'Vraag' : '????'} {index + 1} / {attempt.questions.length} � {question.category}</Text>
         {question.media?.map((item, mediaIndex) => { const uri = mediaUrl(item.src); return uri ? <Image key={`${uri}-${mediaIndex}`} source={{ uri }} style={styles.image} resizeMode="contain" accessibilityLabel={item.alt || question.prompt} /> : null; })}
         <Text style={[styles.question, rtl && styles.rtl]}>{question.prompt}</Text>
         {result ? <View style={styles.review}>
-          <Text style={styles.reviewTitle}>{review?.isCorrect ? (locale === 'nl' ? 'Goed beantwoord' : '✓') : (locale === 'nl' ? 'Niet goed beantwoord' : '✕')}</Text>
+          <Text style={styles.reviewTitle}>{review?.isCorrect ? (locale === 'nl' ? 'Goed beantwoord' : 'V') : (locale === 'nl' ? 'Niet goed beantwoord' : '?')}</Text>
           <Text style={styles.body}>{locale === 'nl' ? 'Jouw antwoord: ' : ''}{answerText(question, review?.selectedAnswer)}</Text>
           <Text style={styles.body}>{locale === 'nl' ? 'Juiste antwoord: ' : ''}{answerText(question, review?.correctAnswer)}</Text>
           <Text style={styles.body}>{review?.explanation}</Text>
         </View> : <>
-          {question.questionType === 'multiple_response' ? <Text style={styles.meta}>{locale === 'nl' ? 'Kies alle juiste antwoorden.' : 'چند پاسخ'}</Text> : null}
+          {question.questionType === 'multiple_response' ? <Text style={styles.meta}>{locale === 'nl' ? 'Kies alle juiste antwoorden.' : '??? ????'}</Text> : null}
           {question.questionType === 'numeric' ? <TextInput value={typeof selected === 'string' ? selected : ''} onChangeText={choose} keyboardType="decimal-pad" placeholder={locale === 'nl' ? 'Vul je antwoord in' : 'Antwoord'} placeholderTextColor="#a9c2ea" style={styles.input} /> : question.options.map((option, optionIndex) => {
             const isSelected = Array.isArray(selected) ? selected.includes(optionIndex) : selected === optionIndex;
             return <Pressable key={optionIndex} onPress={() => {
@@ -133,44 +134,45 @@ export default function ExamScreen() {
                 const values = Array.isArray(selected) ? selected : [];
                 choose(isSelected ? values.filter((value) => value !== optionIndex) : [...values, optionIndex].sort((a, b) => a - b));
               } else choose(optionIndex);
-            }} style={[styles.option, isSelected && styles.optionSelected]}><Text style={styles.body}>{question.questionType === 'multiple_response' ? (isSelected ? '☑ ' : '□ ') : `${String.fromCharCode(65 + optionIndex)}. `}{option}</Text></Pressable>;
+            }} style={[styles.option, isSelected && styles.optionSelected]}><Text style={styles.body}>{question.questionType === 'multiple_response' ? (isSelected ? '? ' : '? ') : `${String.fromCharCode(65 + optionIndex)}. `}{option}</Text></Pressable>;
           })}
-          {selected !== undefined && selected !== '' ? <Pressable disabled={busy || saved[question.id]} onPress={() => void saveAnswer()} style={[styles.primary, (busy || saved[question.id]) && styles.disabled]}><Text style={styles.primaryText}>{saved[question.id] ? (locale === 'nl' ? 'Antwoord opgeslagen ✓' : '✓') : (locale === 'nl' ? 'Antwoord opslaan' : 'ذخیره')}</Text></Pressable> : null}
+          {selected !== undefined && selected !== '' ? <Pressable disabled={busy || saved[question.id]} onPress={() => void saveAnswer()} style={[styles.primary, (busy || saved[question.id]) && styles.disabled]}><Text style={styles.primaryText}>{saved[question.id] ? (locale === 'nl' ? 'Antwoord opgeslagen V' : 'V') : (locale === 'nl' ? 'Antwoord opslaan' : '?????')}</Text></Pressable> : null}
         </>}
       </View> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {!timeExpired || result ? <View style={styles.nav}>
-        <Pressable disabled={index === 0} onPress={() => setIndex(index - 1)} style={[styles.navButton, index === 0 && styles.disabled]}><Text style={styles.navText}>← {locale === 'nl' ? 'Vorige' : ''}</Text></Pressable>
-        <Pressable disabled={index === attempt.questions.length - 1 || (!result && selected !== undefined && !saved[question?.id || 0])} onPress={() => setIndex(index + 1)} style={[styles.navButton, (index === attempt.questions.length - 1 || (!result && selected !== undefined && !saved[question?.id || 0])) && styles.disabled]}><Text style={styles.navText}>{locale === 'nl' ? 'Volgende' : ''} →</Text></Pressable>
+        <Pressable disabled={index === 0} onPress={() => setIndex(index - 1)} style={[styles.navButton, index === 0 && styles.disabled]}><Text style={styles.navText}> {locale === 'nl' ? 'Vorige' : ''}</Text></Pressable>
+        <Pressable disabled={index === attempt.questions.length - 1 || (!result && selected !== undefined && !saved[question?.id || 0])} onPress={() => setIndex(index + 1)} style={[styles.navButton, (index === attempt.questions.length - 1 || (!result && selected !== undefined && !saved[question?.id || 0])) && styles.disabled]}><Text style={styles.navText}>{locale === 'nl' ? 'Volgende' : ''} </Text></Pressable>
       </View> : null}
-      {!result && !timeExpired ? <Pressable disabled={busy || (selected !== undefined && !saved[question?.id || 0])} onPress={confirmSubmit} style={[styles.submit, (busy || (selected !== undefined && !saved[question?.id || 0])) && styles.disabled]}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examen inleveren' : locale === 'fa' ? 'ثبت امتحان' : 'ازموینه وسپارئ'}</Text></Pressable> : null}
+      {!result && !timeExpired ? <Pressable disabled={busy || (selected !== undefined && !saved[question?.id || 0])} onPress={confirmSubmit} style={[styles.submit, (busy || (selected !== undefined && !saved[question?.id || 0])) && styles.disabled]}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examen inleveren' : locale === 'fa' ? '??? ??????' : '??????? ??????'}</Text></Pressable> : null}
       {result ? <Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.submit}><Text style={styles.primaryText}>{locale === 'nl' ? 'Terug naar examens' : 'Examens'}</Text></Pressable></Link> : null}
     </> : null}
   </ScrollView>;
 }
 
 const styles = StyleSheet.create({
-  container: { minHeight: '100%', padding: 18, paddingBottom: 55, gap: 14, backgroundColor: '#0b1633' },
-  title: { color: '#fff', fontSize: 26, fontWeight: '800' },
-  meta: { color: '#a9c2ea', fontSize: 14 },
-  card: { gap: 13, padding: 18, borderRadius: 18, backgroundColor: '#142653', borderWidth: 1, borderColor: '#24437f' },
-  image: { width: '100%', height: 220, backgroundColor: '#fff', borderRadius: 12 },
-  question: { color: '#fff', fontSize: 21, fontWeight: '800', lineHeight: 29 },
-  body: { color: '#edf5ff', fontSize: 16, lineHeight: 23 },
-  option: { padding: 14, borderRadius: 12, backgroundColor: '#1b315e', borderWidth: 1, borderColor: '#44639b' },
-  optionSelected: { borderColor: '#e84a5f', backgroundColor: '#503151' },
-  input: { color: '#fff', backgroundColor: '#1b315e', borderWidth: 1, borderColor: '#44639b', borderRadius: 12, padding: 14, fontSize: 17 },
-  primary: { alignItems: 'center', padding: 14, backgroundColor: '#e84a5f', borderRadius: 12 },
+  container: { minHeight: '100%', padding: 18, paddingBottom: 55, gap: 14, backgroundColor: colors.background },
+  title: { color: colors.ink, fontSize: 26, fontWeight: '900' },
+  meta: { color: colors.muted, fontSize: 14 },
+  card: { gap: 13, padding: 18, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  image: { width: '100%', height: 220, backgroundColor: colors.background, borderRadius: 12 },
+  question: { color: colors.ink, fontSize: 21, fontWeight: '800', lineHeight: 29 },
+  body: { color: colors.ink, fontSize: 16, lineHeight: 23 },
+  option: { padding: 14, minHeight: 52, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  optionSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  input: { color: colors.ink, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 12, padding: 14, fontSize: 17 },
+  primary: { alignItems: 'center', padding: 14, backgroundColor: colors.primary, borderRadius: 12 },
   primaryText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   disabled: { opacity: 0.45 },
-  error: { color: '#ff9c9c', lineHeight: 22 },
+  error: { color: colors.error, lineHeight: 22 },
   nav: { flexDirection: 'row', gap: 12 },
-  navButton: { flex: 1, alignItems: 'center', padding: 13, backgroundColor: '#172b59', borderRadius: 12, borderWidth: 1, borderColor: '#365487' },
-  navText: { color: '#fff', fontWeight: '800' },
-  submit: { alignItems: 'center', padding: 16, borderRadius: 12, backgroundColor: '#e84a5f' },
-  result: { padding: 18, gap: 6, borderRadius: 16, backgroundColor: '#174b43' },
-  resultTitle: { color: '#fff', fontSize: 32, fontWeight: '900' },
-  review: { gap: 8, padding: 13, borderRadius: 12, backgroundColor: '#20345c' },
-  reviewTitle: { color: '#ffd66b', fontSize: 17, fontWeight: '800' },
+  navButton: { flex: 1, alignItems: 'center', padding: 13, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.line },
+  navText: { color: colors.primary, fontWeight: '800' },
+  submit: { alignItems: 'center', padding: 16, borderRadius: 12, backgroundColor: colors.primary },
+  result: { padding: 18, gap: 6, borderRadius: 16, backgroundColor: colors.successSoft },
+  resultTitle: { color: colors.success, fontSize: 32, fontWeight: '900' },
+  review: { gap: 8, padding: 13, borderRadius: 12, backgroundColor: colors.primarySoft },
+  reviewTitle: { color: colors.primaryDeep, fontSize: 17, fontWeight: '800' },
   rtl: { textAlign: 'right', writingDirection: 'rtl' }
 });
+
