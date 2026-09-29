@@ -43,7 +43,8 @@ Voor TestFlight zijn nog nodig:
 - Apple Developer Program / App Store Connect toegang
 - registratie van `nl.mursaltheorie.app` bij Apple
 - iOS signing credentials via EAS
-- definitief vierkant app-icoon (1024×1024)
+- controle van het nieuwe M-icoon op een fysieke iPhone
 - fysieke iPhone smoke test voordat de build naar testers gaat
 
 De live website wordt door deze mobiele branch niet gewijzigd.
+
