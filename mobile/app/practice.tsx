@@ -6,7 +6,7 @@ import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View
 import { createApiClient } from '@/src/api/client';
 import { isQuiz, localizedText, mediaUrl } from '@/src/content';
 import { TabShell } from '@/src/Menu';
-import { cacheLessons, readCachedLessons } from '@/src/storage';
+import { cacheLessons, isLessonsCacheFresh, readCachedLessons } from '@/src/storage';
 import { colors } from '@/src/theme';
 import type { ContentBlock, Lesson, LessonsResponse, Locale } from '@/src/types';
 
@@ -33,10 +33,18 @@ export default function PracticeScreen() {
     void (async () => {
       try {
         const cached = await readCachedLessons(locale);
-        const response = cached?.lessons.length
-          ? cached
-          : await createApiClient(() => getTokenRef.current())<LessonsResponse>(`/api/v1/lessons?locale=${locale}`);
-        if (!cached) await cacheLessons(response);
+        const fresh = await isLessonsCacheFresh(locale);
+        let response: LessonsResponse;
+        if (cached?.lessons.length && fresh) response = cached;
+        else {
+          try {
+            response = await createApiClient(() => getTokenRef.current())<LessonsResponse>(`/api/v1/lessons?locale=${locale}`);
+            await cacheLessons(response);
+          } catch (cause) {
+            if (!cached?.lessons.length) throw cause;
+            response = cached;
+          }
+        }
         if (active) setQuestions(response.lessons.flatMap((lesson) => lesson.contentBlocks.flatMap((block, blockIndex) => isQuiz(block) ? [{ key: `${lesson.id}:${blockIndex}`, lesson, block }] : [])));
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : 'Oefeningen konden niet worden geladen.');
@@ -59,20 +67,22 @@ export default function PracticeScreen() {
   const imageUri = mediaUrl(current?.lesson.media[0]?.src);
 
   return <TabShell locale={locale} active="practice"><ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
-    <Text style={[styles.title, rtl && styles.rtl]}>{locale === 'nl' ? 'Oefenen' : locale === 'fa' ? '?????' : '?????'}</Text>
+    <Text style={[styles.title, rtl && styles.rtl]}>{locale === 'nl' ? 'Oefenen' : locale === 'fa' ? 'تمرین' : 'تمرین'}</Text>
     <Text style={[styles.subtitle, rtl && styles.rtl]}>{locale === 'nl' ? 'Een vraag tegelijk. Leer meteen van de uitleg.' : ''}</Text>
+    <Link href={{ pathname: '/hazard', params: { locale } }} asChild><Pressable style={styles.wordsLink}><Ionicons name="car-sport-outline" size={19} color={colors.primary} /><Text style={styles.wordsText}>{locale === 'nl' ? 'Verkeerssituaties oefenen' : locale === 'fa' ? 'تمرین موقعیت‌های ترافیکی' : 'د ترافیک حالتونه'}</Text><Ionicons name="chevron-forward" size={17} color={colors.primary} /></Pressable></Link>
+    <Link href={{ pathname: '/words', params: { locale } }} asChild><Pressable style={styles.wordsLink}><Ionicons name="book-outline" size={19} color={colors.primary} /><Text style={styles.wordsText}>{locale === 'nl' ? 'Verkeerswoorden bekijken' : locale === 'fa' ? 'واژه‌های ترافیکی' : 'د ترافیک کلمې'}</Text><Ionicons name="chevron-forward" size={17} color={colors.primary} /></Pressable></Link>
     <View style={styles.progressCard}>
-      <View style={styles.progressRow}><Text style={styles.progressLabel}>{locale === 'nl' ? 'Jouw oefenronde' : '?????'}</Text><Text style={styles.progressCount}>{answered} / {visible.length}</Text></View>
+      <View style={styles.progressRow}><Text style={styles.progressLabel}>{locale === 'nl' ? 'Jouw oefenronde' : 'تمرین'}</Text><Text style={styles.progressCount}>{answered} / {visible.length}</Text></View>
       <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${visible.length ? answered / visible.length * 100 : 0}%` }]} /></View>
-      <Text style={styles.muted}>{correct} {locale === 'nl' ? 'goed beantwoord' : 'V'}</Text>
+      <Text style={styles.muted}>{correct} {locale === 'nl' ? 'goed beantwoord' : '✓'}</Text>
     </View>
     {loading ? <ActivityIndicator color={colors.primary} /> : error ? <Text style={styles.error}>{error}</Text> : <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
-        <Pressable onPress={() => chooseModule(0)} style={[styles.chip, module === 0 && styles.chipActive]}><Text style={[styles.chipText, module === 0 && styles.chipTextActive]}>{locale === 'nl' ? 'Alles' : '???'}</Text></Pressable>
+        <Pressable onPress={() => chooseModule(0)} style={[styles.chip, module === 0 && styles.chipActive]}><Text style={[styles.chipText, module === 0 && styles.chipTextActive]}>{locale === 'nl' ? 'Alles' : 'همه'}</Text></Pressable>
         {modules.map(([number, title]) => <Pressable key={number} onPress={() => chooseModule(number)} style={[styles.chip, module === number && styles.chipActive]}><Text style={[styles.chipText, module === number && styles.chipTextActive]}>{title}</Text></Pressable>)}
       </ScrollView>
       {current ? <View style={styles.card}>
-        <View style={styles.questionMeta}><Text style={styles.questionNumber}>{locale === 'nl' ? 'VRAAG' : '????'} {index + 1} / {visible.length}</Text><Text numberOfLines={1} style={styles.module}>{current.lesson.module.title}</Text></View>
+        <View style={styles.questionMeta}><Text style={styles.questionNumber}>{locale === 'nl' ? 'VRAAG' : 'سوال'} {index + 1} / {visible.length}</Text><Text numberOfLines={1} style={styles.module}>{current.lesson.module.title}</Text></View>
         {imageUri ? <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" accessibilityLabel={current.lesson.title} /> : null}
         <Text style={[styles.question, rtl && styles.rtl]}>{localizedText(current.block.question, locale)}</Text>
         {current.block.options.map((option, optionIndex) => <Pressable key={optionIndex} onPress={() => setAnswers((value) => ({ ...value, [current.key]: optionIndex }))} style={[styles.option, answer === optionIndex && (answer === current.block.correctOption ? styles.correct : styles.incorrect)]}>
@@ -80,15 +90,15 @@ export default function PracticeScreen() {
           <Text style={[styles.optionText, rtl && styles.rtl]}>{localizedText(option, locale)}</Text>
         </Pressable>)}
         {answer !== undefined ? <View style={styles.feedback}>
-          <Text style={styles.feedbackTitle}>{answer === current.block.correctOption ? 'V' : '?'} {answer === current.block.correctOption ? (locale === 'nl' ? 'Goed gedaan' : '') : (locale === 'nl' ? 'Bekijk het juiste antwoord' : '')}</Text>
+          <Text style={styles.feedbackTitle}>{answer === current.block.correctOption ? '✓' : '✕'} {answer === current.block.correctOption ? (locale === 'nl' ? 'Goed gedaan' : '') : (locale === 'nl' ? 'Bekijk het juiste antwoord' : '')}</Text>
           {answer !== current.block.correctOption ? <Text style={[styles.optionText, rtl && styles.rtl]}>{localizedText(current.block.options[current.block.correctOption], locale)}</Text> : null}
           <Text style={[styles.optionText, rtl && styles.rtl]}>{localizedText(current.block.explanation, locale)}</Text>
         </View> : null}
-        <Link href={{ pathname: '/lesson/[id]', params: { id: String(current.lesson.id), locale } }} asChild><Pressable style={styles.lessonLink}><Text style={styles.linkText}>{locale === 'nl' ? 'Bekijk de bijbehorende les' : '???'}</Text><Ionicons name="arrow-forward" size={16} color={colors.primary} /></Pressable></Link>
+        <Link href={{ pathname: '/lesson/[id]', params: { id: String(current.lesson.id), locale } }} asChild><Pressable style={styles.lessonLink}><Text style={styles.linkText}>{locale === 'nl' ? 'Bekijk de bijbehorende les' : 'درس'}</Text><Ionicons name="arrow-forward" size={16} color={colors.primary} /></Pressable></Link>
       </View> : <Text style={styles.muted}>{locale === 'nl' ? 'Geen oefenvragen beschikbaar.' : 'Geen vragen'}</Text>}
       {current ? <View style={styles.nav}>
-        <Pressable disabled={index === 0} onPress={() => setIndex(index - 1)} style={[styles.navButton, index === 0 && styles.disabled]}><Text style={styles.navText}> {locale === 'nl' ? 'Vorige' : ''}</Text></Pressable>
-        <Pressable disabled={index === visible.length - 1} onPress={() => setIndex(index + 1)} style={[styles.navButton, index === visible.length - 1 && styles.disabled]}><Text style={styles.navText}>{locale === 'nl' ? 'Volgende' : ''} </Text></Pressable>
+        <Pressable disabled={index === 0} onPress={() => setIndex(index - 1)} style={[styles.navButton, index === 0 && styles.disabled]}><Text style={styles.navText}>← {locale === 'nl' ? 'Vorige' : ''}</Text></Pressable>
+        <Pressable disabled={index === visible.length - 1} onPress={() => setIndex(index + 1)} style={[styles.navButton, index === visible.length - 1 && styles.disabled]}><Text style={styles.navText}>{locale === 'nl' ? 'Volgende' : ''} →</Text></Pressable>
       </View> : null}
     </>}
   </ScrollView></TabShell>;
@@ -99,6 +109,8 @@ const styles = StyleSheet.create({
   container: { padding: 18, paddingBottom: 28, gap: 14 },
   title: { fontSize: 31, fontWeight: '900', color: colors.ink, letterSpacing: -0.7 },
   subtitle: { color: colors.muted, fontSize: 15, lineHeight: 21 },
+  wordsLink: { flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 50, paddingHorizontal: 14, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  wordsText: { flex: 1, color: colors.primary, fontSize: 15, fontWeight: '800' },
   muted: { color: colors.muted, fontSize: 14 },
   progressCard: { gap: 9, padding: 16, borderRadius: 18, backgroundColor: colors.primarySoft },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between' },
