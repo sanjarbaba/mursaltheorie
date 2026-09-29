@@ -7,14 +7,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from './theme';
 import type { Locale } from './types';
 
-type Page = 'lessons' | 'practice' | 'signs' | 'exams';
+type Page = 'lessons' | 'practice' | 'signs' | 'exams' | 'account';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-const items: { page: Page; path: '/' | '/practice' | '/signs' | '/exams'; icon: IconName; activeIcon: IconName; labels: Record<Locale, string> }[] = [
+const items: { page: Page; path: '/' | '/practice' | '/signs' | '/exams' | '/account'; icon: IconName; activeIcon: IconName; labels: Record<Locale, string> }[] = [
   { page: 'lessons', path: '/', icon: 'book-outline', activeIcon: 'book', labels: { nl: 'Lessen', fa: '??????', ps: '??????' } },
   { page: 'practice', path: '/practice', icon: 'flash-outline', activeIcon: 'flash', labels: { nl: 'Oefenen', fa: '?????', ps: '?????' } },
   { page: 'signs', path: '/signs', icon: 'shapes-outline', activeIcon: 'shapes', labels: { nl: 'Borden', fa: '???????', ps: '???' } },
-  { page: 'exams', path: '/exams', icon: 'document-text-outline', activeIcon: 'document-text', labels: { nl: 'Examens', fa: '?????????', ps: '???????' } }
+  { page: 'exams', path: '/exams', icon: 'document-text-outline', activeIcon: 'document-text', labels: { nl: 'Examens', fa: '?????????', ps: '???????' } },
+  { page: 'account', path: '/account', icon: 'person-circle-outline', activeIcon: 'person-circle', labels: { nl: 'Account', fa: '????', ps: '????' } }
 ];
 
 export function TabShell({ locale, active, children }: { locale: Locale; active: Page; children: ReactNode }) {
