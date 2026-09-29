@@ -5,11 +5,11 @@
     "version": "0.2.0",
     "orientation": "portrait",
     "scheme": "mursaltheorie",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "nl.mursaltheorie.app",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "infoPlist": {
         "CFBundleDisplayName": "Mursal Theorie",
         "ITSAppUsesNonExemptEncryption": false
@@ -35,3 +35,4 @@
     "owner": "sanjarbabas-team"
   }
 }
+
