@@ -1,9 +1,10 @@
 import { useAuth } from '@clerk/expo';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
-import { Menu } from '@/src/Menu';
+import { TabShell } from '@/src/Menu';
+import { colors } from '@/src/theme';
 import type { Locale } from '@/src/types';
 
 type Exam = { number: number; title: string; questionCount: number; passScore: number; durationSeconds: number | null };
@@ -29,27 +30,27 @@ export default function ExamsScreen() {
     return () => { active = false; };
   }, [locale]);
 
-  return <ScrollView contentContainerStyle={styles.container}>
-    <Menu locale={locale} active="exams" />
-    <Text style={[styles.title, rtl && styles.rtl]}>{locale === 'nl' ? 'Oefenexamens' : locale === 'fa' ? 'امتحان‌های تمرینی' : 'تمریني ازموینې'}</Text>
-    <Text style={[styles.intro, rtl && styles.rtl]}>{locale === 'nl' ? 'Kies een examen, beantwoord de vragen en bekijk daarna alle antwoorden met uitleg.' : locale === 'fa' ? 'یک امتحان را انتخاب کنید و پس از پایان پاسخ‌ها را ببینید.' : 'ازموینه وټاکئ او په پای کې ځوابونه وګورئ.'}</Text>
-    {loading ? <ActivityIndicator /> : error ? <Text style={styles.error}>{error}</Text> : exams.length ? exams.map((exam) => <View key={exam.number} style={styles.card}>
+  const header = <View style={styles.header}>
+    <Text style={[styles.title, rtl && styles.rtl]}>{locale === 'nl' ? 'Oefenexamens' : locale === 'fa' ? '?????????? ??????' : '?????? ???????'}</Text>
+    <Text style={[styles.intro, rtl && styles.rtl]}>{locale === 'nl' ? 'Kies een examen, beantwoord de vragen en bekijk daarna alle antwoorden met uitleg.' : locale === 'fa' ? '?? ?????? ?? ?????? ???? ? ?? ?? ????? ??????? ?? ??????.' : '??????? ????? ?? ?? ??? ?? ??????? ?????.'}</Text>
+  </View>;
+  return <TabShell locale={locale} active="exams"><FlatList data={loading || error ? [] : exams} keyExtractor={(exam) => String(exam.number)} ListHeaderComponent={header} contentContainerStyle={styles.container} ItemSeparatorComponent={() => <View style={{ height: 12 }} />} renderItem={({ item: exam }) => <View style={styles.card}>
       <Text style={[styles.examTitle, rtl && styles.rtl]}>{exam.title}</Text>
-      <Text style={[styles.meta, rtl && styles.rtl]}>{exam.questionCount} {locale === 'nl' ? 'vragen' : 'سوال'} · {exam.durationSeconds ? `${Math.ceil(exam.durationSeconds / 60)} min` : (locale === 'nl' ? 'zonder tijdslimiet' : 'بدون محدودیت زمان')} · {locale === 'nl' ? 'slagen vanaf' : '✓'} {exam.passScore}%</Text>
-      <Link href={{ pathname: '/exam/[number]', params: { number: String(exam.number), locale } }} asChild><Pressable style={styles.start}><Text style={styles.startText}>{locale === 'nl' ? 'Start examen' : locale === 'fa' ? 'شروع امتحان' : 'ازموینه پیل کړئ'}</Text></Pressable></Link>
-    </View>) : <Text style={styles.intro}>{locale === 'nl' ? 'Er zijn nog geen gepubliceerde examens beschikbaar.' : 'Geen examens'}</Text>}
-  </ScrollView>;
+      <Text style={[styles.meta, rtl && styles.rtl]}>{exam.questionCount} {locale === 'nl' ? 'vragen' : '????'} � {exam.durationSeconds ? `${Math.ceil(exam.durationSeconds / 60)} min` : (locale === 'nl' ? 'zonder tijdslimiet' : '???? ??????? ????')} � {locale === 'nl' ? 'slagen vanaf' : 'V'} {exam.passScore}%</Text>
+      <Link href={{ pathname: '/exam/[number]', params: { number: String(exam.number), locale } }} asChild><Pressable style={styles.start}><Text style={styles.startText}>{locale === 'nl' ? 'Start examen' : locale === 'fa' ? '???? ??????' : '??????? ??? ???'}</Text></Pressable></Link>
+    </View>} ListEmptyComponent={loading ? <ActivityIndicator color={colors.primary} /> : error ? <Text style={styles.error}>{error}</Text> : <Text style={styles.intro}>{locale === 'nl' ? 'Er zijn nog geen gepubliceerde examens beschikbaar.' : 'Geen examens'}</Text>} /></TabShell>;
 }
 
 const styles = StyleSheet.create({
-  container: { minHeight: '100%', padding: 18, paddingBottom: 50, gap: 14, backgroundColor: '#0b1633' },
-  title: { color: '#fff', fontSize: 30, fontWeight: '800' },
-  intro: { color: '#d2def3', fontSize: 16, lineHeight: 23 },
-  error: { color: '#ff9c9c' },
-  card: { gap: 10, padding: 18, borderRadius: 18, backgroundColor: '#142653', borderWidth: 1, borderColor: '#24437f' },
-  examTitle: { color: '#fff', fontSize: 20, fontWeight: '800' },
-  meta: { color: '#bbcfec', fontSize: 14 },
-  start: { alignItems: 'center', padding: 14, borderRadius: 12, backgroundColor: '#e84a5f' },
+  container: { padding: 18, paddingBottom: 30 }, header: { gap: 11, paddingBottom: 18 },
+  title: { color: colors.ink, fontSize: 30, fontWeight: '900' },
+  intro: { color: colors.muted, fontSize: 16, lineHeight: 23 },
+  error: { color: colors.error },
+  card: { gap: 12, padding: 18, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  examTitle: { color: colors.ink, fontSize: 20, fontWeight: '800' },
+  meta: { color: colors.muted, fontSize: 14, lineHeight: 21 },
+  start: { alignItems: 'center', padding: 14, borderRadius: 12, backgroundColor: colors.primary },
   startText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' }
 });
+
