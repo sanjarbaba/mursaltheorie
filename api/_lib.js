@@ -43,10 +43,11 @@ export async function authenticate(request) {
   if (!process.env.CLERK_SECRET_KEY) return { error: json({ error: 'Clerk-serverconfiguratie ontbreekt.' }, 503) };
 
   try {
-    const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY,
-      authorizedParties: authorizedParties()
-    });
+    // Native Clerk tokens can omit azp. Keep the origin check for tokens that have it.
+    const claims = JSON.parse(Buffer.from(token.split('.')[1] || '', 'base64url').toString('utf8'));
+    const options = { secretKey: process.env.CLERK_SECRET_KEY };
+    if (Object.hasOwn(claims, 'azp')) options.authorizedParties = authorizedParties();
+    const payload = await verifyToken(token, options);
     if (!payload.sub) throw new Error('Token has no subject');
     return { userId: payload.sub, sessionId: payload.sid };
   } catch {
