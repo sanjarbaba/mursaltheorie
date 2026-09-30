@@ -30,6 +30,7 @@ export default function ExamScreen() {
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
   const mutationId = useRef(Crypto.randomUUID());
+  const autoSubmitStarted = useRef(false);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [reviewFilter, setReviewFilter] = useState<'all' | 'wrong'>('all');
@@ -48,7 +49,7 @@ export default function ExamScreen() {
     setLoading(true);
     void createApiClient(() => getTokenRef.current())<{ attempt: Attempt }>('/api/v1/exam-attempts', {
       method: 'POST', body: JSON.stringify({ action: 'start', examNumber, mutationId: mutationId.current, locale })
-    }).then((data) => { if (active) { setAttempt(data.attempt); setError(''); } })
+    }).then((data) => { if (active) { autoSubmitStarted.current = false; setAttempt(data.attempt); setError(''); } })
       .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Examen kon niet worden gestart.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -103,11 +104,11 @@ export default function ExamScreen() {
   }
 
   async function submit() {
-    if (!attempt || timeExpired) return;
+    if (!attempt || busy || result) return;
     setBusy(true);
     setError('');
     try {
-      if (!await persistCurrentAnswer()) return;
+      if (!timeExpired && !await persistCurrentAnswer()) return;
       const response = await createApiClient(() => getTokenRef.current())<{ result: Result }>('/api/v1/exam-attempts', {
         method: 'POST', body: JSON.stringify({ action: 'submit', attemptId: attempt.id, locale })
       });
@@ -118,6 +119,12 @@ export default function ExamScreen() {
       setError(cause instanceof Error ? cause.message : 'Examen kon niet worden ingeleverd.');
     } finally { setBusy(false); }
   }
+
+  useEffect(() => {
+    if (!attempt || !timeExpired || result || busy || autoSubmitStarted.current) return;
+    autoSubmitStarted.current = true;
+    void submit();
+  }, [attempt, timeExpired, result, busy]);
 
   function confirmSubmit() {
     const unanswered = (attempt?.questions.length || 0) - answered;
@@ -159,7 +166,7 @@ export default function ExamScreen() {
           })}</View>
         </View>
       </> : <Text style={styles.meta}>{answered} / {attempt.questions.length} {locale === 'nl' ? 'vragen beantwoord' : locale === 'fa' ? 'سوال پاسخ داده شد' : 'پوښتنو ته ځواب ویل شوی'}{remaining !== null ? ` · ${Math.floor(remaining / 60).toString().padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}` : ''}</Text>}
-      {timeExpired && !result ? <View style={styles.card}><Text style={styles.error}>{locale === 'nl' ? 'De tijd is voorbij. Start een nieuw examen.' : locale === 'fa' ? 'وقت تمام شد. امتحان جدیدی شروع کنید.' : 'وخت پای ته ورسېد. نوې ازموینه پیل کړئ.'}</Text><Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.primary}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examens' : locale === 'fa' ? 'امتحان‌ها' : 'ازموینې'}</Text></Pressable></Link></View> : question ? <View style={styles.card}>
+      {timeExpired && !result ? <View style={styles.card}><Text style={styles.body}>{locale === 'nl' ? 'De tijd is voorbij. Je antwoorden worden nagekeken.' : locale === 'fa' ? 'وقت تمام شد. پاسخ‌های شما بررسی می‌شود.' : 'وخت پای ته ورسېد. ستاسو ځوابونه کتل کېږي.'}</Text>{busy ? <ActivityIndicator color={colors.primary} /> : error ? <Pressable onPress={() => void submit()} style={styles.primary}><Text style={styles.primaryText}>{locale === 'nl' ? 'Uitslag opnieuw ophalen' : locale === 'fa' ? 'دریافت دوبارهٔ نتیجه' : 'پایله بیا ترلاسه کړئ'}</Text></Pressable> : null}</View> : question ? <View style={styles.card}>
         <Text style={styles.meta}>{locale === 'nl' ? 'Vraag' : locale === 'fa' ? 'سوال' : 'پوښتنه'} {index + 1} / {attempt.questions.length} · {question.category}</Text>
         {question.media?.map((item, mediaIndex) => { const uri = mediaUrl(item.src); return uri ? <Image key={`${uri}-${mediaIndex}`} source={{ uri }} style={styles.image} resizeMode="contain" accessibilityLabel={item.alt || question.prompt} /> : null; })}
         <Text style={[styles.question, rtl && styles.rtl]}>{question.prompt}</Text>

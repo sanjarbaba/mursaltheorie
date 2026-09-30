@@ -15,6 +15,7 @@ import {
   readCachedLessons,
   readProgressQueue,
   readPreferredLocale,
+  saveAccessLease,
   savePreferredLocale
 } from '@/src/storage';
 import type { Lesson, LessonsResponse, Locale } from '@/src/types';
@@ -24,6 +25,7 @@ type AccessResponse = {
     hasAccess: boolean;
     products: string[];
     locales?: Locale[];
+    entitlements?: Array<{ ends_at?: string | null }>;
   };
 };
 
@@ -95,9 +97,12 @@ export default function HomeScreen() {
   }, []);
 
   const load = useCallback(async (forceContentRefresh = false) => {
+    const accountId = userId;
     setLoading(true);
     setAccess(null);
     setError('');
+    if (!accountId) { setLoading(false); return; }
+    let accessDenied = false;
     try {
       const request = createApiClient(() => getTokenRef.current());
       const deviceId = await getDeviceId();
@@ -107,10 +112,12 @@ export default function HomeScreen() {
         body: JSON.stringify({ deviceId, platform: Platform.OS === 'ios' ? 'ios' : 'android' })
       });
 
-      if (userId) await flushProgressQueue(userId, request);
+      await flushProgressQueue(accountId, request);
 
       const accessData = await request<AccessResponse>('/api/v1/access');
       const hasAccess = accessData.access.hasAccess;
+      accessDenied = !hasAccess;
+      await saveAccessLease(accountId, accessData.access);
       const locales: Locale[] = accessData.access.locales?.length ? accessData.access.locales : ['nl'];
       setAccess(hasAccess);
       setAllowedLocales(locales);
@@ -127,8 +134,8 @@ export default function HomeScreen() {
         return;
       }
 
-      const cached = await readCachedLessons(effectiveLocale);
-      const fresh = await isLessonsCacheFresh(effectiveLocale);
+      const cached = await readCachedLessons(accountId, effectiveLocale);
+      const fresh = await isLessonsCacheFresh(accountId, effectiveLocale);
 
       if (cached?.lessons.length && fresh && !forceContentRefresh) {
         setLessons(cached.lessons);
@@ -137,12 +144,20 @@ export default function HomeScreen() {
       }
 
       const lessonsData = await request<LessonsResponse>(`/api/v1/lessons?locale=${effectiveLocale}`);
-      await cacheLessons(lessonsData);
+      await cacheLessons(accountId, lessonsData);
       setLessons(lessonsData.lessons);
       setOffline(false);
     } catch (cause) {
-      const cached = await readCachedLessons(locale);
+      if (accessDenied) {
+        setAccess(false);
+        setLessons([]);
+        setOffline(false);
+        return;
+      }
+      const cached = await readCachedLessons(accountId, locale);
       if (cached?.lessons.length) {
+        setAccess(true);
+        setAllowedLocales([locale]);
         setLessons(cached.lessons);
         setOffline(true);
       } else {

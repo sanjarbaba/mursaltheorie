@@ -38,12 +38,7 @@ npx eas-cli build --platform ios --profile production
 npx eas-cli submit --platform ios --profile production
 ```
 
-Voor TestFlight zijn nog nodig:
-
-- Apple Developer Program / App Store Connect toegang
-- registratie van `nl.mursaltheorie.app` bij Apple
-- iOS signing credentials via EAS
-- controle van het door Mursal aangeleverde foto-logo op een fysieke iPhone
-- fysieke iPhone smoke test voordat de build naar testers gaat
+De eerste interne iPhone-builds en apparaatcontrole zijn uitgevoerd. Voor de resterende
+App Store-stappen en de huidige blokkades: zie [APP_STORE_READINESS.md](./APP_STORE_READINESS.md).
 
 De live website wordt door deze mobiele branch niet gewijzigd.

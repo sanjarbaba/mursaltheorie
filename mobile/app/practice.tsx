@@ -17,7 +17,7 @@ export default function PracticeScreen() {
   const { locale: rawLocale } = useLocalSearchParams<{ locale?: string }>();
   const locale: Locale = rawLocale === 'fa' || rawLocale === 'ps' ? rawLocale : 'nl';
   const rtl = locale !== 'nl';
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -28,19 +28,20 @@ export default function PracticeScreen() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!userId) return;
     let active = true;
     setLoading(true);
     setError('');
     void (async () => {
       try {
-        const cached = await readCachedLessons(locale);
-        const fresh = await isLessonsCacheFresh(locale);
+        const cached = await readCachedLessons(userId, locale);
+        const fresh = await isLessonsCacheFresh(userId, locale);
         let response: LessonsResponse;
         if (cached?.lessons.length && fresh) response = cached;
         else {
           try {
             response = await createApiClient(() => getTokenRef.current())<LessonsResponse>(`/api/v1/lessons?locale=${locale}`);
-            await cacheLessons(response);
+            await cacheLessons(userId, response);
           } catch (cause) {
             if (!cached?.lessons.length) throw cause;
             response = cached;
@@ -54,7 +55,7 @@ export default function PracticeScreen() {
       }
     })();
     return () => { active = false; };
-  }, [locale]);
+  }, [locale, userId]);
 
   const modules = useMemo(() => [...new Map(questions.map((question) => [question.lesson.module.number, question.lesson.module.title])).entries()], [questions]);
   const visible = useMemo(() => module ? questions.filter((question) => question.lesson.module.number === module) : questions, [module, questions]);

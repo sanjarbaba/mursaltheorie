@@ -17,13 +17,21 @@ export default function LessonScreen() {
   const rtl = locale === 'fa' || locale === 'ps';
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [lessonLoading, setLessonLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [answers, setAnswers] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    if (Number.isInteger(lessonId)) void readCachedLesson(lessonId, locale).then(setLesson);
-  }, [lessonId, locale]);
+    let active = true;
+    setLessonLoading(true);
+    setLesson(null);
+    if (Number.isInteger(lessonId) && userId) void readCachedLesson(userId, lessonId, locale)
+      .then((cached) => { if (active) setLesson(cached); })
+      .finally(() => { if (active) setLessonLoading(false); });
+    else setLessonLoading(false);
+    return () => { active = false; };
+  }, [lessonId, locale, userId]);
 
   async function completeLesson() {
     if (!userId || !lesson) return;
@@ -46,7 +54,8 @@ export default function LessonScreen() {
     }
   }
 
-  if (!lesson) return <ActivityIndicator style={styles.loader} />;
+  if (lessonLoading) return <ActivityIndicator style={styles.loader} />;
+  if (!lesson) return <View style={styles.unavailable}><Text style={styles.unavailableText}>{locale === 'nl' ? 'Deze les is niet offline beschikbaar. Open de cursus opnieuw met internet.' : locale === 'fa' ? 'این درس آفلاین در دسترس نیست. دوباره با اینترنت وارد دوره شوید.' : 'دا درس آفلاین نه شته. کورس د انټرنېټ له لارې بیا پرانیزئ.'}</Text></View>;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -99,6 +108,8 @@ export default function LessonScreen() {
 
 const styles = StyleSheet.create({
   loader: { flex: 1, backgroundColor: colors.background },
+  unavailable: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.background },
+  unavailableText: { color: colors.ink, fontSize: 17, textAlign: 'center', lineHeight: 25 },
   container: { gap: 16, padding: 20, paddingBottom: 48, backgroundColor: colors.background },
   module: { color: colors.primary, fontWeight: '800' },
   title: { color: colors.ink, fontSize: 30, fontWeight: '900' },

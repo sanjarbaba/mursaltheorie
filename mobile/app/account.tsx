@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
 import { TabShell } from '@/src/Menu';
+import { clearCachedCourse, clearLocalAccountData } from '@/src/storage';
 import { colors } from '@/src/theme';
 import type { Locale } from '@/src/types';
 
@@ -23,7 +24,7 @@ export default function AccountScreen() {
   const copy = labels[locale];
   const rtl = locale !== 'nl';
   const { user } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
   const { signOut } = useClerk();
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
@@ -50,13 +51,24 @@ export default function AccountScreen() {
       await createApiClient(() => getTokenRef.current())('/api/v1/me', {
         method: 'DELETE', body: JSON.stringify({ confirmation: DELETE_CONFIRMATION })
       });
-      setAccountDeleted(true);
-      try { await signOut(); } catch { /* The server has already removed the account. */ }
     } catch {
       setDeleteError(copy.failed);
-    } finally {
       setDeleting(false);
+      return;
     }
+    setAccountDeleted(true);
+    try {
+      if (userId) await clearLocalAccountData(userId);
+    } catch {
+      // A failed local cleanup must not make a completed server deletion look unsuccessful.
+    }
+    try { await signOut(); } catch { /* The server has already removed the account. */ }
+    setDeleting(false);
+  }
+
+  async function leaveAccount() {
+    try { if (userId) await clearCachedCourse(userId); }
+    finally { await signOut(); }
   }
 
   useEffect(() => {
@@ -95,7 +107,7 @@ export default function AccountScreen() {
         </View>
       </View>
 
-      <Pressable onPress={() => void signOut()} style={styles.signOut} accessibilityRole="button">
+      <Pressable onPress={() => void leaveAccount()} style={styles.signOut} accessibilityRole="button">
         <Ionicons name="log-out-outline" size={20} color={colors.error} />
         <Text style={styles.signOutText}>{copy.signOut}</Text>
       </Pressable>

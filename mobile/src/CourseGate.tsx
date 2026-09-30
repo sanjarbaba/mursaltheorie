@@ -4,11 +4,11 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createApiClient } from './api/client';
+import { saveAccessLease } from './storage';
 import { colors } from './theme';
 import type { Locale } from './types';
 
 type Status = 'loading' | 'active' | 'denied' | 'error';
-const accessCache = new Map<string, { active: boolean; checkedAt: number }>();
 const labels: Record<Locale, { denied: string; error: string; deniedDetail: string; errorDetail: string; retry: string; account: string }> = {
   nl: { denied: 'Geen actieve toegang', error: 'Toegang controleren is niet gelukt', deniedDetail: 'Je hebt actieve cursustoegang nodig voor dit onderdeel.', errorDetail: 'Controleer je verbinding en probeer opnieuw.', retry: 'Opnieuw proberen', account: 'Mijn account' },
   fa: { denied: 'دسترسی فعال ندارید', error: 'بررسی دسترسی انجام نشد', deniedDetail: 'برای دیدن این بخش به دسترسی فعال دوره نیاز دارید.', errorDetail: 'اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.', retry: 'دوباره تلاش کنید', account: 'حساب من' },
@@ -24,16 +24,11 @@ export function CourseGate({ locale, children }: { locale: Locale; children: Rea
 
   useEffect(() => {
     if (!userId) { setStatus('loading'); return; }
-    const cached = accessCache.get(userId);
-    if (cached && Date.now() - cached.checkedAt < 60_000 && retry === 0) {
-      setStatus(cached.active ? 'active' : 'denied');
-      return;
-    }
     let mounted = true;
     setStatus('loading');
-    void createApiClient(() => getTokenRef.current())<{ access: { hasAccess: boolean } }>('/api/v1/access')
-      .then((data) => {
-        accessCache.set(userId, { active: data.access.hasAccess, checkedAt: Date.now() });
+    void createApiClient(() => getTokenRef.current())<{ access: { hasAccess: boolean; locales?: Locale[]; entitlements?: Array<{ ends_at?: string | null }> } }>('/api/v1/access')
+      .then(async (data) => {
+        await saveAccessLease(userId, data.access);
         if (mounted) setStatus(data.access.hasAccess ? 'active' : 'denied');
       })
       .catch(() => { if (mounted) setStatus('error'); });
