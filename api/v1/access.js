@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClerkClient } from '@clerk/backend';
 import { authenticate, ensureUser, getSql, hasCourseAccess, parseBody, requireCourseAccess } from '../_lib.js';
 import { accessSummary } from './_access.js';
@@ -15,10 +15,16 @@ function configured(name) {
 }
 
 const MOLLIE_PRODUCTS = Object.freeze({
-  theory_b_nl_30d: Object.freeze({ amount: '29.99', description: 'Mursaltheorie Nederlands - 30 dagen', kind: 'digital' }),
-  theory_b_nl_fa_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands + Dari/Farsi - 30 dagen', kind: 'digital' }),
-  theory_b_nl_ps_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands + Pashto - 30 dagen', kind: 'digital' }),
+  theory_b_nl_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands - 30 dagen', kind: 'digital' }),
+  theory_b_nl_fa_30d: Object.freeze({ amount: '65.00', description: 'Mursaltheorie Nederlands + Dari/Farsi - 30 dagen', kind: 'digital' }),
+  theory_b_nl_ps_30d: Object.freeze({ amount: '65.00', description: 'Mursaltheorie Nederlands + Pashto - 30 dagen', kind: 'digital' }),
   theory_b_book: Object.freeze({ amount: '65.00', description: 'Mursaltheorie B-boek', kind: 'physical' })
+});
+
+const STRIPE_PAYMENT_LINKS = Object.freeze({
+  theory_b_nl_30d: Object.freeze({ id: 'plink_1ULKPUKBUCvMx3oMwtAHlDSX', url: 'https://buy.stripe.com/00w00k8Xd0ZvdEdcHwaVa03' }),
+  theory_b_nl_fa_30d: Object.freeze({ id: 'plink_1ULKPBKBUCvMx3oMZum1ap0i', url: 'https://buy.stripe.com/3cI9AUflB23z7fP8rgaVa02' }),
+  theory_b_nl_ps_30d: Object.freeze({ id: 'plink_1ULKOrKBUCvMx3oM1PtdwCmo', url: 'https://buy.stripe.com/8x24gAgpF0Zv9nXdLAaVa01' })
 });
 
 const CONSENT_VERSION = 'digital-content-v2-2026-09-04';
@@ -43,15 +49,36 @@ function normalizedShipping(value) {
 }
 
 async function createCheckout(sql, userId, customerEmail, productKey, immediateAccessConsent, shipping = null) {
-  const secret = configured('MOLLIE_API_KEY');
   const product = MOLLIE_PRODUCTS[productKey];
   const appUrl = configured('APP_URL') || 'https://www.mursaltheorie.nl';
-  if (!secret) return fail('PAYMENTS_NOT_CONFIGURED', 'Betalen is nog niet geactiveerd.', 503);
   if (!product) return fail('INVALID_PRODUCT', 'Kies een geldig taalpakket.', 422);
   const isPhysical = product.kind === 'physical';
   const consentVersion = isPhysical ? PHYSICAL_ORDER_VERSION : CONSENT_VERSION;
   const consentText = isPhysical ? PHYSICAL_ORDER_TEXT : CONSENT_TEXT;
   const consentedAt = new Date().toISOString();
+
+  if (!isPhysical) {
+    const stripeLink = STRIPE_PAYMENT_LINKS[productKey];
+    if (!stripeLink) return fail('PAYMENTS_NOT_CONFIGURED', 'Stripe is nog niet geconfigureerd voor dit pakket.', 503);
+    const checkoutReference = `mt_${randomUUID().replace(/-/g, '')}`;
+    await sql`
+      INSERT INTO purchase_orders(
+        provider, provider_payment_id, clerk_user_id, customer_email, product_key, description,
+        amount_value, amount_currency, status, consent_version, consent_text, consented_at
+      ) VALUES(
+        'stripe', ${`pending_${checkoutReference}`}, ${userId}, ${customerEmail || null}, ${productKey}, ${product.description},
+        ${product.amount}, 'EUR', 'payment_pending', ${consentVersion}, ${consentText}, ${consentedAt}
+      )
+    `;
+    const checkoutUrl = new URL(stripeLink.url);
+    checkoutUrl.searchParams.set('client_reference_id', checkoutReference);
+    if (customerEmail) checkoutUrl.searchParams.set('locked_prefilled_email', customerEmail);
+    checkoutUrl.searchParams.set('locale', 'nl');
+    return ok({ checkoutUrl: checkoutUrl.toString(), provider: 'stripe' });
+  }
+
+  const secret = configured('MOLLIE_API_KEY');
+  if (!secret) return fail('PAYMENTS_NOT_CONFIGURED', 'Betalen is nog niet geactiveerd.', 503);
   const response = await fetch('https://api.mollie.com/v2/payments', {
     method: 'POST',
     headers: {
@@ -62,13 +89,13 @@ async function createCheckout(sql, userId, customerEmail, productKey, immediateA
     body: JSON.stringify({
       amount: { currency: 'EUR', value: product.amount },
       description: product.description,
-      redirectUrl: `${appUrl}/learn5?payment=${isPhysical ? 'book-return' : 'return'}`,
-      cancelUrl: `${appUrl}/learn5?payment=${isPhysical ? 'book-cancelled' : 'cancelled'}`,
+      redirectUrl: `${appUrl}/learn5?payment=book-return`,
+      cancelUrl: `${appUrl}/learn5?payment=book-cancelled`,
       webhookUrl: `${appUrl}/api/v1/access?resource=mollie-webhook`,
       metadata: {
         clerk_user_id: userId,
         product_key: productKey,
-        immediate_access_consent: !isPhysical && immediateAccessConsent ? 'true' : 'false',
+        immediate_access_consent: 'false',
         consent_version: consentVersion,
         consented_at: consentedAt
       }
@@ -91,7 +118,7 @@ async function createCheckout(sql, userId, customerEmail, productKey, immediateA
     )
     ON CONFLICT(provider, provider_payment_id) DO NOTHING
   `;
-  return ok({ checkoutUrl });
+  return ok({ checkoutUrl, provider: 'mollie' });
 }
 
 function normalizeGuestEmail(value) {
@@ -517,17 +544,100 @@ async function processStripeWebhook(request) {
   if (!verifyStripeSignature(payload, request.headers.get('stripe-signature'), secret)) return fail('INVALID_SIGNATURE', 'Ongeldige webhookhandtekening.', 400);
   const event = JSON.parse(payload);
   const object = event?.data?.object || {};
-  const safePayload = { id: object.id, payment_status: object.payment_status, amount_total: object.amount_total, currency: object.currency, client_reference_id: object.client_reference_id };
   const sql = getSql();
-  await sql`INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at) VALUES('stripe',${event.id},${event.type},${JSON.stringify(safePayload)}::jsonb,NOW()) ON CONFLICT(provider,provider_event_id) DO NOTHING`;
-  if (event.type === 'checkout.session.completed' && object.payment_status === 'paid') {
-    const userId = object.metadata?.clerk_user_id || object.client_reference_id;
-    if (userId) {
-      await ensureUser(sql, userId);
-      await sql`INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status) VALUES(${userId},${object.metadata?.product_key || 'theory_b_access'},'web',${object.id},'active') ON CONFLICT(source,external_reference) DO UPDATE SET status='active',updated_at=NOW()`;
-    }
+  const safePayload = {
+    id: object.id,
+    payment_status: object.payment_status,
+    amount_total: object.amount_total,
+    currency: object.currency,
+    client_reference_id: object.client_reference_id,
+    payment_link: object.payment_link
+  };
+  const inserted = await sql`
+    INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at)
+    VALUES('stripe',${event.id},${event.type},${JSON.stringify(safePayload)}::jsonb,NOW())
+    ON CONFLICT(provider,provider_event_id) DO NOTHING
+    RETURNING id
+  `;
+  if (!inserted[0]) return ok({ received: true, duplicate: true });
+
+  if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) {
+    return ok({ received: true });
   }
-  return ok({ received: true });
+  if (object.payment_status !== 'paid') return ok({ received: true, pending: true });
+
+  const reference = typeof object.client_reference_id === 'string' ? object.client_reference_id : '';
+  if (!/^mt_[A-Za-z0-9]+$/.test(reference)) return fail('PAYMENT_MISMATCH', 'Betalingsreferentie ontbreekt.', 400);
+  const pendingReference = `pending_${reference}`;
+  const orders = await sql`
+    SELECT id, clerk_user_id, customer_email, product_key, description,
+      amount_value::TEXT AS amount_value, amount_currency, consent_version, consent_text, consented_at
+    FROM purchase_orders
+    WHERE provider='stripe' AND provider_payment_id=${pendingReference} AND status='payment_pending'
+    LIMIT 1
+  `;
+  const order = orders[0];
+  if (!order) {
+    const existing = await sql`
+      SELECT provider_payment_id FROM purchase_orders
+      WHERE provider='stripe' AND provider_payment_id=${object.id}
+      LIMIT 1
+    `;
+    if (existing[0]) return ok({ received: true, alreadyProcessed: true });
+    return fail('PAYMENT_MISMATCH', 'Deze Stripe-betaling hoort niet bij een openstaande bestelling.', 400);
+  }
+
+  const product = MOLLIE_PRODUCTS[order.product_key];
+  const stripeLink = STRIPE_PAYMENT_LINKS[order.product_key];
+  const expectedAmount = Math.round(Number(product?.amount || 0) * 100);
+  const paidEmail = normalizeGuestEmail(object.customer_details?.email || object.customer_email);
+  if (!product || !stripeLink || object.payment_link !== stripeLink.id || object.currency?.toLowerCase() !== 'eur' || Number(object.amount_total) !== expectedAmount) {
+    return fail('PAYMENT_MISMATCH', 'Betalingsgegevens komen niet overeen met het gekozen pakket.', 400);
+  }
+
+  const user = await ensureUser(sql, order.clerk_user_id, { email: paidEmail || order.customer_email || undefined });
+  const paidAt = new Date().toISOString();
+  await sql`
+    UPDATE purchase_orders
+    SET provider_payment_id=${object.id}, customer_email=COALESCE(${paidEmail},customer_email),
+      status='active', paid_at=${paidAt}, activated_at=${paidAt}, updated_at=NOW()
+    WHERE id=${order.id}
+  `;
+  await sql`
+    INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status,starts_at,ends_at)
+    VALUES(${order.clerk_user_id},${order.product_key},'web',${object.id},'active',NOW(),NOW()+INTERVAL '30 days')
+    ON CONFLICT(source,external_reference) DO UPDATE SET
+      product_key=EXCLUDED.product_key,status='active',
+      starts_at=COALESCE(entitlements.starts_at,EXCLUDED.starts_at),
+      ends_at=COALESCE(entitlements.ends_at,EXCLUDED.ends_at),updated_at=NOW()
+  `;
+  await sql`
+    UPDATE app_users
+    SET access_status='active',
+      access_starts_at=COALESCE(access_starts_at,NOW()),
+      access_ends_at=GREATEST(COALESCE(access_ends_at,NOW()),NOW()+INTERVAL '30 days'),
+      updated_at=NOW()
+    WHERE clerk_user_id=${order.clerk_user_id} AND access_status <> 'admin'
+  `;
+
+  try {
+    const email = await purchaseConfirmationEmail({
+      email: user.email || paidEmail || order.customer_email,
+      orderId: object.id,
+      description: order.description,
+      amount: order.amount_value,
+      consentText: order.consent_text,
+      appUrl: configured('APP_URL') || 'https://www.mursaltheorie.nl',
+      activated: true
+    });
+    if (email.sent) {
+      await sql`UPDATE purchase_orders SET confirmation_sent_at=NOW(),confirmation_email_id=${email.id},updated_at=NOW() WHERE id=${order.id}`;
+    }
+  } catch (error) {
+    console.error('Stripe purchase confirmation email could not be sent', { name: error?.name });
+  }
+
+  return ok({ received: true, activated: true });
 }
 
 async function examHistory(sql, userId, url) {
@@ -642,7 +752,8 @@ const endpoint = {
       catch (error) { console.error('Mollie webhook failed', error); return fail('WEBHOOK_ERROR', 'Webhook kon niet worden verwerkt.', 400); }
     }
     if (request.method === 'POST' && resource === 'stripe-webhook') {
-      return fail('PAYMENT_PROVIDER_DISABLED', 'Deze betaalprovider is niet actief.', 410);
+      try { return await processStripeWebhook(request); }
+      catch (error) { console.error('Stripe webhook failed', error); return fail('WEBHOOK_ERROR', 'Webhook kon niet worden verwerkt.', 400); }
     }
     if (request.method === 'POST' && resource === 'guest-checkout') {
       const body = await parseBody(request);
