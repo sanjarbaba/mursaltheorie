@@ -164,4 +164,3 @@ const styles = StyleSheet.create({
   restoreText: { color: colors.primary, fontWeight: '800' },
   disabled: { opacity: 0.45 }
 });
-
