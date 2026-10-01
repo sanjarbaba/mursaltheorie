@@ -2,14 +2,16 @@ import { useAuth, useClerk, useUser } from '@clerk/expo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
+import { ApplePurchases } from '@/src/ApplePurchases';
+import type { ApplePurchaseConfiguration } from '@/src/ApplePurchases';
 import { TabShell } from '@/src/Menu';
 import { clearCachedCourse, clearLocalAccountData } from '@/src/storage';
 import { colors } from '@/src/theme';
 import type { Locale } from '@/src/types';
 
-type AccessResponse = { access: { hasAccess: boolean } };
+type AccessResponse = { access: { hasAccess: boolean; locales: Locale[] } };
 type AccountLabels = { title: string; subtitle: string; course: string; active: string; inactive: string; unavailable: string; signOut: string; privacy: string; deleteAccount: string; deleteWarning: string; deletePhrase: string; cancel: string; confirm: string; confirmTitle: string; confirmMessage: string; failed: string; deleted: string };
 const DELETE_CONFIRMATION = 'VERWIJDER MIJN ACCOUNT';
 const labels: Record<Locale, AccountLabels> = {
@@ -29,6 +31,8 @@ export default function AccountScreen() {
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+  const [allowedLocales, setAllowedLocales] = useState<Locale[]>([]);
+  const [purchaseConfiguration, setPurchaseConfiguration] = useState<ApplePurchaseConfiguration | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDelete, setShowDelete] = useState(false);
   const [deletePhrase, setDeletePhrase] = useState('');
@@ -71,12 +75,21 @@ export default function AccountScreen() {
     finally { await signOut(); }
   }
 
+  async function refreshAccess() {
+    const data = await createApiClient(() => getTokenRef.current())<AccessResponse>('/api/v1/access');
+    setHasAccess(data.access.hasAccess);
+    setAllowedLocales(data.access.locales || []);
+  }
+
   useEffect(() => {
     let active = true;
     void createApiClient(() => getTokenRef.current())<AccessResponse>('/api/v1/access')
-      .then((data) => { if (active) setHasAccess(data.access.hasAccess); })
+      .then((data) => { if (active) { setHasAccess(data.access.hasAccess); setAllowedLocales(data.access.locales || []); } })
       .catch(() => { if (active) setHasAccess(null); })
       .finally(() => { if (active) setLoading(false); });
+    if (Platform.OS === 'ios') void createApiClient(() => getTokenRef.current())<ApplePurchaseConfiguration>('/api/v1/apple-purchases')
+      .then((data) => { if (active) setPurchaseConfiguration(data); })
+      .catch(() => { if (active) setPurchaseConfiguration(null); });
     return () => { active = false; };
   }, []);
 
@@ -106,6 +119,8 @@ export default function AccountScreen() {
           {loading ? <ActivityIndicator style={styles.spinner} color={colors.primary} /> : <Text style={[styles.statusText, rtl && styles.rtl]}>{hasAccess === true ? copy.active : hasAccess === false ? copy.inactive : copy.unavailable}</Text>}
         </View>
       </View>
+
+      {Platform.OS === 'ios' && purchaseConfiguration?.enabled ? <ApplePurchases locale={locale} configuration={purchaseConfiguration} allowedLocales={allowedLocales} onAccessChanged={refreshAccess} /> : null}
 
       <Pressable onPress={() => void leaveAccount()} style={styles.signOut} accessibilityRole="button">
         <Ionicons name="log-out-outline" size={20} color={colors.error} />

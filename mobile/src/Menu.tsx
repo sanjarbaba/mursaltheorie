@@ -11,11 +11,11 @@ type Page = 'lessons' | 'practice' | 'signs' | 'exams' | 'account';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const items: { page: Page; path: '/' | '/practice' | '/signs' | '/exams' | '/account'; icon: IconName; activeIcon: IconName; labels: Record<Locale, string> }[] = [
-  { page: 'lessons', path: '/', icon: 'book-outline', activeIcon: 'book', labels: { nl: 'Lessen', fa: '??????', ps: '??????' } },
-  { page: 'practice', path: '/practice', icon: 'flash-outline', activeIcon: 'flash', labels: { nl: 'Oefenen', fa: '?????', ps: '?????' } },
-  { page: 'signs', path: '/signs', icon: 'shapes-outline', activeIcon: 'shapes', labels: { nl: 'Borden', fa: '???????', ps: '???' } },
-  { page: 'exams', path: '/exams', icon: 'document-text-outline', activeIcon: 'document-text', labels: { nl: 'Examens', fa: '?????????', ps: '???????' } },
-  { page: 'account', path: '/account', icon: 'person-circle-outline', activeIcon: 'person-circle', labels: { nl: 'Account', fa: '????', ps: '????' } }
+  { page: 'lessons', path: '/', icon: 'book-outline', activeIcon: 'book', labels: { nl: 'Lessen', fa: 'درس‌ها', ps: 'درسونه' } },
+  { page: 'practice', path: '/practice', icon: 'flash-outline', activeIcon: 'flash', labels: { nl: 'Oefenen', fa: 'تمرین', ps: 'تمرین' } },
+  { page: 'signs', path: '/signs', icon: 'shapes-outline', activeIcon: 'shapes', labels: { nl: 'Borden', fa: 'تابلوها', ps: 'نښې' } },
+  { page: 'exams', path: '/exams', icon: 'document-text-outline', activeIcon: 'document-text', labels: { nl: 'Examens', fa: 'امتحان‌ها', ps: 'ازموینې' } },
+  { page: 'account', path: '/account', icon: 'person-circle-outline', activeIcon: 'person-circle', labels: { nl: 'Account', fa: 'حساب', ps: 'حساب' } }
 ];
 
 export function TabShell({ locale, active, children }: { locale: Locale; active: Page; children: ReactNode }) {
@@ -49,4 +49,3 @@ const styles = StyleSheet.create({
   label: { color: colors.muted, fontSize: 11, fontWeight: '700' },
   labelActive: { color: colors.primary, fontWeight: '800' }
 });
-

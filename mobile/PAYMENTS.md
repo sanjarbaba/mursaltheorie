@@ -2,19 +2,21 @@
 
 De website verkoopt nu 30 dagen toegang via Mollie. De mobiele app herkent die bestaande toegang na inloggen via de centrale `entitlements`-tabel. De app start geen Mollie-checkout.
 
-De gekozen looptijd voor aankoop **in de iPhone-app** is 30 dagen zonder automatische verlenging. Het gewenste bedrag is €49,99 voor ieder van de drie taalpakketten, ook voor de Nederlandse versie. Deze keuze wijzigt de huidige websiteprijs niet.
+De gekozen looptijd voor aankoop **in de iPhone-app** is 30 dagen zonder automatische verlenging. Nederlands kost € 49,99; Nederlands + Dari/Farsi en Nederlands + Pashto kosten elk € 65,00. Dit zijn de door de eigenaar opgegeven App Store-prijzen. De bestaande websiteprijzen zijn niet aangepast.
 
-In App Store Connect komen drie niet-verlengende aankopen die overeenkomen met de huidige taalpakketten:
+In App Store Connect zijn drie niet-verlengende abonnementen als concept aangemaakt voor Nederland en België:
 
-| Bestaand pakket | Voorlopig Apple-product-ID | Gewenste prijs in Nederland |
+| Bestaand pakket | Apple-product-ID | Gewenste prijs in Nederland en België |
 | --- | --- | --- |
 | `theory_b_nl_30d` | `nl.mursaltheorie.course.nl.30d` | €49,99 |
-| `theory_b_nl_fa_30d` | `nl.mursaltheorie.course.nl.fa.30d` | €49,99 |
-| `theory_b_nl_ps_30d` | `nl.mursaltheorie.course.nl.ps.30d` | €49,99 |
+| `theory_b_nl_fa_30d` | `nl.mursaltheorie.course.nl.fa.30d` | €65,00 |
+| `theory_b_nl_ps_30d` | `nl.mursaltheorie.course.nl.ps.30d` | €65,00 |
 
-De eigenaar moet de product-ID's en de beschikbare Apple-prijscategorie in App Store Connect goedkeuren en de betaalovereenkomst, bank- en belastinggegevens afronden. Tot die tijd verschijnt geen koopknop in de app. De vermelde prijzen op de website worden niet automatisch Apple-prijzen.
+Stand op 30 september 2026: alle drie producten zijn nog `Prepare for Submission`. België en Nederland zijn geselecteerd; automatisch beschikbaar maken in toekomstige landen staat uit. De prijzen zijn in beide landen gecontroleerd: € 49,99 voor Nederlands en € 65,00 voor beide vertaalpakketten. Apple's prijswijziging voor het basisland heeft ook prijsberekeningen voor overige landen aangepast, maar die landen zijn niet voor verkoop geselecteerd. De Paid Applications-overeenkomst en een bankrekening staan in App Store Connect als actief; dat is geen vervanging voor aankooptests of productgoedkeuring.
 
-Na die stap:
+De StoreKit-schermen en serververificatie staan lokaal voorbereid. De koopknop blijft uit zolang `APPLE_IAP_ENABLED` niet bewust is geactiveerd. De databasewijziging en Apple-servergegevens zijn nog niet live ingesteld; er is geen sandbox-aankoop getest. De vermelde prijzen op de website worden niet automatisch Apple-prijzen.
+
+Voor vrijgave moeten deze onderdelen getest worden:
 
 1. Toon de Apple-producten met hun live StoreKit-prijs in het accountscherm.
 2. Start de aankoop met StoreKit en stuur de transactie-ID naar de API.

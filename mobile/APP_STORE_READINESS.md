@@ -11,10 +11,10 @@ Status op 30 september 2026: **nog niet klaar voor inzending**. Deze beoordeling
 
 ## Blokkerende stappen voor inzending
 
-1. **In-app aankoop:** In App Store Connect moet de eigenaar nagaan of de drie 30-dagenproducten uit [PAYMENTS.md](./PAYMENTS.md) bestaan, bij de juiste app horen en voor de gewenste landen/prijzen zijn ingesteld. Dit is momenteel onbekend. De eigenaar moet ook de overeenkomst voor betaalde apps en benodigde bank- en belastinggegevens afronden.
-2. **Veilige verwerking van aankopen:** De app heeft nog geen StoreKit-koopknoppen of herstelknop en de API verifieert nog geen Apple-transacties. Een prijsvermelding of koopknop mag pas worden ingeschakeld nadat serververificatie, accountkoppeling, terugbetalingen en herstel in Apple sandbox zijn getest. De server beheert de looptijd van 30 dagen. Voor het fysieke boek blijft de website de checkout.
+1. **In-app aankoop:** De drie 30-dagenproducten uit [PAYMENTS.md](./PAYMENTS.md) bestaan als concept bij de juiste app. Ze zijn alleen in Nederland en België geselecteerd. In beide landen staat Nederlands op € 49,99 en elk vertaalpakket op € 65,00. Paid Applications en de bankrekening zijn actief in App Store Connect. Producten hebben nog geen reviewscreenshot en zijn niet goedgekeurd.
+2. **Veilige verwerking van aankopen:** StoreKit-koopknoppen, herstel, serververificatie van ondertekende Apple-transacties, 30-daagse toegang en terugbetalingsmeldingen zijn lokaal voorbereid met een standaard uitgeschakelde functieknop. Databasewijziging, Apple-servergegevens, notificatieadres en een volledige Apple-sandboxtest ontbreken nog. Daarom zijn aankopen niet live. Voor het fysieke boek blijft de website de checkout.
 3. **App Store-build:** Er is een iOS-`production`-build met App Store-distributie en een daaropvolgende TestFlight-controle nodig. De bestaande interne preview-build is daarvoor niet geschikt. De gebruiker heeft uitdrukkelijk gevraagd nu geen nieuwe build te maken.
-4. **App Store Connect:** Apprecord, categorie, leeftijdsclassificatie, beschrijving, screenshots, support-URL, privacy-URL, privacyantwoorden en een werkende reviewer-login/toegang moeten gecontroleerd en compleet gemaakt worden. Deze gegevens zijn niet door de codecontrole te bevestigen.
+4. **App Store Connect:** De Nederlandse appbeschrijving, zoekwoorden, support-URL, marketing-URL, copyright en privacy-URL zijn als concept ingevuld. iPhone-screenshots ontbreken nog. De App Privacy-vragenlijst is na een eerste inventarisatie niet gepubliceerd; gegevens van Clerk en de API moeten volledig worden meegenomen. Reviewer-inlog, contactgegevens, categorie en leeftijdsclassificatie moeten worden afgerond. Versie 1.0 staat nog op `Prepare for Submission` en is niet ingediend.
 5. **Echte iPhone-test:** Controleer aanmelden, alle drie talen, 147 borden, verkeerssituaties, lessen, oefenvragen, examens inclusief verlopen tijd en uitslag, offline toegang, accountverwijdering en aankoopherstel met de uiteindelijke production/TestFlight-build.
 6. **Taalcontrole:** Laat Nederlands, Dari/Farsi en Pashto door bevoegde sprekers nalopen op juistheid, duidelijkheid en leesbaarheid op een iPhone. De automatische inhoudscontrole beoordeelt geen taalkwaliteit.
 
@@ -23,6 +23,7 @@ Status op 30 september 2026: **nog niet klaar voor inzending**. Deze beoordeling
 - De examen-API rondt een poging na het verstrijken van de tijd af en toont een uitslag. Dit staat alleen op de testbranch; de live API moet apart worden uitgerold voordat een appversie daarop kan vertrouwen.
 - De lokale lescache is per gebruiker en taal gescheiden. Een offline toegangsbewijs verloopt uiterlijk na 24 uur of eerder bij het verstrijken van een bekende cursustoegang.
 - De testbranch kan zonder nieuwe build worden nagekeken. Een toekomstige build is pas zinvol na de hierboven genoemde betaal- en releasevoorbereiding.
+- De lokale privacyverklaring benoemt Apple-transacties. De publieke privacy-URL toont de bestaande verklaring totdat deze wijziging afzonderlijk op de website wordt uitgerold.
 
 ## Bronnen
 

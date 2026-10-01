@@ -4,6 +4,10 @@
     "fra1"
   ],
   "functions": {
+    "api/v1/apple-purchases.js": {
+      "maxDuration": 30,
+      "includeFiles": "api/v1/apple-certs/*.cer"
+    },
     "api/**/*.js": {
       "maxDuration": 10
     }
