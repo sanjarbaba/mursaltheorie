@@ -19,11 +19,11 @@ const packages = [
   { id: 'nl.mursaltheorie.course.nl.ps.30d', locales: ['nl', 'ps'], name: { nl: 'Nederlands + Pashto', fa: 'هلندی + پشتو', ps: 'هالنډي + پښتو' } }
 ] as const;
 
-type Copy = { title: string; duration: string; buy: string; restore: string; loading: string; unavailable: string; restored: string; none: string; verified: string; pending: string; failed: string };
+type Copy = { title: string; duration: string; buy: string; restore: string; loading: string; unavailable: string; restored: string; none: string; verified: string; inactive: string; pending: string; failed: string };
 const copy: Record<Locale, Copy> = {
-  nl: { title: '30 dagen toegang via Apple', duration: 'Eenmalige aankoop zonder automatische verlenging', buy: 'Koop via App Store', restore: 'Herstel aankopen', loading: 'Apple-producten laden…', unavailable: 'Aankopen zijn nog niet beschikbaar. Probeer het later opnieuw.', restored: 'Je aankopen zijn gecontroleerd.', none: 'Geen aankoop gevonden voor dit Apple-account.', verified: 'Aankoop bevestigd. Je toegang is bijgewerkt.', pending: 'Je aankoop wordt nog gecontroleerd. Probeer Herstel aankopen als dit blijft staan.', failed: 'De aankoop kon nog niet worden bevestigd. Probeer Herstel aankopen.' },
-  fa: { title: 'دسترسی ۳۰ روزه از اپل', duration: 'خرید یک‌باره، بدون تمدید خودکار', buy: 'خرید از اپ استور', restore: 'بازیابی خریدها', loading: 'در حال بارگیری محصولات اپل…', unavailable: 'خرید فعلاً در دسترس نیست. بعداً دوباره تلاش کنید.', restored: 'خریدهای شما بررسی شد.', none: 'برای این حساب اپل خریدی پیدا نشد.', verified: 'خرید تأیید شد. دسترسی شما به‌روز شد.', pending: 'خرید شما هنوز بررسی می‌شود. در صورت ادامه، بازیابی خریدها را بزنید.', failed: 'خرید هنوز تأیید نشد. بازیابی خریدها را امتحان کنید.' },
-  ps: { title: 'د اپل له لارې ۳۰ ورځنی لاسرسی', duration: 'یو ځل پېرود، بې له اتومات تمدید څخه', buy: 'له اپ سټور څخه واخلئ', restore: 'پېرودونه بېرته ترلاسه کړئ', loading: 'د اپل محصولات بارېږي…', unavailable: 'پېرود اوس نه شته. وروسته بیا هڅه وکړئ.', restored: 'ستاسو پېرودونه وکتل شول.', none: 'د دې اپل حساب لپاره پېرود ونه موندل شو.', verified: 'پېرود تایید شو. ستاسو لاسرسی تازه شو.', pending: 'ستاسو پېرود لا کتل کېږي. که دا حالت پاتې شي، پېرودونه بېرته ترلاسه کړئ.', failed: 'پېرود لا تایید نه شو. پېرودونه بېرته ترلاسه کړئ.' }
+  nl: { title: '30 dagen toegang via Apple', duration: 'Eenmalige aankoop zonder automatische verlenging', buy: 'Koop via App Store', restore: 'Herstel aankopen', loading: 'Apple-producten laden…', unavailable: 'Aankopen zijn nog niet beschikbaar. Probeer het later opnieuw.', restored: 'Je aankopen zijn gecontroleerd.', none: 'Geen aankoop gevonden voor dit Apple-account.', verified: 'Aankoop bevestigd. Je toegang is bijgewerkt.', inactive: 'Deze aankoop geeft geen actieve toegang meer.', pending: 'Je aankoop wordt nog gecontroleerd. Probeer Herstel aankopen als dit blijft staan.', failed: 'De aankoop kon nog niet worden bevestigd. Probeer Herstel aankopen.' },
+  fa: { title: 'دسترسی ۳۰ روزه از اپل', duration: 'خرید یک‌باره، بدون تمدید خودکار', buy: 'خرید از اپ استور', restore: 'بازیابی خریدها', loading: 'در حال بارگیری محصولات اپل…', unavailable: 'خرید فعلاً در دسترس نیست. بعداً دوباره تلاش کنید.', restored: 'خریدهای شما بررسی شد.', none: 'برای این حساب اپل خریدی پیدا نشد.', verified: 'خرید تأیید شد. دسترسی شما به‌روز شد.', inactive: 'این خرید دیگر دسترسی فعال نمی‌دهد.', pending: 'خرید شما هنوز بررسی می‌شود. در صورت ادامه، بازیابی خریدها را بزنید.', failed: 'خرید هنوز تأیید نشد. بازیابی خریدها را امتحان کنید.' },
+  ps: { title: 'د اپل له لارې ۳۰ ورځنی لاسرسی', duration: 'یو ځل پېرود، بې له اتومات تمدید څخه', buy: 'له اپ سټور څخه واخلئ', restore: 'پېرودونه بېرته ترلاسه کړئ', loading: 'د اپل محصولات بارېږي…', unavailable: 'پېرود اوس نه شته. وروسته بیا هڅه وکړئ.', restored: 'ستاسو پېرودونه وکتل شول.', none: 'د دې اپل حساب لپاره پېرود ونه موندل شو.', verified: 'پېرود تایید شو. ستاسو لاسرسی تازه شو.', inactive: 'دا پېرود نور فعال لاسرسی نه ورکوي.', pending: 'ستاسو پېرود لا کتل کېږي. که دا حالت پاتې شي، پېرودونه بېرته ترلاسه کړئ.', failed: 'پېرود لا تایید نه شو. پېرودونه بېرته ترلاسه کړئ.' }
 };
 
 export function ApplePurchases({ locale, configuration, allowedLocales, onAccessChanged }: {
@@ -35,7 +35,9 @@ export function ApplePurchases({ locale, configuration, allowedLocales, onAccess
   const { getToken } = useAuth();
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
-  const processed = useRef(new Set<string>());
+  const checking = useRef(new Map<string, Promise<boolean>>());
+  const finishing = useRef(new Map<string, Promise<void>>());
+  const finished = useRef(new Set<string>());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const labels = copy[locale];
@@ -44,20 +46,43 @@ export function ApplePurchases({ locale, configuration, allowedLocales, onAccess
     if (!configuration.products.includes(purchase.productId)) return false;
     const transactionId = 'transactionId' in purchase ? purchase.transactionId : null;
     if (!transactionId) { setMessage(labels.pending); return false; }
-    if (processed.current.has(transactionId)) return true;
-    processed.current.add(transactionId);
+    let task = checking.current.get(transactionId);
+    if (!task) {
+      task = (async () => {
+        const result = await createApiClient(() => getTokenRef.current())<{ status: string; accessUntil: string }>('/api/v1/apple-purchases', {
+          method: 'POST', body: JSON.stringify({ transactionId })
+        });
+        return result.status === 'active' && new Date(result.accessUntil).getTime() > Date.now();
+      })();
+      checking.current.set(transactionId, task);
+    }
     try {
-      await createApiClient(() => getTokenRef.current())('/api/v1/apple-purchases', {
-        method: 'POST', body: JSON.stringify({ transactionId })
-      });
-      if (finish) await finishTransaction({ purchase, isConsumable: false });
-      await onAccessChanged();
-      setMessage(labels.verified);
-      return true;
+      const active = await task;
+      if (finish && !finished.current.has(transactionId)) {
+        let finishTask = finishing.current.get(transactionId);
+        if (!finishTask) {
+          finishTask = finishTransaction({ purchase, isConsumable: false }).then(() => {
+            finished.current.add(transactionId);
+          });
+          finishing.current.set(transactionId, finishTask);
+        }
+        try { await finishTask; }
+        finally {
+          if (finishing.current.get(transactionId) === finishTask) finishing.current.delete(transactionId);
+        }
+      }
+      try {
+        await onAccessChanged();
+        setMessage(active ? labels.verified : labels.inactive);
+      } catch {
+        setMessage(labels.pending);
+      }
+      return active;
     } catch {
-      processed.current.delete(transactionId);
       setMessage(labels.failed);
       return false;
+    } finally {
+      if (checking.current.get(transactionId) === task) checking.current.delete(transactionId);
     }
   }
 
@@ -139,3 +164,4 @@ const styles = StyleSheet.create({
   restoreText: { color: colors.primary, fontWeight: '800' },
   disabled: { opacity: 0.45 }
 });
+
