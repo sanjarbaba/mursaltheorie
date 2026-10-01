@@ -3,7 +3,7 @@
     "name": "Mursal Theorie",
     "slug": "mursaltheorie",
     "icon": "./assets/icon.png",
-    "version": "0.2.0",
+    "version": "1.0",
     "orientation": "portrait",
     "scheme": "mursaltheorie",
     "userInterfaceStyle": "light",
