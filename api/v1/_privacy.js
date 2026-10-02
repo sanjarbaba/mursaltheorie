@@ -4,7 +4,7 @@ export function validDeletionConfirmation(body) {
   return Boolean(body && !Array.isArray(body) && body.confirmation === ACCOUNT_DELETE_CONFIRMATION);
 }
 
-export function accountExport({ profile, progress, examAttempts, entitlements, purchases, devices }, exportedAt = new Date().toISOString()) {
+export function accountExport({ profile, progress, examAttempts, entitlements, purchases, applePurchases, devices }, exportedAt = new Date().toISOString()) {
   return {
     schemaVersion: 2,
     exportedAt,
@@ -13,6 +13,7 @@ export function accountExport({ profile, progress, examAttempts, entitlements, p
     examAttempts: examAttempts || [],
     entitlements: entitlements || [],
     purchases: purchases || [],
+    applePurchases: applePurchases || [],
     devices: (devices || []).map(({ push_token: _pushToken, ...device }) => device)
   };
 }

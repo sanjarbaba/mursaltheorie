@@ -151,10 +151,12 @@ test('accountverwijdering vereist de exacte expliciete bevestiging', () => {
 test('gegevensexport bevat geen push-token', () => {
   const exported = accountExport({
     profile: { clerk_user_id: 'user_1' },
+    applePurchases: [{ transaction_id: '123456789', product_id: 'nl.mursaltheorie.course.nl.30d' }],
     devices: [{ device_id: 'web:1', platform: 'web', push_token: 'secret' }]
   }, '2026-09-02T12:00:00.000Z');
-  assert.equal(exported.schemaVersion, 1);
+  assert.equal(exported.schemaVersion, 2);
   assert.equal(exported.exportedAt, '2026-09-02T12:00:00.000Z');
+  assert.deepEqual(exported.applePurchases, [{ transaction_id: '123456789', product_id: 'nl.mursaltheorie.course.nl.30d' }]);
   assert.deepEqual(exported.devices, [{ device_id: 'web:1', platform: 'web' }]);
 });
 
