@@ -110,9 +110,7 @@ async function submitAttempt(sql, userId, body, language) {
 
   const attempts = await sql`
     SELECT a.id, a.exam_id, a.status, a.score, a.started_at, a.submitted_at,
-      e.question_count, e.pass_score, e.duration_seconds,
-      (e.duration_seconds IS NOT NULL
-        AND a.started_at + e.duration_seconds * INTERVAL '1 second' <= NOW()) AS is_expired
+      e.question_count, e.pass_score, e.duration_seconds
     FROM exam_attempts_v1 a
     JOIN exam_definitions e ON e.id = a.exam_id
     WHERE a.id = ${attemptId} AND a.clerk_user_id = ${userId}
@@ -121,14 +119,7 @@ async function submitAttempt(sql, userId, body, language) {
   const attempt = attempts[0];
   if (!attempt) return fail('ATTEMPT_NOT_FOUND', 'Examenpoging niet gevonden.', 404);
 
-  if (attempt.status === 'started') {
-    if (attempt.is_expired) {
-      await sql`
-        UPDATE exam_attempts_v1 SET status = 'expired'
-        WHERE id = ${attemptId} AND clerk_user_id = ${userId} AND status = 'started'
-      `;
-      return fail('ATTEMPT_EXPIRED', 'De tijd voor deze examenpoging is verstreken.', 409);
-    }
+  if (attempt.status === 'started' || attempt.status === 'expired') {
     const counts = await sql`
       SELECT COUNT(*)::INTEGER AS answered,
         COUNT(*) FILTER (WHERE answer.is_correct)::INTEGER AS correct
@@ -142,7 +133,7 @@ async function submitAttempt(sql, userId, body, language) {
     const updated = await sql`
       UPDATE exam_attempts_v1
       SET status = 'submitted', score = ${score}, submitted_at = NOW()
-      WHERE id = ${attemptId} AND clerk_user_id = ${userId} AND status = 'started'
+      WHERE id = ${attemptId} AND clerk_user_id = ${userId} AND status IN ('started', 'expired')
       RETURNING status, score, submitted_at
     `;
     if (updated[0]) {

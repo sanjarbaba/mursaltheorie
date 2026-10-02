@@ -4,15 +4,23 @@ import { fail, ok } from './_contract.js';
 import { accountExport, validDeletionConfirmation } from './_privacy.js';
 
 async function exportAccount(sql, userId) {
-  const [profiles, progress, examAttempts, entitlements, purchases, devices] = await Promise.all([
+  const [profiles, progress, examAttempts, entitlements, purchases, applePurchases, devices] = await Promise.all([
     sql`SELECT clerk_user_id, email, display_name, access_status, access_starts_at, access_ends_at, preferred_locale, created_at, updated_at FROM app_users WHERE clerk_user_id = ${userId}`,
     sql`SELECT lesson_id, completed, progress_percent, client_updated_at, device_id, updated_at FROM lesson_progress WHERE clerk_user_id = ${userId} ORDER BY lesson_id`,
     sql`SELECT a.id, e.exam_number, a.status, a.score, a.started_at, a.submitted_at FROM exam_attempts_v1 a JOIN exam_definitions e ON e.id = a.exam_id WHERE a.clerk_user_id = ${userId} ORDER BY a.started_at DESC`,
     sql`SELECT product_key, source, status, starts_at, ends_at, created_at, updated_at FROM entitlements WHERE clerk_user_id = ${userId} ORDER BY created_at DESC`,
     sql`SELECT provider_payment_id, product_key, description, amount_value, amount_currency, status, consent_version, consent_text, consented_at, paid_at, confirmation_sent_at, activated_at, withdrawal_requested_at, refund_reference, refunded_at, created_at FROM purchase_orders WHERE clerk_user_id = ${userId} ORDER BY created_at DESC`,
+    (async () => {
+      try {
+        return await sql`SELECT environment, transaction_id, product_id, product_key, purchase_at, revoked_at, created_at, updated_at FROM apple_iap_transactions WHERE clerk_user_id = ${userId} ORDER BY purchase_at DESC`;
+      } catch (error) {
+        if (error?.code === '42P01') return [];
+        throw error;
+      }
+    })(),
     sql`SELECT device_id, platform, last_seen_at, created_at FROM user_devices WHERE clerk_user_id = ${userId} ORDER BY last_seen_at DESC`
   ]);
-  return accountExport({ profile: profiles[0], progress, examAttempts, entitlements, purchases, devices });
+  return accountExport({ profile: profiles[0], progress, examAttempts, entitlements, purchases, applePurchases, devices });
 }
 
 async function deleteAccount(sql, userId) {

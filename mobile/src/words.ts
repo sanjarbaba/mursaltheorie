@@ -1,0 +1,27 @@
+// Woordenlijst uit de bestaande Mursal Theorie-cursus.
+export const words: Array<{ nl: string; fa: string; ps: string }> = [
+  { nl: 'voorrang', fa: 'حق تقدم', ps: 'لومړیتوب' },
+  { nl: 'haaientanden', fa: 'خط‌های مثلثی', ps: 'د لومړیتوب مثلثي کرښې' },
+  { nl: 'rijstrook', fa: 'خط عبور', ps: 'د تګ کرښه' },
+  { nl: 'invoegen', fa: 'داخل شدن', ps: 'په جریان کې یوځای کېدل' },
+  { nl: 'uitvoegen', fa: 'خارج شدن', ps: 'له جریان څخه وتل' },
+  { nl: 'remweg', fa: 'مسافت ترمز', ps: 'د بریک واټن' },
+  { nl: 'volgafstand', fa: 'فاصله', ps: 'د تعقیب واټن' },
+  { nl: 'zebrapad', fa: 'گذرگاه پیاده', ps: 'د پلي کسانو د تېرېدو ځای' },
+  { nl: 'rotonde', fa: 'میدان', ps: 'څرخېدونکې څلورلارې' },
+  { nl: 'snelweg', fa: 'بزرگراه', ps: 'لویه لار' },
+  { nl: 'dode hoek', fa: 'نقطه کور', ps: 'ړوند ځای' },
+  { nl: 'richtingaanwijzer', fa: 'چراغ راهنما', ps: 'د لوري څراغ' },
+  { nl: 'dimlicht', fa: 'چراغ پایین', ps: 'ټیټ څراغ' },
+  { nl: 'parkeerverbod', fa: 'ممنوعیت پارک', ps: 'د پارک کولو بندیز' },
+  { nl: 'stopverbod', fa: 'ممنوعیت توقف', ps: 'د درولو بندیز' },
+  { nl: 'voetganger', fa: 'پیاده', ps: 'پلی کس' },
+  { nl: 'fietser', fa: 'دوچرخه‌سوار', ps: 'بایسکل چلوونکی' },
+  { nl: 'gordel', fa: 'کمربند ایمنی', ps: 'د خوندیتوب کمربند' },
+  { nl: 'aquaplaning', fa: 'سر خوردن روی آب', ps: 'پر اوبو ښویېدل' },
+  { nl: 'inhalen', fa: 'سبقت', ps: 'مخکې تېرېدل' },
+  { nl: 'vluchtstrook', fa: 'شانه اضطراری', ps: 'بېړنۍ څنډه' },
+  { nl: 'matrixbord', fa: 'تابلوی ماتریسی', ps: 'برېښنايي ترافیکي نښه' },
+  { nl: 'afrit', fa: 'خروجی', ps: 'د وتلو لاره' },
+  { nl: 'stopafstand', fa: 'فاصله توقف', ps: 'د تمېدو واټن' }
+];
