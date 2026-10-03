@@ -35,6 +35,13 @@ export function applePurchasesEnabled() {
   return config('APPLE_IAP_ENABLED') === 'true' && appleConfigurationReady();
 }
 
+export function applePurchasesVisibleTo(userId) {
+  if (!applePurchasesEnabled()) return false;
+  if (config('APPLE_IAP_PUBLIC_ENABLED') === 'true') return true;
+  const ids = (config('APPLE_IAP_TEST_USER_IDS') || '').split(',').map((item) => item.trim());
+  return ids.includes(userId);
+}
+
 export function appleAccountToken(userId) {
   const secret = config('APPLE_ACCOUNT_TOKEN_SECRET');
   if (!secret || secret.length < 32) throw new Error('Apple account token secret is not configured');

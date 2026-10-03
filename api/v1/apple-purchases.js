@@ -2,6 +2,7 @@ import { authenticate, ensureUser, getSql, parseBody } from '../_lib.js';
 import { fail, ok } from './_contract.js';
 import {
   APPLE_PRODUCTS, appleAccountToken, appleConfigurationReady, applePurchasesEnabled,
+  applePurchasesVisibleTo,
   sandboxAllowed, validateAppleTransaction, verifiedNotification,
   verifiedSignedTransaction, verifiedTransactionInfo
 } from './_apple_iap.js';
@@ -29,17 +30,17 @@ async function recordTransaction(sql, userId, value) {
 }
 
 async function getConfiguration(sql, userId) {
-  if (!appleConfigurationReady()) return ok({ enabled: false, products: [] });
+  if (!applePurchasesVisibleTo(userId)) return ok({ enabled: false, products: [] });
   const token = await accountToken(sql, userId);
   return ok({
-    enabled: applePurchasesEnabled(),
+    enabled: true,
     appAccountToken: token,
     products: Object.keys(APPLE_PRODUCTS)
   });
 }
 
 async function verifyPurchase(sql, userId, request) {
-  if (!applePurchasesEnabled()) return fail('APPLE_NOT_AVAILABLE', 'Apple-aankopen zijn nog niet beschikbaar.', 503);
+  if (!applePurchasesVisibleTo(userId)) return fail('APPLE_NOT_AVAILABLE', 'Apple-aankopen zijn nog niet beschikbaar.', 503);
   const body = await parseBody(request);
   const transactionId = typeof body?.transactionId === 'string' ? body.transactionId.trim() : '';
   if (!/^[0-9]{1,30}$/.test(transactionId)) return fail('INVALID_TRANSACTION', 'Ongeldige Apple-transactie.', 422);
