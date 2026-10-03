@@ -22,6 +22,8 @@ test('only a verified paid Stripe session provisions access to the checkout emai
   assert.match(access, /findOrCreatePaidCustomer\(paidEmail\)/);
   assert.match(access, /INSERT INTO entitlements/);
   assert.match(access, /purchaseConfirmationEmail/);
+  assert.match(course, /params\.get\('payment'\)==='stripe-return'/);
+  assert.match(course, /\$\{activationNotice\}<span class=pill>/);
 });
 
 test('both pages offer one menu for all three languages', () => {
