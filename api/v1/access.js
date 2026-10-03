@@ -208,6 +208,28 @@ async function createGuestCheckout(sql, customerEmail, productKey, immediateAcce
   return ok({ checkoutUrl });
 }
 
+async function createGuestStripeCheckout(sql, productKey) {
+  const product = MOLLIE_PRODUCTS[productKey];
+  const stripeLink = STRIPE_PAYMENT_LINKS[productKey];
+  if (!product || product.kind !== 'digital' || !stripeLink) {
+    return fail('INVALID_PRODUCT', 'Kies een geldig taalpakket.', 422);
+  }
+  const checkoutReference = `mt_${randomUUID().replace(/-/g, '')}`;
+  await sql`
+    INSERT INTO purchase_orders(
+      provider, provider_payment_id, clerk_user_id, customer_email, product_key, description,
+      amount_value, amount_currency, status, consent_version, consent_text, consented_at
+    ) VALUES(
+      'stripe', ${`pending_${checkoutReference}`}, NULL, NULL, ${productKey}, ${product.description},
+      ${product.amount}, 'EUR', 'payment_pending', ${CONSENT_VERSION}, ${CONSENT_TEXT}, NOW()
+    )
+  `;
+  const checkoutUrl = new URL(stripeLink.url);
+  checkoutUrl.searchParams.set('client_reference_id', checkoutReference);
+  checkoutUrl.searchParams.set('locale', 'nl');
+  return ok({ checkoutUrl: checkoutUrl.toString(), provider: 'stripe' });
+}
+
 async function claimGuestPurchase(sql, userId, request) {
   const body = await parseBody(request);
   const rawToken = typeof body?.token === 'string' ? body.token.trim() : '';
@@ -544,68 +566,61 @@ async function processStripeWebhook(request) {
   if (!verifyStripeSignature(payload, request.headers.get('stripe-signature'), secret)) return fail('INVALID_SIGNATURE', 'Ongeldige webhookhandtekening.', 400);
   const event = JSON.parse(payload);
   const object = event?.data?.object || {};
-  const sql = getSql();
-  const safePayload = {
-    id: object.id,
-    payment_status: object.payment_status,
-    amount_total: object.amount_total,
-    currency: object.currency,
-    client_reference_id: object.client_reference_id,
-    payment_link: object.payment_link
-  };
-  const inserted = await sql`
-    INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at)
-    VALUES('stripe',${event.id},${event.type},${JSON.stringify(safePayload)}::jsonb,NOW())
-    ON CONFLICT(provider,provider_event_id) DO NOTHING
-    RETURNING id
-  `;
-  if (!inserted[0]) return ok({ received: true, duplicate: true });
-
   if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) {
     return ok({ received: true });
   }
   if (object.payment_status !== 'paid') return ok({ received: true, pending: true });
+
+  const sql = getSql();
+  const alreadyProcessed = await sql`SELECT id FROM purchase_events WHERE provider='stripe' AND provider_event_id=${event.id} LIMIT 1`;
+  if (alreadyProcessed[0]) return ok({ received: true, duplicate: true });
 
   const reference = typeof object.client_reference_id === 'string' ? object.client_reference_id : '';
   if (!/^mt_[A-Za-z0-9]+$/.test(reference)) return fail('PAYMENT_MISMATCH', 'Betalingsreferentie ontbreekt.', 400);
   const pendingReference = `pending_${reference}`;
   const orders = await sql`
     SELECT id, clerk_user_id, customer_email, product_key, description,
-      amount_value::TEXT AS amount_value, amount_currency, consent_version, consent_text, consented_at
+      amount_value::TEXT AS amount_value, amount_currency, consent_version, consent_text, consented_at,
+      provider_payment_id, confirmation_sent_at
     FROM purchase_orders
-    WHERE provider='stripe' AND provider_payment_id=${pendingReference} AND status='payment_pending'
+    WHERE provider='stripe' AND provider_payment_id IN (${pendingReference}, ${object.id})
+      AND status IN ('payment_pending', 'active')
     LIMIT 1
   `;
   const order = orders[0];
-  if (!order) {
-    const existing = await sql`
-      SELECT provider_payment_id FROM purchase_orders
-      WHERE provider='stripe' AND provider_payment_id=${object.id}
-      LIMIT 1
-    `;
-    if (existing[0]) return ok({ received: true, alreadyProcessed: true });
-    return fail('PAYMENT_MISMATCH', 'Deze Stripe-betaling hoort niet bij een openstaande bestelling.', 400);
-  }
+  if (!order) return fail('PAYMENT_MISMATCH', 'Deze Stripe-betaling hoort niet bij een openstaande bestelling.', 400);
 
   const product = MOLLIE_PRODUCTS[order.product_key];
   const stripeLink = STRIPE_PAYMENT_LINKS[order.product_key];
   const expectedAmount = Math.round(Number(product?.amount || 0) * 100);
   const paidEmail = normalizeGuestEmail(object.customer_details?.email || object.customer_email);
-  if (!product || !stripeLink || object.payment_link !== stripeLink.id || object.currency?.toLowerCase() !== 'eur' || Number(object.amount_total) !== expectedAmount) {
-    return fail('PAYMENT_MISMATCH', 'Betalingsgegevens komen niet overeen met het gekozen pakket.', 400);
+  if (!product || !stripeLink || !paidEmail || object.payment_link !== stripeLink.id ||
+      object.currency?.toLowerCase() !== 'eur' || Number(object.amount_total) !== expectedAmount ||
+      (!order.clerk_user_id && object.consent?.terms_of_service !== 'accepted')) {
+    return fail('PAYMENT_MISMATCH', 'Betalingsgegevens of toestemming komen niet overeen met het gekozen pakket.', 400);
   }
 
-  const user = await ensureUser(sql, order.clerk_user_id, { email: paidEmail || order.customer_email || undefined });
+  let userId = order.clerk_user_id;
+  if (!userId) {
+    try {
+      userId = (await findOrCreatePaidCustomer(paidEmail)).id;
+    } catch (error) {
+      console.error('Stripe paid customer provisioning failed', { name: error?.name });
+      return fail('ACCOUNT_PROVISIONING_PENDING', 'De betaling is ontvangen; de toegang wordt opnieuw verwerkt.', 503);
+    }
+  }
+  const user = await ensureUser(sql, userId, { email: paidEmail });
   const paidAt = new Date().toISOString();
   await sql`
     UPDATE purchase_orders
-    SET provider_payment_id=${object.id}, customer_email=COALESCE(${paidEmail},customer_email),
-      status='active', paid_at=${paidAt}, activated_at=${paidAt}, updated_at=NOW()
+    SET provider_payment_id=${object.id}, clerk_user_id=${userId}, customer_email=${paidEmail},
+      status='active', paid_at=COALESCE(paid_at,${paidAt}), activated_at=COALESCE(activated_at,${paidAt}),
+      consented_at=${paidAt}, updated_at=NOW()
     WHERE id=${order.id}
   `;
   await sql`
     INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status,starts_at,ends_at)
-    VALUES(${order.clerk_user_id},${order.product_key},'web',${object.id},'active',NOW(),NOW()+INTERVAL '30 days')
+    VALUES(${userId},${order.product_key},'web',${object.id},'active',NOW(),NOW()+INTERVAL '30 days')
     ON CONFLICT(source,external_reference) DO UPDATE SET
       product_key=EXCLUDED.product_key,status='active',
       starts_at=COALESCE(entitlements.starts_at,EXCLUDED.starts_at),
@@ -615,28 +630,40 @@ async function processStripeWebhook(request) {
     UPDATE app_users
     SET access_status='active',
       access_starts_at=COALESCE(access_starts_at,NOW()),
-      access_ends_at=GREATEST(COALESCE(access_ends_at,NOW()),NOW()+INTERVAL '30 days'),
+      access_ends_at=GREATEST(COALESCE(access_ends_at,NOW()),
+        COALESCE((SELECT MAX(ends_at) FROM entitlements WHERE clerk_user_id=${userId} AND status='active'),NOW())),
       updated_at=NOW()
-    WHERE clerk_user_id=${order.clerk_user_id} AND access_status <> 'admin'
+    WHERE clerk_user_id=${userId} AND access_status <> 'admin'
   `;
 
-  try {
-    const email = await purchaseConfirmationEmail({
-      email: user.email || paidEmail || order.customer_email,
-      orderId: object.id,
-      description: order.description,
-      amount: order.amount_value,
-      consentText: order.consent_text,
-      appUrl: configured('APP_URL') || 'https://www.mursaltheorie.nl',
-      activated: true
-    });
-    if (email.sent) {
-      await sql`UPDATE purchase_orders SET confirmation_sent_at=NOW(),confirmation_email_id=${email.id},updated_at=NOW() WHERE id=${order.id}`;
+  if (!order.confirmation_sent_at) {
+    try {
+      const email = await purchaseConfirmationEmail({
+        email: paidEmail,
+        orderId: object.id,
+        description: order.description,
+        amount: order.amount_value,
+        consentText: order.consent_text,
+        appUrl: configured('APP_URL') || 'https://www.mursaltheorie.nl',
+        activated: true
+      });
+      if (email.sent) {
+        await sql`UPDATE purchase_orders SET confirmation_sent_at=NOW(),confirmation_email_id=${email.id},updated_at=NOW() WHERE id=${order.id}`;
+      }
+    } catch (error) {
+      console.error('Stripe purchase confirmation email could not be sent', { name: error?.name });
     }
-  } catch (error) {
-    console.error('Stripe purchase confirmation email could not be sent', { name: error?.name });
   }
 
+  const safePayload = {
+    id: object.id, payment_status: object.payment_status, amount_total: object.amount_total,
+    currency: object.currency, client_reference_id: reference, payment_link: object.payment_link
+  };
+  await sql`
+    INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at)
+    VALUES('stripe',${event.id},${event.type},${JSON.stringify(safePayload)}::jsonb,NOW())
+    ON CONFLICT(provider,provider_event_id) DO NOTHING
+  `;
   return ok({ received: true, activated: true });
 }
 
@@ -765,6 +792,15 @@ const endpoint = {
         return fail('SERVICE_UNAVAILABLE', 'De betaalpagina kon niet worden geopend.', 503);
       }
     }
+    if (request.method === 'POST' && resource === 'guest-stripe-checkout') {
+      const body = await parseBody(request);
+      try {
+        return await createGuestStripeCheckout(getSql(), body?.productKey);
+      } catch (error) {
+        console.error('Guest Stripe checkout failed', { name: error?.name });
+        return fail('SERVICE_UNAVAILABLE', 'De Stripe-betaalpagina kon niet worden geopend.', 503);
+      }
+    }
     const auth = await authenticate(request);
     if (auth.error) return fail('UNAUTHORIZED', 'Inloggen is vereist.', 401);
 
@@ -841,4 +877,3 @@ async function handler(request) {
 
 export const GET = handler;
 export const POST = handler;
-
