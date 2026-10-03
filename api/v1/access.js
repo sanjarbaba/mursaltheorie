@@ -621,7 +621,7 @@ async function processStripeWebhook(request) {
   await sql`
     INSERT INTO entitlements(clerk_user_id,product_key,source,external_reference,status,starts_at,ends_at)
     SELECT ${userId},${order.product_key},'web',${object.id},'active',
-      GREATEST(NOW(),COALESCE(MAX(ends_at),NOW())),
+      NOW(),
       GREATEST(NOW(),COALESCE(MAX(ends_at),NOW()))+INTERVAL '30 days'
     FROM entitlements WHERE clerk_user_id=${userId} AND status='active'
     ON CONFLICT(source,external_reference) DO UPDATE SET
