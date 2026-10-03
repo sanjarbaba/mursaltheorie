@@ -221,7 +221,8 @@ async function createGuestStripeCheckout(sql, productKey) {
       amount_value, amount_currency, status, consent_version, consent_text, consented_at
     ) VALUES(
       'stripe', ${`pending_${checkoutReference}`}, NULL, NULL, ${productKey}, ${product.description},
-      ${product.amount}, 'EUR', 'payment_pending', ${CONSENT_VERSION}, ${CONSENT_TEXT}, NOW()
+      ${product.amount}, 'EUR', 'payment_pending', 'stripe-checkout-pending',
+      'Toestemming wordt op de Stripe-betaalpagina gevraagd.', NOW()
     )
   `;
   const checkoutUrl = new URL(stripeLink.url);
@@ -615,6 +616,7 @@ async function processStripeWebhook(request) {
     UPDATE purchase_orders
     SET provider_payment_id=${object.id}, clerk_user_id=${userId}, customer_email=${paidEmail},
       status='active', paid_at=COALESCE(paid_at,${paidAt}), activated_at=COALESCE(activated_at,${paidAt}),
+      consent_version=${CONSENT_VERSION}, consent_text=${CONSENT_TEXT},
       consented_at=${paidAt}, updated_at=NOW()
     WHERE id=${order.id}
   `;
@@ -646,7 +648,7 @@ async function processStripeWebhook(request) {
         orderId: object.id,
         description: order.description,
         amount: order.amount_value,
-        consentText: order.consent_text,
+        consentText: CONSENT_TEXT,
         appUrl: configured('APP_URL') || 'https://www.mursaltheorie.nl',
         activated: true
       });
