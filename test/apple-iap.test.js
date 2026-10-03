@@ -2,14 +2,15 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { Environment, InAppOwnershipType, Type } from '@apple/app-store-server-library';
 import {
-  appleAccountToken, applePurchasesEnabled, sameAccountToken,
+  appleAccountToken, applePurchasesEnabled, applePurchasesVisibleTo, sameAccountToken,
   sandboxAllowed, validateAppleTransaction
 } from '../api/v1/_apple_iap.js';
 
 const names = [
   'APPLE_ACCOUNT_TOKEN_SECRET', 'APPLE_IAP_ENABLED', 'APPLE_IAP_KEY_ID',
   'APPLE_IAP_ISSUER_ID', 'APPLE_IAP_PRIVATE_KEY', 'APPLE_APP_ID',
-  'APPLE_IAP_SANDBOX_TEST_USER_IDS', 'VERCEL_ENV'
+  'APPLE_IAP_SANDBOX_TEST_USER_IDS', 'APPLE_IAP_TEST_USER_IDS',
+  'APPLE_IAP_PUBLIC_ENABLED', 'VERCEL_ENV'
 ];
 const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
 
@@ -38,6 +39,23 @@ test('purchase feature remains off without explicit activation and complete cred
   assert.equal(applePurchasesEnabled(), false);
   process.env.APPLE_IAP_ENABLED = 'true';
   assert.equal(applePurchasesEnabled(), false);
+  process.env.APPLE_IAP_ENABLED = 'false';
+});
+
+test('purchase screen is limited to named test accounts until public release', () => {
+  process.env.APPLE_IAP_KEY_ID = 'test-key';
+  process.env.APPLE_IAP_ISSUER_ID = 'test-issuer';
+  process.env.APPLE_IAP_PRIVATE_KEY = 'test-private-key';
+  process.env.APPLE_APP_ID = '6817092966';
+  process.env.APPLE_IAP_ENABLED = 'true';
+  process.env.APPLE_IAP_TEST_USER_IDS = 'user_one,user_two';
+  assert.equal(applePurchasesVisibleTo('user_one'), true);
+  assert.equal(applePurchasesVisibleTo('real_customer'), false);
+  delete process.env.APPLE_IAP_TEST_USER_IDS;
+  assert.equal(applePurchasesVisibleTo('real_customer'), false);
+  process.env.APPLE_IAP_PUBLIC_ENABLED = 'true';
+  assert.equal(applePurchasesVisibleTo('real_customer'), true);
+  process.env.APPLE_IAP_PUBLIC_ENABLED = 'false';
   process.env.APPLE_IAP_ENABLED = 'false';
 });
 
