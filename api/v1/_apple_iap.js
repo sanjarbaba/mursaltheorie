@@ -39,7 +39,8 @@ export function applePurchasesVisibleTo(userId) {
   if (!applePurchasesEnabled()) return false;
   if (config('APPLE_IAP_PUBLIC_ENABLED') === 'true') return true;
   const ids = (config('APPLE_IAP_TEST_USER_IDS') || '').split(',').map((item) => item.trim());
-  return ids.includes(userId);
+  const reviewIds = (config('APPLE_IAP_REVIEW_USER_IDS') || '').split(',').map((item) => item.trim());
+  return ids.includes(userId) || reviewIds.includes(userId);
 }
 
 export function appleAccountToken(userId) {
@@ -80,7 +81,8 @@ function apiClient(environment) {
 export function sandboxAllowed(userId) {
   if (process.env.VERCEL_ENV !== 'production') return true;
   const ids = (config('APPLE_IAP_SANDBOX_TEST_USER_IDS') || '').split(',').map((item) => item.trim());
-  return ids.includes(userId);
+  const reviewIds = (config('APPLE_IAP_REVIEW_USER_IDS') || '').split(',').map((item) => item.trim());
+  return ids.includes(userId) || reviewIds.includes(userId);
 }
 
 export async function verifiedTransactionInfo(transactionId, preferredEnvironment) {
