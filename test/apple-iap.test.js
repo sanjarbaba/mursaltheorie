@@ -9,7 +9,7 @@ import {
 const names = [
   'APPLE_ACCOUNT_TOKEN_SECRET', 'APPLE_IAP_ENABLED', 'APPLE_IAP_KEY_ID',
   'APPLE_IAP_ISSUER_ID', 'APPLE_IAP_PRIVATE_KEY', 'APPLE_APP_ID',
-  'APPLE_IAP_SANDBOX_TEST_USER_IDS', 'APPLE_IAP_TEST_USER_IDS',
+  'APPLE_IAP_SANDBOX_TEST_USER_IDS', 'APPLE_IAP_TEST_USER_IDS', 'APPLE_IAP_REVIEW_USER_IDS',
   'APPLE_IAP_PUBLIC_ENABLED', 'VERCEL_ENV'
 ];
 const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
@@ -49,7 +49,9 @@ test('purchase screen is limited to named test accounts until public release', (
   process.env.APPLE_APP_ID = '6817092966';
   process.env.APPLE_IAP_ENABLED = 'true';
   process.env.APPLE_IAP_TEST_USER_IDS = 'user_one,user_two';
+  process.env.APPLE_IAP_REVIEW_USER_IDS = 'review_user';
   assert.equal(applePurchasesVisibleTo('user_one'), true);
+  assert.equal(applePurchasesVisibleTo('review_user'), true);
   assert.equal(applePurchasesVisibleTo('real_customer'), false);
   delete process.env.APPLE_IAP_TEST_USER_IDS;
   assert.equal(applePurchasesVisibleTo('real_customer'), false);
@@ -91,6 +93,8 @@ test('server accepts only the exact app, product, account and purchase shape', (
 test('production rejects sandbox transactions outside named test accounts', () => {
   process.env.VERCEL_ENV = 'production';
   process.env.APPLE_IAP_SANDBOX_TEST_USER_IDS = 'user_one,user_two';
+  process.env.APPLE_IAP_REVIEW_USER_IDS = 'review_user';
   assert.equal(sandboxAllowed('user_one'), true);
+  assert.equal(sandboxAllowed('review_user'), true);
   assert.equal(sandboxAllowed('real_customer'), false);
 });
