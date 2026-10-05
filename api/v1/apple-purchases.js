@@ -1,3 +1,4 @@
+import { APIException } from '@apple/app-store-server-library';
 import { authenticate, ensureUser, getSql, parseBody } from '../_lib.js';
 import { fail, ok } from './_contract.js';
 import {
@@ -51,7 +52,9 @@ async function verifyPurchase(sql, userId, request) {
     const { transaction, environment } = await verifiedTransactionInfo(transactionId);
     verified = validateAppleTransaction(transaction, environment, expectedToken);
   } catch (error) {
-    console.error('Apple purchase verification failed', error?.constructor?.name);
+    console.error('Apple purchase verification failed', error?.constructor?.name,
+      error instanceof APIException ? error.httpStatusCode : null,
+      error instanceof APIException ? error.apiError : null);
     return fail('APPLE_VERIFICATION_FAILED', 'De Apple-aankoop kon nog niet worden bevestigd.', 422);
   }
   if (verified.environment === 'Sandbox' && !sandboxAllowed(userId)) {
