@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mursaltheorie beheer</title>
-<script defer src="/clerk-auth-v5.js?v=2"></script>
+<script>(()=>{try{document.documentElement.dataset.theme=localStorage.getItem("mt-theme-v2")==="dark"?"dark":"light"}catch{document.documentElement.dataset.theme="light"}})()</script><script defer src="/clerk-auth-v5.js?v=2"></script>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eef2ff;background:#07112f}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#35158a,#07112f 55%);min-height:100vh}
@@ -19,10 +19,10 @@ h1,h2,h3{margin:0 0 8px}.muted{color:#b8c5ee;font-size:.92rem}.btn{border:0;bord
 @media(max-width:800px){.cards{grid-template-columns:1fr 1fr}.activity-grid{grid-template-columns:1fr}.user{grid-template-columns:1fr;min-width:0}.user .actions{justify-content:flex-start}}
 @media(max-width:520px){.wrap{padding:20px 12px}.cards{grid-template-columns:1fr 1fr}.card,.panel{padding:14px}.card strong{font-size:1.55rem}}
 </style>
-</head>
+<style id="calm-white-admin-v1">html[data-theme=light]{color-scheme:light;color:#172033;background:#fff}html[data-theme=light] body{background:#fff;color:#172033}html[data-theme=light] .muted,html[data-theme=light] .offline{color:#4b5668}html[data-theme=light] .card,html[data-theme=light] .panel,html[data-theme=light] .notice,html[data-theme=light] .grant-product{background:#fff;color:#172033;border-color:#d8e1ed}html[data-theme=light] .card strong,html[data-theme=light] .activity-row strong{color:#183b83}html[data-theme=light] .user,html[data-theme=light] .activity-row{border-color:#d8e1ed}html[data-theme=light] .tag{background:#e9efff;color:#183b83}html[data-theme=light] .tag.active{background:#d9f5e5;color:#12613b}html[data-theme=light] .error{background:#fff0ef;color:#9b2e27}html[data-theme=light] .success{background:#e8f8ef;color:#116b43}html[data-theme=light] .alt{background:#e9efff;color:#183b83}html[data-theme=light] .online{color:#116b43}#themeToggle{min-width:42px;font-size:20px;padding:8px}</style></head>
 <body>
 <main class="wrap">
-<header class="topbar"><div><h1>Beheerderspaneel</h1><p class="muted">Toegang, betalingen en veilig gebruiksoverzicht</p></div><div style="margin-left:auto"><button class="btn alt" id="login">Inloggen</button></div></header>
+<header class="topbar"><div><h1>Beheerderspaneel</h1><p class="muted">Toegang, betalingen en veilig gebruiksoverzicht</p></div><div style="margin-left:auto;display:flex;align-items:center;gap:8px"><button class="btn alt" id="themeToggle" type="button" aria-label="Donkere modus" title="Donkere modus">🌙</button><button class="btn alt" id="login">Inloggen</button></div></header>
 <div id="notice" class="notice">Beveiligde beheeromgeving laden…</div>
 <section id="app" hidden>
 <div class="cards">
@@ -55,5 +55,5 @@ document.querySelector('#refreshActivity').onclick=loadActivity;
 window.addEventListener('load',()=>mtClerkReady.then(load).catch(()=>{}));
 setInterval(()=>{if(!app.hidden)loadActivity()},60000);
 </script>
-</body>
+<script>(()=>{const b=document.getElementById("themeToggle");if(!b)return;const sync=()=>{const dark=document.documentElement.dataset.theme==="dark";b.textContent=dark?"☀️":"🌙";b.setAttribute("aria-label",dark?"Lichte modus":"Donkere modus");b.title=b.getAttribute("aria-label")};sync();b.addEventListener("click",()=>{const next=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=next;try{localStorage.setItem("mt-theme-v2",next)}catch{}sync()})})()</script></body>
 </html>
