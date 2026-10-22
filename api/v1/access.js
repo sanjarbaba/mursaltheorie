@@ -15,16 +15,22 @@ function configured(name) {
 }
 
 const MOLLIE_PRODUCTS = Object.freeze({
-  theory_b_nl_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands - 30 dagen', kind: 'digital' }),
-  theory_b_nl_fa_30d: Object.freeze({ amount: '65.00', description: 'Mursaltheorie Nederlands + Dari/Farsi - 30 dagen', kind: 'digital' }),
-  theory_b_nl_ps_30d: Object.freeze({ amount: '65.00', description: 'Mursaltheorie Nederlands + Pashto - 30 dagen', kind: 'digital' }),
+  theory_b_nl_30d: Object.freeze({ amount: '29.99', description: 'Mursaltheorie Nederlands - 30 dagen', kind: 'digital' }),
+  theory_b_nl_fa_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands + Dari/Farsi - 30 dagen', kind: 'digital' }),
+  theory_b_nl_ps_30d: Object.freeze({ amount: '49.99', description: 'Mursaltheorie Nederlands + Pashto - 30 dagen', kind: 'digital' }),
   theory_b_book: Object.freeze({ amount: '65.00', description: 'Mursaltheorie B-boek', kind: 'physical' })
 });
 
 const STRIPE_PAYMENT_LINKS = Object.freeze({
-  theory_b_nl_30d: Object.freeze({ id: 'plink_1ULKPUKBUCvMx3oMwtAHlDSX', url: 'https://buy.stripe.com/00w00k8Xd0ZvdEdcHwaVa03' }),
-  theory_b_nl_fa_30d: Object.freeze({ id: 'plink_1ULKPBKBUCvMx3oMZum1ap0i', url: 'https://buy.stripe.com/3cI9AUflB23z7fP8rgaVa02' }),
-  theory_b_nl_ps_30d: Object.freeze({ id: 'plink_1ULKOrKBUCvMx3oM1PtdwCmo', url: 'https://buy.stripe.com/8x24gAgpF0Zv9nXdLAaVa01' })
+  theory_b_nl_30d: Object.freeze({ id: 'plink_1UTNb0KBUCvMx3oMW7c491tF', url: 'https://buy.stripe.com/14A7sMehxfUpdEd5f4aVa04' }),
+  theory_b_nl_fa_30d: Object.freeze({ id: 'plink_1UTNbGKBUCvMx3oMd0ZLAj4X', url: 'https://buy.stripe.com/dRm28s6P5cIdcA96j8aVa05' }),
+  theory_b_nl_ps_30d: Object.freeze({ id: 'plink_1UTNbKKBUCvMx3oMgJygTZSd', url: 'https://buy.stripe.com/5kQ5kEgpF5fL0Rr22SaVa06' })
+});
+
+const LEGACY_STRIPE_PAYMENT_LINK_IDS = Object.freeze({
+  theory_b_nl_30d: 'plink_1ULKPUKBUCvMx3oMwtAHlDSX',
+  theory_b_nl_fa_30d: 'plink_1ULKPBKBUCvMx3oMZum1ap0i',
+  theory_b_nl_ps_30d: 'plink_1ULKOrKBUCvMx3oM1PtdwCmo'
 });
 
 const CONSENT_VERSION = 'digital-content-v2-2026-09-04';
@@ -593,9 +599,10 @@ async function processStripeWebhook(request) {
 
   const product = MOLLIE_PRODUCTS[order.product_key];
   const stripeLink = STRIPE_PAYMENT_LINKS[order.product_key];
-  const expectedAmount = Math.round(Number(product?.amount || 0) * 100);
+  const expectedAmount = Math.round(Number(order.amount_value || 0) * 100);
+  const validPaymentLinks = [stripeLink?.id, LEGACY_STRIPE_PAYMENT_LINK_IDS[order.product_key]];
   const paidEmail = normalizeGuestEmail(object.customer_details?.email || object.customer_email);
-  if (!product || !stripeLink || !paidEmail || object.payment_link !== stripeLink.id ||
+  if (!product || !stripeLink || !paidEmail || !validPaymentLinks.includes(object.payment_link) ||
       object.currency?.toLowerCase() !== 'eur' || Number(object.amount_total) !== expectedAmount ||
       (!order.clerk_user_id && object.consent?.terms_of_service !== 'accepted')) {
     return fail('PAYMENT_MISMATCH', 'Betalingsgegevens of toestemming komen niet overeen met het gekozen pakket.', 400);
