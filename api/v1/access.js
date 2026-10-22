@@ -24,7 +24,8 @@ const MOLLIE_PRODUCTS = Object.freeze({
 const STRIPE_PAYMENT_LINKS = Object.freeze({
   theory_b_nl_30d: Object.freeze({ id: 'plink_1UTNb0KBUCvMx3oMW7c491tF', url: 'https://buy.stripe.com/14A7sMehxfUpdEd5f4aVa04' }),
   theory_b_nl_fa_30d: Object.freeze({ id: 'plink_1UTNbGKBUCvMx3oMd0ZLAj4X', url: 'https://buy.stripe.com/dRm28s6P5cIdcA96j8aVa05' }),
-  theory_b_nl_ps_30d: Object.freeze({ id: 'plink_1UTNbKKBUCvMx3oMgJygTZSd', url: 'https://buy.stripe.com/5kQ5kEgpF5fL0Rr22SaVa06' })
+  theory_b_nl_ps_30d: Object.freeze({ id: 'plink_1UTNbKKBUCvMx3oMgJygTZSd', url: 'https://buy.stripe.com/5kQ5kEgpF5fL0Rr22SaVa06' }),
+  theory_b_book: Object.freeze({ id: 'plink_1UTOpPKBUCvMx3oMZdkQAVVy', url: 'https://buy.stripe.com/fZu7sM2yPgYt9nXcHwaVa07' })
 });
 
 const LEGACY_STRIPE_PAYMENT_LINK_IDS = Object.freeze({
@@ -36,7 +37,7 @@ const LEGACY_STRIPE_PAYMENT_LINK_IDS = Object.freeze({
 const CONSENT_VERSION = 'digital-content-v2-2026-09-04';
 const CONSENT_TEXT = 'Ik geef uitdrukkelijk toestemming om de digitale inhoud direct na bevestiging van mijn betaling te leveren. Ik verklaar dat mijn wettelijke herroepingsrecht vervalt zodra de digitale toegang na betaling wordt gestart.';
 const PHYSICAL_ORDER_VERSION = 'physical-book-v1-2026-09-10';
-const PHYSICAL_ORDER_TEXT = 'Ik bestel het fysieke Mursaltheorie B-boek voor €65 en bevestig dat het ingevulde afleveradres juist is.';
+const PHYSICAL_ORDER_TEXT = 'Ik bestel het fysieke Mursaltheorie B-boek voor €65 en geef mijn afleveradres op de Stripe-betaalpagina door.';
 
 function normalizedShipping(value) {
   if (!value || typeof value !== 'object') return null;
@@ -54,77 +55,41 @@ function normalizedShipping(value) {
   return shipping;
 }
 
-async function createCheckout(sql, userId, customerEmail, productKey, immediateAccessConsent, shipping = null) {
-  const product = MOLLIE_PRODUCTS[productKey];
-  const appUrl = configured('APP_URL') || 'https://www.mursaltheorie.nl';
-  if (!product) return fail('INVALID_PRODUCT', 'Kies een geldig taalpakket.', 422);
-  const isPhysical = product.kind === 'physical';
-  const consentVersion = isPhysical ? PHYSICAL_ORDER_VERSION : CONSENT_VERSION;
-  const consentText = isPhysical ? PHYSICAL_ORDER_TEXT : CONSENT_TEXT;
-  const consentedAt = new Date().toISOString();
-
-  if (!isPhysical) {
-    const stripeLink = STRIPE_PAYMENT_LINKS[productKey];
-    if (!stripeLink) return fail('PAYMENTS_NOT_CONFIGURED', 'Stripe is nog niet geconfigureerd voor dit pakket.', 503);
-    const checkoutReference = `mt_${randomUUID().replace(/-/g, '')}`;
-    await sql`
-      INSERT INTO purchase_orders(
-        provider, provider_payment_id, clerk_user_id, customer_email, product_key, description,
-        amount_value, amount_currency, status, consent_version, consent_text, consented_at
-      ) VALUES(
-        'stripe', ${`pending_${checkoutReference}`}, ${userId}, ${customerEmail || null}, ${productKey}, ${product.description},
-        ${product.amount}, 'EUR', 'payment_pending', ${consentVersion}, ${consentText}, ${consentedAt}
-      )
-    `;
-    const checkoutUrl = new URL(stripeLink.url);
-    checkoutUrl.searchParams.set('client_reference_id', checkoutReference);
-    if (customerEmail) checkoutUrl.searchParams.set('locked_prefilled_email', customerEmail);
-    checkoutUrl.searchParams.set('locale', 'nl');
-    return ok({ checkoutUrl: checkoutUrl.toString(), provider: 'stripe' });
-  }
-
-  const secret = configured('MOLLIE_API_KEY');
-  if (!secret) return fail('PAYMENTS_NOT_CONFIGURED', 'Betalen is nog niet geactiveerd.', 503);
-  const response = await fetch('https://api.mollie.com/v2/payments', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${secret}`,
-      'Content-Type': 'application/json',
-      'Idempotency-Key': `checkout:${userId}:${productKey}:${Math.floor(Date.now() / 60000)}`
-    },
-    body: JSON.stringify({
-      amount: { currency: 'EUR', value: product.amount },
-      description: product.description,
-      redirectUrl: `${appUrl}/learn5?payment=book-return`,
-      cancelUrl: `${appUrl}/learn5?payment=book-cancelled`,
-      webhookUrl: `${appUrl}/api/v1/access?resource=mollie-webhook`,
-      metadata: {
-        clerk_user_id: userId,
-        product_key: productKey,
-        immediate_access_consent: 'false',
-        consent_version: consentVersion,
-        consented_at: consentedAt
-      }
-    })
+function stripeShippingDetails(session) {
+  const details = session?.collected_information?.shipping_details || session?.shipping_details;
+  const address = details?.address;
+  if (!address || address.country !== 'NL') return null;
+  return normalizedShipping({
+    name: details.name || session?.customer_details?.name || '',
+    street: [address.line1, address.line2].filter(Boolean).join(' '),
+    postcode: address.postal_code || '',
+    city: address.city || ''
   });
-  const payment = await response.json();
-  const checkoutUrl = payment?._links?.checkout?.href;
-  if (!response.ok || !payment?.id || !checkoutUrl) {
-    console.error('Mollie payment creation failed', { status: response.status, detail: payment?.detail });
-    return fail('PAYMENT_PROVIDER_ERROR', 'De betaalpagina kon niet worden geopend.', 502);
-  }
+}
+
+async function createCheckout(sql, userId, customerEmail, productKey) {
+  const product = MOLLIE_PRODUCTS[productKey];
+  const stripeLink = STRIPE_PAYMENT_LINKS[productKey];
+  if (!product) return fail('INVALID_PRODUCT', 'Kies een geldig product.', 422);
+  if (!stripeLink) return fail('PAYMENTS_NOT_CONFIGURED', 'Stripe is nog niet geconfigureerd voor dit product.', 503);
+  const isPhysical = product.kind === 'physical';
+  const checkoutReference = `mt_${randomUUID().replace(/-/g, '')}`;
   await sql`
     INSERT INTO purchase_orders(
       provider, provider_payment_id, clerk_user_id, customer_email, product_key, description,
-      amount_value, amount_currency, status, consent_version, consent_text, consented_at, shipping_details
+      amount_value, amount_currency, status, consent_version, consent_text, consented_at
     ) VALUES(
-      'mollie', ${payment.id}, ${userId}, ${customerEmail || null}, ${productKey}, ${product.description},
-      ${product.amount}, 'EUR', 'payment_pending', ${consentVersion}, ${consentText},
-      ${consentedAt}, ${shipping ? JSON.stringify(shipping) : null}::jsonb
+      'stripe', ${`pending_${checkoutReference}`}, ${userId}, ${customerEmail || null}, ${productKey}, ${product.description},
+      ${product.amount}, 'EUR', 'payment_pending',
+      ${isPhysical ? PHYSICAL_ORDER_VERSION : CONSENT_VERSION},
+      ${isPhysical ? PHYSICAL_ORDER_TEXT : CONSENT_TEXT}, NOW()
     )
-    ON CONFLICT(provider, provider_payment_id) DO NOTHING
   `;
-  return ok({ checkoutUrl, provider: 'mollie' });
+  const checkoutUrl = new URL(stripeLink.url);
+  checkoutUrl.searchParams.set('client_reference_id', checkoutReference);
+  if (customerEmail) checkoutUrl.searchParams.set('locked_prefilled_email', customerEmail);
+  checkoutUrl.searchParams.set('locale', 'nl');
+  return ok({ checkoutUrl: checkoutUrl.toString(), provider: 'stripe' });
 }
 
 function normalizeGuestEmail(value) {
@@ -217,7 +182,7 @@ async function createGuestCheckout(sql, customerEmail, productKey, immediateAcce
 async function createGuestStripeCheckout(sql, productKey) {
   const product = MOLLIE_PRODUCTS[productKey];
   const stripeLink = STRIPE_PAYMENT_LINKS[productKey];
-  if (!product || product.kind !== 'digital' || !stripeLink) {
+  if (!product || !stripeLink) {
     return fail('INVALID_PRODUCT', 'Kies een geldig taalpakket.', 422);
   }
   const checkoutReference = `mt_${randomUUID().replace(/-/g, '')}`;
@@ -227,8 +192,8 @@ async function createGuestStripeCheckout(sql, productKey) {
       amount_value, amount_currency, status, consent_version, consent_text, consented_at
     ) VALUES(
       'stripe', ${`pending_${checkoutReference}`}, NULL, NULL, ${productKey}, ${product.description},
-      ${product.amount}, 'EUR', 'payment_pending', 'stripe-checkout-pending',
-      'Toestemming wordt op de Stripe-betaalpagina gevraagd.', NOW()
+      ${product.amount}, 'EUR', 'payment_pending', ${product.kind === 'physical' ? PHYSICAL_ORDER_VERSION : 'stripe-checkout-pending'},
+      ${product.kind === 'physical' ? PHYSICAL_ORDER_TEXT : 'Toestemming wordt op de Stripe-betaalpagina gevraagd.'}, NOW()
     )
   `;
   const checkoutUrl = new URL(stripeLink.url);
@@ -588,10 +553,10 @@ async function processStripeWebhook(request) {
   const orders = await sql`
     SELECT id, clerk_user_id, customer_email, product_key, description,
       amount_value::TEXT AS amount_value, amount_currency, consent_version, consent_text, consented_at,
-      provider_payment_id, confirmation_sent_at
+      provider_payment_id, confirmation_sent_at, status
     FROM purchase_orders
     WHERE provider='stripe' AND provider_payment_id IN (${pendingReference}, ${object.id})
-      AND status IN ('payment_pending', 'active')
+      AND status IN ('payment_pending', 'active', 'paid_awaiting_fulfillment', 'fulfilled')
     LIMIT 1
   `;
   const order = orders[0];
@@ -600,12 +565,52 @@ async function processStripeWebhook(request) {
   const product = MOLLIE_PRODUCTS[order.product_key];
   const stripeLink = STRIPE_PAYMENT_LINKS[order.product_key];
   const expectedAmount = Math.round(Number(order.amount_value || 0) * 100);
-  const validPaymentLinks = [stripeLink?.id, LEGACY_STRIPE_PAYMENT_LINK_IDS[order.product_key]];
+  const validPaymentLinks = [stripeLink?.id, LEGACY_STRIPE_PAYMENT_LINK_IDS[order.product_key]].filter(Boolean);
+  const isPhysical = product?.kind === 'physical';
   const paidEmail = normalizeGuestEmail(object.customer_details?.email || object.customer_email);
   if (!product || !stripeLink || !paidEmail || !validPaymentLinks.includes(object.payment_link) ||
       object.currency?.toLowerCase() !== 'eur' || Number(object.amount_total) !== expectedAmount ||
-      (!order.clerk_user_id && object.consent?.terms_of_service !== 'accepted')) {
+      ((!order.clerk_user_id || isPhysical) && object.consent?.terms_of_service !== 'accepted')) {
     return fail('PAYMENT_MISMATCH', 'Betalingsgegevens of toestemming komen niet overeen met het gekozen pakket.', 400);
+  }
+
+  if (isPhysical) {
+    const shipping = stripeShippingDetails(object);
+    if (!shipping) return fail('INVALID_SHIPPING_ADDRESS', 'Een geldig Nederlands afleveradres ontbreekt.', 400);
+    const paidAt = new Date().toISOString();
+    await sql`
+      UPDATE purchase_orders
+      SET provider_payment_id=${object.id}, customer_email=${paidEmail},
+        status=CASE WHEN status='fulfilled' THEN 'fulfilled' ELSE 'paid_awaiting_fulfillment' END,
+        paid_at=COALESCE(paid_at,${paidAt}), shipping_details=${JSON.stringify(shipping)}::jsonb,
+        consent_version=${PHYSICAL_ORDER_VERSION}, consent_text=${PHYSICAL_ORDER_TEXT},
+        consented_at=COALESCE(consented_at,${paidAt}), updated_at=NOW()
+      WHERE id=${order.id}
+    `;
+    if (!order.confirmation_sent_at) {
+      let email;
+      try {
+        email = await bookOrderConfirmationEmail({
+          email: paidEmail, orderId: object.id, description: order.description,
+          amount: order.amount_value, shipping
+        });
+      } catch (error) {
+        console.error('Stripe book confirmation email could not be sent', { name: error?.name });
+        return fail('BOOK_CONFIRMATION_PENDING', 'De betaling is ontvangen; de bevestiging wordt opnieuw geprobeerd.', 503);
+      }
+      if (!email.sent) return fail('BOOK_CONFIRMATION_PENDING', 'De betaling is ontvangen; de bevestiging wordt opnieuw geprobeerd.', 503);
+      await sql`UPDATE purchase_orders SET confirmation_sent_at=NOW(), confirmation_email_id=${email.id}, updated_at=NOW() WHERE id=${order.id}`;
+    }
+    const safePayload = {
+      id: object.id, payment_status: object.payment_status, amount_total: object.amount_total,
+      currency: object.currency, client_reference_id: reference, payment_link: object.payment_link
+    };
+    await sql`
+      INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at)
+      VALUES('stripe',${event.id},${event.type},${JSON.stringify(safePayload)}::jsonb,NOW())
+      ON CONFLICT(provider,provider_event_id) DO NOTHING
+    `;
+    return ok({ received: true, bookOrder: true });
   }
 
   let userId = order.clerk_user_id;
@@ -830,11 +835,7 @@ const endpoint = {
         const productKey = typeof body?.productKey === 'string' ? body.productKey : '';
         const product = MOLLIE_PRODUCTS[productKey];
         if (!product) return fail('INVALID_PRODUCT', 'Kies een geldig product.', 422);
-        if (product.kind === 'physical') {
-          const shipping = normalizedShipping(body?.shipping);
-          if (!shipping) return fail('INVALID_SHIPPING_ADDRESS', 'Vul een geldig Nederlands afleveradres in.', 422);
-          return createCheckout(sql, auth.userId, user.email, productKey, false, shipping);
-        }
+        if (product.kind === 'physical') return createCheckout(sql, auth.userId, user.email, productKey);
         if (body?.immediateAccessConsent !== true) {
           return fail('CONSENT_REQUIRED', 'Bevestig dat de digitale toegang direct mag starten.', 422);
         }
