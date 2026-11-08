@@ -3,16 +3,18 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const home = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const access = fs.readFileSync(new URL('../api/v1/access.js', import.meta.url), 'utf8');
 
-test('homepage shows the approved 30-day prices and bilingual introduction offer', () => {
-  assert.match(home, /<strong>€29,99<\/strong>/);
-  assert.match(home, /<strong>€49,99<\/strong>/);
-  assert.match(home, /INTRODUCTIEPRIJS · EERSTE 3 MAANDEN/);
-  assert.match(home, /Daarna €64,99 voor 30 dagen\./);
-  assert.match(home, /قیمت معرفی · ۳ ماه نخست/);
-  assert.match(home, /NL \+ پښتو · BINNENKORT/);
-  assert.match(home, /Nederlands \+ Pashto/);
-  assert.match(home, /Binnenkort beschikbaar/);
-  assert.match(home, /disabled aria-disabled="true"/);
+test('Black Friday 2026 pricing shows €19,99 on each digital 30-day plan', () => {
+  assert.match(home, /BLACK FRIDAY ACTIE/);
+  assert.equal((home.match(/<strong>€19,99<\/strong>/g) || []).length, 3);
+  assert.match(home, /Mursaltheorie B-boek · €65/);
 });
 
+test('server prices and three Stripe links match the campaign', () => {
+  assert.equal((access.match(/amount: '19\.99'/g) || []).length, 3);
+  assert.match(access, /plink_1UZeFyKBUCvMx3oMiDbpDge9/);
+  assert.match(access, /plink_1UZeG0KBUCvMx3oMpLw8jIX8/);
+  assert.match(access, /plink_1UZeG2KBUCvMx3oMSw1vkLhz/);
+  assert.match(access, /PRE_BLACK_FRIDAY_STRIPE_PAYMENT_LINK_IDS/);
+});
