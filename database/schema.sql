@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS app_users (
 
 CREATE TABLE IF NOT EXISTS lesson_progress (
   clerk_user_id TEXT NOT NULL REFERENCES app_users(clerk_user_id) ON DELETE CASCADE,
-  lesson_id INTEGER NOT NULL CHECK (lesson_id BETWEEN 1 AND 150),
+  lesson_id INTEGER NOT NULL CHECK (lesson_id BETWEEN 1 AND 10000),
   completed BOOLEAN NOT NULL DEFAULT TRUE,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (clerk_user_id, lesson_id)

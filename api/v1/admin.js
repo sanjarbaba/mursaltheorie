@@ -1,3 +1,4 @@
+import { createClerkClient } from '@clerk/backend';
 import { authenticate, ensureUser, getSql, parseBody } from '../_lib.js';
 import { COURSE_PRODUCTS } from './_products.js';
 import { fail, integer, ok } from './_contract.js';
@@ -15,7 +16,20 @@ async function requireAdmin(sql, auth) {
     FROM app_users WHERE clerk_user_id = ${auth.userId} LIMIT 1
   `;
   const user = rows[0];
-  if (!user || (user.access_status !== 'admin' && !adminEmails().includes(String(user.email || '').toLowerCase()))) {
+  if (!user) {
+    return { error: fail('ADMIN_REQUIRED', 'Beheerdersrechten zijn vereist.', 403) };
+  }
+  // app_users.email can be changed through the profile endpoint. Never use it
+  // as proof of ownership for privileged actions.
+  let clerkUser;
+  try {
+    clerkUser = await createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY }).users.getUser(auth.userId);
+  } catch {
+    return { error: fail('IDENTITY_UNAVAILABLE', 'Beheerdersidentiteit kon niet worden gecontroleerd.', 503) };
+  }
+  const primary = clerkUser.emailAddresses?.find((address) => address.id === clerkUser.primaryEmailAddressId);
+  if (!primary || primary.verification?.status !== 'verified' ||
+      !adminEmails().includes(String(primary.emailAddress || '').trim().toLowerCase())) {
     return { error: fail('ADMIN_REQUIRED', 'Beheerdersrechten zijn vereist.', 403) };
   }
   return { user };
@@ -79,6 +93,141 @@ async function activityData(sql) {
   return {setupRequired:false,summary:summaryRows[0]||{events_7d:0,page_views_7d:0,users_7d:0,sessions_7d:0,active_now:0},topPages,recentUsers};
 }
 
+const LESSON_LANGUAGES = ['nl', 'fa', 'ps'];
+
+function editText(value, limit) {
+  if (typeof value !== 'string' || value.length > limit || /[<>\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) return null;
+  return value.trim();
+}
+
+function mergeLessonText(current, submitted, limit) {
+  if (!submitted || typeof submitted !== 'object' || Array.isArray(submitted)) return null;
+  const result = { ...(current && typeof current === 'object' && !Array.isArray(current) ? current : {}) };
+  for (const language of LESSON_LANGUAGES) {
+    if (!Object.hasOwn(submitted, language)) continue;
+    const value = editText(submitted[language], limit);
+    if (value === null) return null;
+    if (value) result[language] = value;
+    else delete result[language];
+  }
+  return result;
+}
+
+function lessonBlock(blocks, type) {
+  return blocks.find((block) => block?.type === type)?.text || {};
+}
+
+function replaceLessonBlock(blocks, type, text) {
+  const index = blocks.findIndex((block) => block?.type === type);
+  if (index < 0) blocks.push({ type, text });
+  else blocks[index] = { ...blocks[index], text };
+}
+
+function completeLesson(fields) {
+  return ['title', 'summary', 'rule', 'tip'].every((field) =>
+    LESSON_LANGUAGES.every((language) => Boolean(fields[field]?.[language])));
+}
+
+async function adminLessons(sql) {
+  const releases = await sql`SELECT id, version FROM content_releases WHERE status='published' LIMIT 1`;
+  if (!releases[0]) return { release: null, modules: [], lessons: [] };
+  const release = releases[0];
+  const [modules, lessons] = await Promise.all([
+    sql`SELECT id, module_number, title FROM course_modules WHERE release_id=${release.id} AND published=TRUE ORDER BY sort_order`,
+    sql`SELECT id, lesson_number, module_id, slug, title, summary, content_blocks,
+      estimated_minutes, published, updated_at
+      FROM course_lessons WHERE release_id=${release.id} ORDER BY lesson_number`
+  ]);
+  return {
+    release: { version: release.version },
+    modules: modules.map((module) => ({ id: module.id, number: module.module_number, title: module.title })),
+    lessons: lessons.map((lesson) => ({
+      id: lesson.id, number: lesson.lesson_number, moduleId: lesson.module_id, slug: lesson.slug,
+      title: lesson.title, summary: lesson.summary, rule: lessonBlock(lesson.content_blocks || [], 'rule'),
+      tip: lessonBlock(lesson.content_blocks || [], 'exam_tip'),
+      estimatedMinutes: lesson.estimated_minutes, published: lesson.published, updatedAt: lesson.updated_at
+    }))
+  };
+}
+
+async function saveLesson(sql, body) {
+  const releases = await sql`SELECT id FROM content_releases WHERE status='published' LIMIT 1`;
+  if (!releases[0]) return fail('CONTENT_NOT_READY', 'Er is geen gepubliceerde lesversie.', 409);
+  const releaseId = releases[0].id;
+  const lessonId = body.lessonId == null ? null : integer(body.lessonId, { min: 1, max: 1000000000 });
+  if (body.lessonId != null && !lessonId) return fail('INVALID_LESSON', 'Kies een geldige les.', 422);
+  const rows = lessonId ? await sql`SELECT id, title, summary, content_blocks, updated_at FROM course_lessons WHERE id=${lessonId} AND release_id=${releaseId} LIMIT 1` : [];
+  if (lessonId && !rows[0]) return fail('LESSON_NOT_FOUND', 'Les niet gevonden.', 404);
+  const current = rows[0];
+  if (current && (!body.updatedAt || new Date(body.updatedAt).getTime() !== new Date(current.updated_at).getTime())) {
+    return fail('LESSON_CHANGED', 'Deze les is intussen gewijzigd. Laad hem opnieuw voordat je opslaat.', 409);
+  }
+  const blocks = Array.isArray(current?.content_blocks) ? [...current.content_blocks] : [];
+  const fields = {
+    title: mergeLessonText(current?.title, body.title, 120),
+    summary: mergeLessonText(current?.summary, body.summary, 500),
+    rule: mergeLessonText(lessonBlock(blocks, 'rule'), body.rule, 1500),
+    tip: mergeLessonText(lessonBlock(blocks, 'exam_tip'), body.tip, 1500)
+  };
+  if (Object.values(fields).some((value) => value === null) || !fields.title.nl || !fields.summary.nl || !fields.rule.nl || !fields.tip.nl) {
+    return fail('INVALID_LESSON', 'Vul een Nederlandse titel, samenvatting, kernregel en examentip in. Gebruik alleen gewone tekst.', 422);
+  }
+  replaceLessonBlock(blocks, 'rule', fields.rule);
+  replaceLessonBlock(blocks, 'exam_tip', fields.tip);
+  const minutes = integer(body.estimatedMinutes, { min: 1, max: 60 });
+  if (!minutes) return fail('INVALID_MINUTES', 'Kies een lestijd van 1 tot 60 minuten.', 422);
+  if (current) {
+    const updated = await sql`UPDATE course_lessons SET title=${JSON.stringify(fields.title)}::jsonb,
+      summary=${JSON.stringify(fields.summary)}::jsonb, content_blocks=${JSON.stringify(blocks)}::jsonb,
+      estimated_minutes=${minutes}, updated_at=NOW()
+      WHERE id=${lessonId} AND release_id=${releaseId} AND updated_at=${current.updated_at}
+      RETURNING id, lesson_number, published`;
+    if (!updated[0]) return fail('LESSON_CHANGED', 'Deze les is intussen gewijzigd. Laad hem opnieuw.', 409);
+    return ok({ saved: true, number: updated[0].lesson_number, published: updated[0].published });
+  }
+  const moduleNumber = integer(body.moduleNumber, { min: 1, max: 99 });
+  if (!moduleNumber) return fail('INVALID_MODULE', 'Kies een hoofdstuk.', 422);
+  const modules = await sql`SELECT id FROM course_modules WHERE release_id=${releaseId} AND module_number=${moduleNumber} AND published=TRUE LIMIT 1`;
+  if (!modules[0]) return fail('INVALID_MODULE', 'Hoofdstuk niet gevonden.', 422);
+  try {
+    const created = await sql`WITH next_number AS (
+      SELECT COALESCE(MAX(lesson_number),0)+1 AS value FROM course_lessons WHERE release_id=${releaseId}
+    ), next_position AS (
+      SELECT COALESCE(MAX(sort_order),0)+1 AS value FROM course_lessons WHERE release_id=${releaseId} AND module_id=${modules[0].id}
+    )
+    INSERT INTO course_lessons(lesson_number,module_id,release_id,slug,title,summary,content_blocks,media,estimated_minutes,sort_order,published)
+    SELECT next_number.value,${modules[0].id},${releaseId},'admin-'||next_number.value,
+      ${JSON.stringify(fields.title)}::jsonb,${JSON.stringify(fields.summary)}::jsonb,
+      ${JSON.stringify(blocks)}::jsonb,'[]'::jsonb,${minutes},next_position.value,FALSE
+    FROM next_number,next_position RETURNING id,lesson_number`;
+    return ok({ saved: true, created: true, number: created[0].lesson_number, published: false });
+  } catch (error) {
+    if (error?.code === '23505') return fail('LESSON_CONFLICT', 'Een andere les is net toegevoegd. Vernieuw de lijst en probeer opnieuw.', 409);
+    throw error;
+  }
+}
+
+async function setLessonPublication(sql, body) {
+  const lessonId = integer(body.lessonId, { min: 1, max: 1000000000 });
+  if (!lessonId || typeof body.published !== 'boolean') return fail('INVALID_LESSON', 'Kies een les en een status.', 422);
+  const rows = await sql`SELECT l.id,l.lesson_number,l.title,l.summary,l.content_blocks,l.published FROM course_lessons l
+    JOIN content_releases r ON r.id=l.release_id WHERE l.id=${lessonId} AND r.status='published' LIMIT 1`;
+  const lesson = rows[0];
+  if (!lesson) return fail('LESSON_NOT_FOUND', 'Les niet gevonden.', 404);
+  const blocks = lesson.content_blocks || [];
+  if (body.published && !completeLesson({
+    title: lesson.title, summary: lesson.summary,
+    rule: lessonBlock(blocks, 'rule'), tip: lessonBlock(blocks, 'exam_tip')
+  })) return fail('TRANSLATIONS_REQUIRED', 'Vul voor publicatie alle vier tekstvelden in Nederlands, Dari/Farsi en Pashto in.', 422);
+  if (body.published && lesson.lesson_number > 150) {
+    await sql`ALTER TABLE lesson_progress
+      DROP CONSTRAINT IF EXISTS lesson_progress_lesson_id_check,
+      ADD CONSTRAINT lesson_progress_lesson_id_check CHECK (lesson_id BETWEEN 1 AND 10000)`;
+  }
+  await sql`UPDATE course_lessons SET published=${body.published},updated_at=NOW() WHERE id=${lessonId}`;
+  return ok({ published: body.published, lessonId });
+}
+
 async function handler(request) {
   const auth = await authenticate(request);
   if (auth.error) return auth.error;
@@ -88,10 +237,13 @@ async function handler(request) {
 
   const resource = new URL(request.url, 'https://www.mursaltheorie.nl').searchParams.get('resource');
   if (request.method === 'GET' && resource === 'activity') return ok({ ...(await activityData(sql)), admin: admin.user });
+  if (request.method === 'GET' && resource === 'lessons-admin') return ok(await adminLessons(sql));
   if (request.method === 'GET') return ok({ ...(await listData(sql)), admin: admin.user });
   if (request.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'Methode niet toegestaan.', 405);
 
   const body = await parseBody(request) || {};
+  if (resource === 'lesson-save') return saveLesson(sql, body);
+  if (resource === 'lesson-publish') return setLessonPublication(sql, body);
   const targetId = typeof body.clerkUserId === 'string' ? body.clerkUserId.trim() : '';
   if (!targetId) return fail('INVALID_USER', 'Kies een gebruiker.', 422);
   if (resource === 'grant') {

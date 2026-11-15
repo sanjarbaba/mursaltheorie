@@ -63,7 +63,7 @@ export default {
       }
 
       const body = await parseBody(request);
-      const lessonId = integer(body?.lessonId, { min: 1, max: 150 });
+      const lessonId = integer(body?.lessonId, { min: 1, max: 10000 });
       const progressPercent = body?.progressPercent == null
         ? (body?.completed ? 100 : 0)
         : integer(body.progressPercent, { min: 0, max: 100 });
@@ -76,6 +76,11 @@ export default {
         || !incomingClientTime || !normalizedDeviceId || (body?.mutationId != null && !normalizedMutationId)) {
         return fail('VALIDATION_ERROR', 'Ongeldige voortgangsmutatie.', 422);
       }
+
+      const publishedLesson = await sql`SELECT l.id FROM course_lessons l
+        JOIN content_releases r ON r.id=l.release_id
+        WHERE l.lesson_number=${lessonId} AND l.published=TRUE AND r.status='published' LIMIT 1`;
+      if (!publishedLesson[0]) return fail('LESSON_NOT_FOUND', 'Deze les is niet beschikbaar.', 404);
 
       if (normalizedMutationId) {
         const duplicate = await sql`
