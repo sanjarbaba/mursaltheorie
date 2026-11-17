@@ -21,9 +21,28 @@
       "ios": {
         "simulator": false
       }
+    },
+    "android-preview": {
+      "distribution": "internal",
+      "environment": "preview",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "android-production": {
+      "autoIncrement": true,
+      "environment": "production",
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "android-production": {
+      "android": {
+        "track": "internal"
+      }
+    }
   }
 }

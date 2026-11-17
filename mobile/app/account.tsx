@@ -9,6 +9,7 @@ import type { ApplePurchaseConfiguration } from '@/src/ApplePurchases';
 import { TabShell } from '@/src/Menu';
 import { clearCachedCourse, clearLocalAccountData } from '@/src/storage';
 import { colors } from '@/src/theme';
+import { useAndroidCourseAccess } from '@/src/AndroidCourseAccess';
 import type { Locale } from '@/src/types';
 
 type AccessResponse = { access: { hasAccess: boolean; locales: Locale[] } };
@@ -26,6 +27,7 @@ export default function AccountScreen() {
   const copy = labels[locale];
   const rtl = locale !== 'nl';
   const { user } = useUser();
+  const courseAccess = useAndroidCourseAccess();
   const { getToken, userId } = useAuth();
   const { signOut } = useClerk();
   const getTokenRef = useRef(getToken);
@@ -79,6 +81,7 @@ export default function AccountScreen() {
     const data = await createApiClient(() => getTokenRef.current())<AccessResponse>('/api/v1/access');
     setHasAccess(data.access.hasAccess);
     setAllowedLocales(data.access.locales || []);
+    await courseAccess?.refresh();
   }
 
   useEffect(() => {
@@ -119,6 +122,8 @@ export default function AccountScreen() {
           {loading ? <ActivityIndicator style={styles.spinner} color={colors.primary} /> : <Text style={[styles.statusText, rtl && styles.rtl]}>{hasAccess === true ? copy.active : hasAccess === false ? copy.inactive : copy.unavailable}</Text>}
         </View>
       </View>
+
+      {courseAccess && !courseAccess.allowed ? <Pressable onPress={() => void refreshAccess().catch(() => undefined)} style={styles.privacyLink} accessibilityRole="button"><Ionicons name="refresh-outline" size={19} color={colors.primary} /><Text style={styles.privacyText}>{locale === 'nl' ? 'Toegang opnieuw controleren' : locale === 'fa' ? 'بررسی دوبارهٔ دسترسی' : 'لاسرسی بیا وګورئ'}</Text></Pressable> : null}
 
       {Platform.OS === 'ios' && purchaseConfiguration?.enabled ? <ApplePurchases locale={locale} configuration={purchaseConfiguration} allowedLocales={allowedLocales} onAccessChanged={refreshAccess} /> : null}
 

@@ -25,13 +25,19 @@ export async function saveAccessLease(userId: string, access: AccessGrant) {
   await Storage.setItem(accessLeaseKey(userId), JSON.stringify(lease));
 }
 
-export async function hasOfflineAccess(userId: string, locale: Locale): Promise<boolean> {
+export async function readOfflineAccessLease(userId: string): Promise<AccessLease | null> {
   const value = await Storage.getItem(accessLeaseKey(userId));
-  if (!value) return false;
+  if (!value) return null;
   try {
     const lease = JSON.parse(value) as AccessLease;
-    return lease.validUntil > Date.now() && Array.isArray(lease.locales) && lease.locales.includes(locale);
-  } catch { return false; }
+    return Number.isFinite(lease.validUntil) && lease.validUntil > Date.now()
+      && Array.isArray(lease.locales) && lease.locales.length > 0 ? lease : null;
+  } catch { return null; }
+}
+
+export async function hasOfflineAccess(userId: string, locale: Locale): Promise<boolean> {
+  const lease = await readOfflineAccessLease(userId);
+  return Boolean(lease?.locales.includes(locale));
 }
 
 export async function cacheLessons(userId: string, response: LessonsResponse) {
