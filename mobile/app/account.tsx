@@ -132,6 +132,7 @@ export default function AccountScreen() {
         <Text style={styles.signOutText}>{copy.signOut}</Text>
       </Pressable>
 
+      {Platform.OS === 'android' ? <Pressable onPress={() => void Linking.openURL('mailto:support@mursaltheorie.nl')} style={styles.privacyLink} accessibilityRole="link"><Ionicons name="mail-outline" size={19} color={colors.primary} /><Text style={styles.privacyText}>{locale === 'nl' ? 'Hulp en contact' : locale === 'fa' ? 'پشتیبانی و تماس' : 'مرسته او اړیکه'}</Text></Pressable> : null}
       <Pressable onPress={() => void Linking.openURL('https://www.mursaltheorie.nl/privacy')} style={styles.privacyLink} accessibilityRole="link"><Ionicons name="shield-checkmark-outline" size={19} color={colors.primary} /><Text style={styles.privacyText}>{copy.privacy}</Text></Pressable>
       <Pressable onPress={() => setShowDelete((value) => !value)} style={styles.deleteLink} accessibilityRole="button"><Text style={styles.deleteText}>{copy.deleteAccount}</Text></Pressable>
       {showDelete ? <View style={styles.deleteCard}>

@@ -17,8 +17,8 @@ The existing screens, languages, content and API endpoints remain the source of 
 - Enable Google in the existing production Clerk instance. Configure native Android application nl.mursaltheorie.app and signing SHA-256. Register matching OAuth SHA-1 for each signing certificate (preview and Play App Signing).
 - Set EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID and EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID in the correct EAS environments. Never place client secrets in the app.
 - Google Play products, backend purchase verification, account binding, acknowledgement, restore/reconciliation and refunds/RTDN still need implementation. Apple purchases are iOS-only; no Android checkout has been added yet.
-- No APK/AAB has been built or installed yet. Physical-device tests and Google sign-in/payment tests remain outstanding.
-- Browser automation was unavailable during preparation; no Google Cloud, Clerk or Play Console settings were changed.
+- A first Android preview build has been uploaded to EAS; its cloud result and physical installation are not yet verified. Google sign-in/payment tests remain outstanding.
+- Google Cloud project mursal-theorie has been created. support@mursaltheorie.nl is configured as an email alias at Purelymail, with MX/SPF/DKIM/DMARC validated. OAuth configuration still requires registering that email as a Google account (or choosing an eligible existing account/group). Clerk and Play Console settings have not been changed.
 
 ## Required end-to-end tests
 1. New Google account: only account/purchase screen; no course/deep link/back-button access.
@@ -33,3 +33,6 @@ The existing screens, languages, content and API endpoints remain the source of 
 From mobile: pnpm install --frozen-lockfile, pnpm typecheck, pnpm content:check, pnpm test:android.
 Then npx eas-cli build --platform android --profile android-preview.
 Use android-production only after the above configuration and purchase tests are complete.
+
+## Local validation
+TypeScript check passed; 147 traffic signs and 30 road situations validated; five Android access-policy tests passed. A help/contact link uses support@mursaltheorie.nl on Android.

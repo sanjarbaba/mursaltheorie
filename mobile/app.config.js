@@ -4,6 +4,7 @@ export default ({ config }) => ({
   android: { ...config.android, versionCode: config.android?.versionCode || 1 },
   extra: {
     ...config.extra,
+    supportEmail: 'support@mursaltheorie.nl',
     EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID,
     EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID: process.env.EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID,
   },
