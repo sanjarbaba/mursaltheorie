@@ -37,5 +37,10 @@ Use android-production only after the above configuration and purchase tests are
 ## Local validation
 TypeScript check passed; 147 traffic signs and 30 road situations validated; five Android access-policy tests passed. A help/contact link uses support@mursaltheorie.nl on Android.
 
-- Play Console currently opens the developer-account registration page for xsanjarbaba@gmail.com. Registration or a switch to an existing developer account is needed before product creation/internal billing testing.
+- The correct existing organization account is Mursal Trading (6151101609267796520), owned by Mursal Sadat. Mursal Theorie has been created as draft app 4972188945796853654 with package nl.mursaltheorie.app. Trader status is complete. Play product creation is blocked until the owner completes linking the existing Google Payments organization profile for Mursal Taalcoach.
 - Both Dari/Farsi and Pashto packages include Dutch. Product mapping tests enforce this.
+
+## Internal Play build
+- android-play-test inherits the AAB production build type, uses the already verified preview environment variables, and pins Android versionCode 2 with local versioning. iOS build number 14 is unchanged.
+- New AAB build requested: https://expo.dev/accounts/sanjarbabas-team/projects/mursaltheorie/builds/c885fba7-5120-452b-be99-2b41793045db . Cloud success is not yet confirmed; no bundle has been uploaded to Play.
+- Play draft category Onderwijs and support@mursaltheorie.nl / https://www.mursaltheorie.nl were saved. No public release has been made.
