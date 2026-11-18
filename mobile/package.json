@@ -11,7 +11,11 @@
     "content:check": "node scripts/validate-content.cjs",
     "build:ios:preview": "npx eas-cli build --platform ios --profile preview",
     "build:ios": "npx eas-cli build --platform ios --profile production",
-    "submit:ios": "npx eas-cli submit --platform ios --profile production"
+    "submit:ios": "npx eas-cli submit --platform ios --profile production",
+    "build:android:preview": "npx eas-cli build --platform android --profile android-preview",
+    "build:android": "npx eas-cli build --platform android --profile android-production",
+    "submit:android": "npx eas-cli submit --platform android --profile android-production",
+    "test:android": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@clerk/expo": "^4.2.7",

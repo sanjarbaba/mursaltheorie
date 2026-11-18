@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from './theme';
+import { useAndroidCourseAccess } from './AndroidCourseAccess';
 import type { Locale } from './types';
 
 type Page = 'lessons' | 'practice' | 'signs' | 'exams' | 'account';
@@ -20,11 +21,13 @@ const items: { page: Page; path: '/' | '/practice' | '/signs' | '/exams' | '/acc
 
 export function TabShell({ locale, active, children }: { locale: Locale; active: Page; children: ReactNode }) {
   const insets = useSafeAreaInsets();
+  const courseAccess = useAndroidCourseAccess();
+  const visibleItems = courseAccess && !courseAccess.allowed ? items.filter((item) => item.page === 'account') : items;
   return <View style={[styles.shell, { paddingTop: insets.top }]}>
     <StatusBar style="dark" />
     <View style={styles.content}>{children}</View>
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 9) }]} accessibilityRole="tablist">
-      {items.map((item) => {
+      {visibleItems.map((item) => {
         const selected = active === item.page;
         return <Link key={item.page} href={{ pathname: item.path, params: { locale } }} asChild>
           <Pressable accessibilityRole="tab" accessibilityLabel={item.labels[locale]} accessibilityState={{ selected }} style={styles.tab}>

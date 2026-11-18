@@ -3,6 +3,7 @@ import type { ContentBlock, Locale, LocalizedContent } from './types';
 export function localizedText(value: LocalizedContent | undefined, locale: Locale): string {
   if (typeof value === 'string') return value;
   if (!value) return '';
+  if (locale === 'ps') return value.ps || value.nl || '';
   return value[locale] || value.nl || value.fa || value.ps || '';
 }
 

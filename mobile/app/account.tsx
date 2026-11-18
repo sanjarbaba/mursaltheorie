@@ -4,11 +4,13 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { createApiClient } from '@/src/api/client';
+import { GooglePurchases, type GooglePurchaseConfiguration } from '@/src/GooglePurchases';
 import { ApplePurchases } from '@/src/ApplePurchases';
 import type { ApplePurchaseConfiguration } from '@/src/ApplePurchases';
 import { TabShell } from '@/src/Menu';
 import { clearCachedCourse, clearLocalAccountData } from '@/src/storage';
 import { colors } from '@/src/theme';
+import { useAndroidCourseAccess } from '@/src/AndroidCourseAccess';
 import type { Locale } from '@/src/types';
 
 type AccessResponse = { access: { hasAccess: boolean; locales: Locale[] } };
@@ -26,6 +28,7 @@ export default function AccountScreen() {
   const copy = labels[locale];
   const rtl = locale !== 'nl';
   const { user } = useUser();
+  const courseAccess = useAndroidCourseAccess();
   const { getToken, userId } = useAuth();
   const { signOut } = useClerk();
   const getTokenRef = useRef(getToken);
@@ -33,6 +36,7 @@ export default function AccountScreen() {
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [allowedLocales, setAllowedLocales] = useState<Locale[]>([]);
   const [purchaseConfiguration, setPurchaseConfiguration] = useState<ApplePurchaseConfiguration | null>(null);
+  const [googleConfiguration, setGoogleConfiguration] = useState<GooglePurchaseConfiguration | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDelete, setShowDelete] = useState(false);
   const [deletePhrase, setDeletePhrase] = useState('');
@@ -79,10 +83,12 @@ export default function AccountScreen() {
     const data = await createApiClient(() => getTokenRef.current())<AccessResponse>('/api/v1/access');
     setHasAccess(data.access.hasAccess);
     setAllowedLocales(data.access.locales || []);
+    await courseAccess?.refresh();
   }
 
   useEffect(() => {
     let active = true;
+    setLoading(true); setHasAccess(null); setAllowedLocales([]); setGoogleConfiguration(null);
     void createApiClient(() => getTokenRef.current())<AccessResponse>('/api/v1/access')
       .then((data) => { if (active) { setHasAccess(data.access.hasAccess); setAllowedLocales(data.access.locales || []); } })
       .catch(() => { if (active) setHasAccess(null); })
@@ -90,8 +96,11 @@ export default function AccountScreen() {
     if (Platform.OS === 'ios') void createApiClient(() => getTokenRef.current())<ApplePurchaseConfiguration>('/api/v1/apple-purchases')
       .then((data) => { if (active) setPurchaseConfiguration(data); })
       .catch(() => { if (active) setPurchaseConfiguration(null); });
+    if (Platform.OS === 'android') void createApiClient(() => getTokenRef.current())<GooglePurchaseConfiguration>('/api/v1/google-purchases')
+      .then((data) => { if (active) setGoogleConfiguration(data); })
+      .catch(() => { if (active) setGoogleConfiguration(null); });
     return () => { active = false; };
-  }, []);
+  }, [userId]);
 
   const email = user?.primaryEmailAddress?.emailAddress || '';
   const name = user?.fullName || user?.firstName || email || 'Mursal Theorie';
@@ -120,13 +129,19 @@ export default function AccountScreen() {
         </View>
       </View>
 
+      {courseAccess && !courseAccess.allowed ? <Pressable onPress={() => void refreshAccess().catch(() => undefined)} style={styles.privacyLink} accessibilityRole="button"><Ionicons name="refresh-outline" size={19} color={colors.primary} /><Text style={styles.privacyText}>{locale === 'nl' ? 'Toegang opnieuw controleren' : locale === 'fa' ? 'بررسی دوبارهٔ دسترسی' : 'لاسرسی بیا وګورئ'}</Text></Pressable> : null}
+
       {Platform.OS === 'ios' && purchaseConfiguration?.enabled ? <ApplePurchases locale={locale} configuration={purchaseConfiguration} allowedLocales={allowedLocales} onAccessChanged={refreshAccess} /> : null}
+
+      {Platform.OS === 'android' && googleConfiguration?.enabled ? <GooglePurchases key={userId} locale={locale} configuration={googleConfiguration} allowedLocales={allowedLocales} onAccessChanged={refreshAccess} /> : null}
+      {Platform.OS === 'android' && !googleConfiguration?.enabled && !hasAccess ? <Text style={styles.statusText}>{locale === 'nl' ? 'Aankopen zijn tijdelijk niet beschikbaar.' : locale === 'fa' ? 'خرید فعلاً در دسترس نیست.' : 'پېرود اوس نه شته.'}</Text> : null}
 
       <Pressable onPress={() => void leaveAccount()} style={styles.signOut} accessibilityRole="button">
         <Ionicons name="log-out-outline" size={20} color={colors.error} />
         <Text style={styles.signOutText}>{copy.signOut}</Text>
       </Pressable>
 
+      {Platform.OS === 'android' ? <Pressable onPress={() => void Linking.openURL('mailto:support@mursaltheorie.nl')} style={styles.privacyLink} accessibilityRole="link"><Ionicons name="mail-outline" size={19} color={colors.primary} /><Text style={styles.privacyText}>{locale === 'nl' ? 'Hulp en contact' : locale === 'fa' ? 'پشتیبانی و تماس' : 'مرسته او اړیکه'}</Text></Pressable> : null}
       <Pressable onPress={() => void Linking.openURL('https://www.mursaltheorie.nl/privacy')} style={styles.privacyLink} accessibilityRole="link"><Ionicons name="shield-checkmark-outline" size={19} color={colors.primary} /><Text style={styles.privacyText}>{copy.privacy}</Text></Pressable>
       <Pressable onPress={() => setShowDelete((value) => !value)} style={styles.deleteLink} accessibilityRole="button"><Text style={styles.deleteText}>{copy.deleteAccount}</Text></Pressable>
       {showDelete ? <View style={styles.deleteCard}>

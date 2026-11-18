@@ -10,6 +10,9 @@
     },
     "api/**/*.js": {
       "maxDuration": 10
+    },
+    "api/v1/google-purchases.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
