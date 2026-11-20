@@ -7,6 +7,7 @@ import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Tex
 import { createApiClient } from '@/src/api/client';
 import { mediaUrl } from '@/src/content';
 import { colors } from '@/src/theme';
+import { reviewNeighbors } from '@/src/review-navigation';
 import type { Locale } from '@/src/types';
 
 type Answer = number | number[] | string;
@@ -96,6 +97,10 @@ export default function ExamScreen() {
 
   async function goToQuestion(nextIndex: number) {
     if (!attempt || busy || nextIndex < 0 || nextIndex >= attempt.questions.length) return;
+    if (result) {
+      setIndex(nextIndex);
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -138,6 +143,10 @@ export default function ExamScreen() {
   const correctCount = result?.answers.filter((item) => item.isCorrect).length || 0;
   const wrongIndices = result && attempt ? attempt.questions.flatMap((item, questionIndex) => result.answers.find((answer) => answer.questionId === item.id)?.isCorrect ? [] : [questionIndex]) : [];
 
+  const { previousIndex, nextIndex } = reviewNeighbors(
+    index, attempt?.questions.length ?? 0, result && reviewFilter === 'wrong' ? wrongIndices : undefined
+  );
+
   function showWrongAnswers() {
     if (wrongIndices.length === 0) return;
     setReviewFilter('wrong');
@@ -172,9 +181,9 @@ export default function ExamScreen() {
         <Text style={[styles.question, rtl && styles.rtl]}>{question.prompt}</Text>
         {result ? <View style={styles.review}>
           <Text style={[styles.reviewTitle, !review?.isCorrect && styles.reviewTitleWrong]}>{review?.isCorrect ? '✓ ' : '✕ '}{review?.isCorrect ? (locale === 'nl' ? 'Goed beantwoord' : locale === 'fa' ? 'پاسخ درست' : 'سم ځواب') : (locale === 'nl' ? 'Niet goed beantwoord' : locale === 'fa' ? 'پاسخ نادرست' : 'ناسم ځواب')}</Text>
-          <Text style={styles.body}>{locale === 'nl' ? 'Jouw antwoord: ' : locale === 'fa' ? 'پاسخ شما: ' : 'ستاسو ځواب: '}{answerText(question, review?.selectedAnswer)}</Text>
-          <Text style={styles.body}>{locale === 'nl' ? 'Juiste antwoord: ' : locale === 'fa' ? 'پاسخ درست: ' : 'سم ځواب: '}{answerText(question, review?.correctAnswer)}</Text>
-          <Text style={styles.body}>{review?.explanation}</Text>
+          <Text style={[styles.body, rtl && styles.rtl]}>{locale === 'nl' ? 'Jouw antwoord: ' : locale === 'fa' ? 'پاسخ شما: ' : 'ستاسو ځواب: '}{answerText(question, review?.selectedAnswer)}</Text>
+          <Text style={[styles.body, rtl && styles.rtl]}>{locale === 'nl' ? 'Juiste antwoord: ' : locale === 'fa' ? 'پاسخ درست: ' : 'سم ځواب: '}{answerText(question, review?.correctAnswer)}</Text>
+          <Text style={[styles.body, rtl && styles.rtl]}>{review?.explanation}</Text>
         </View> : <>
           {question.questionType === 'multiple_response' ? <Text style={styles.meta}>{locale === 'nl' ? 'Kies alle juiste antwoorden.' : locale === 'fa' ? 'همهٔ پاسخ‌های درست را انتخاب کنید.' : 'ټول سم ځوابونه وټاکئ.'}</Text> : null}
           {question.questionType === 'numeric' ? <TextInput value={typeof selected === 'string' ? selected : ''} onChangeText={choose} keyboardType="decimal-pad" placeholder={locale === 'nl' ? 'Vul je antwoord in' : locale === 'fa' ? 'پاسخ را وارد کنید' : 'ځواب ولیکئ'} placeholderTextColor="#a9c2ea" style={styles.input} /> : question.options.map((option, optionIndex) => {
@@ -190,8 +199,8 @@ export default function ExamScreen() {
       </View> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {!timeExpired || result ? <View style={styles.nav}>
-        <Pressable disabled={busy || index === 0} onPress={() => void goToQuestion(index - 1)} style={[styles.navButton, (busy || index === 0) && styles.disabled]}><Text style={styles.navText}>← {locale === 'nl' ? 'Vorige' : locale === 'fa' ? 'قبلی' : 'مخکینۍ'}</Text></Pressable>
-        <Pressable disabled={busy || index === attempt.questions.length - 1} onPress={() => void goToQuestion(index + 1)} style={[styles.navButton, (busy || index === attempt.questions.length - 1) && styles.disabled]}><Text style={styles.navText}>{busy ? (locale === 'nl' ? 'Opslaan…' : locale === 'fa' ? 'ذخیره…' : 'ساتل…') : locale === 'nl' ? 'Volgende' : locale === 'fa' ? 'بعدی' : 'بله'} →</Text></Pressable>
+        <Pressable disabled={busy || previousIndex === undefined} onPress={() => { if (previousIndex !== undefined) void goToQuestion(previousIndex); }} style={[styles.navButton, (busy || previousIndex === undefined) && styles.disabled]}><Text style={styles.navText}>← {locale === 'nl' ? 'Vorige' : locale === 'fa' ? 'قبلی' : 'مخکینۍ'}</Text></Pressable>
+        <Pressable disabled={busy || nextIndex === undefined} onPress={() => { if (nextIndex !== undefined) void goToQuestion(nextIndex); }} style={[styles.navButton, (busy || nextIndex === undefined) && styles.disabled]}><Text style={styles.navText}>{busy ? (locale === 'nl' ? 'Opslaan…' : locale === 'fa' ? 'ذخیره…' : 'ساتل…') : locale === 'nl' ? 'Volgende' : locale === 'fa' ? 'بعدی' : 'بله'} →</Text></Pressable>
       </View> : null}
       {!result && !timeExpired ? <Pressable disabled={busy} onPress={confirmSubmit} style={[styles.submit, busy && styles.disabled]}><Text style={styles.primaryText}>{locale === 'nl' ? 'Examen inleveren' : locale === 'fa' ? 'ثبت امتحان' : 'ازموینه وسپارئ'}</Text></Pressable> : null}
       {result ? <Link href={{ pathname: '/exams', params: { locale } }} asChild><Pressable style={styles.submit}><Text style={styles.primaryText}>{locale === 'nl' ? 'Terug naar examens' : locale === 'fa' ? 'بازگشت به امتحان‌ها' : 'ازموینو ته بېرته'}</Text></Pressable></Link> : null}
