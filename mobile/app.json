@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "nl.mursaltheorie.app",
-      "versionCode": 2
+      "versionCode": 3
     },
     "plugins": [
       "expo-router",
