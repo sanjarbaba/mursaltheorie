@@ -8,6 +8,9 @@
       "maxDuration": 30,
       "includeFiles": "api/v1/apple-certs/*.cer"
     },
+    "api/v1/google-purchases.js": {
+      "maxDuration": 30
+    },
     "api/**/*.js": {
       "maxDuration": 10
     }
