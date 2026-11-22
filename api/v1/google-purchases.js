@@ -26,7 +26,7 @@ export async function verifyAndRecord(sql, userId, productId, token, dependencie
   if (!verified.consumed && !verified.revoked && recorded[0].entitlement_status === 'active') await consume(productId, token);
   return { productId, status: recorded[0].entitlement_status, accessUntil: recorded[0].access_until };
 }
-async function notification(sql, request) {
+async function notification(request) {
   try { await verifyGoogleNotification(request); }
   catch { return fail('UNAUTHORIZED_NOTIFICATION', 'Ongeldige afzender.', 401); }
   const body = await parseBody(request);
@@ -37,6 +37,8 @@ async function notification(sql, request) {
   if (event.testNotification) return ok({ received: true });
   const notice = event.oneTimeProductNotification || event.voidedPurchaseNotification;
   if (!notice?.purchaseToken) return ok({ received: true, ignored: true });
+  if (!googleReady()) return fail('GOOGLE_NOT_AVAILABLE', 'Aankopen zijn tijdelijk niet beschikbaar.', 503);
+  const sql = getSql();
   const hash = purchaseHash(notice.purchaseToken);
   const known = await sql`SELECT clerk_user_id, product_id FROM google_iap_transactions WHERE token_hash = ${hash}`;
   // A deleted account cannot be granted access again by a late notification.
@@ -55,10 +57,10 @@ async function notification(sql, request) {
 }
 async function handler(request) {
   try {
+    const url = new URL(request.url);
+    if (request.method === 'POST' && url.searchParams.get('resource') === 'notification') return await notification(request);
     if (!googleReady()) return request.method === 'GET' ? ok({ enabled: false, products: [] }) : fail('GOOGLE_NOT_AVAILABLE', 'Aankopen zijn tijdelijk niet beschikbaar.', 503);
     const sql = getSql();
-    const url = new URL(request.url);
-    if (request.method === 'POST' && url.searchParams.get('resource') === 'notification') return await notification(sql, request);
     const auth = await authenticate(request);
     if (auth.error) return fail('UNAUTHORIZED', 'Inloggen is vereist.', 401);
     await ensureUser(sql, auth.userId);
