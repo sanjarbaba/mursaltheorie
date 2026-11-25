@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-<title id="title">Rode kruis boven de rechterrijstrook</title><desc id="desc">Een schematische snelweg met drie rijstroken. Groene pijlen staan boven de twee linkerrijstroken; een rood kruis sluit de rechterrijstrook.</desc>
+<title id="title">Rood kruis boven de rechterrijstrook</title><desc id="desc">Een schematische snelweg met drie rijstroken. Groene pijlen staan boven de twee linkerrijstroken; een rood kruis sluit de rechterrijstrook.</desc>
 <rect width="1280" height="720" fill="#dceefa"/><rect y="290" width="1280" height="430" fill="#779f6a"/>
 <path d="M410 290H870L1240 720H40Z" fill="#4c5561"/><path d="m410 290-370 430m830-430 370 430" stroke="#fff" stroke-width="9"/>
 <path d="m563 290-123 430m277-430 123 430" fill="none" stroke="#fff" stroke-width="7" stroke-dasharray="28 22"/>
