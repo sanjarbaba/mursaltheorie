@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+<title id="title">Rode kruis boven de rechterrijstrook</title><desc id="desc">Een schematische snelweg met drie rijstroken. Groene pijlen staan boven de twee linkerrijstroken; een rood kruis sluit de rechterrijstrook.</desc>
+<rect width="1280" height="720" fill="#dceefa"/><rect y="290" width="1280" height="430" fill="#779f6a"/>
+<path d="M410 290H870L1240 720H40Z" fill="#4c5561"/><path d="m410 290-370 430m830-430 370 430" stroke="#fff" stroke-width="9"/>
+<path d="m563 290-123 430m277-430 123 430" fill="none" stroke="#fff" stroke-width="7" stroke-dasharray="28 22"/>
+<path d="M310 340V140H970V340" fill="none" stroke="#75818d" stroke-width="16"/>
+<g fill="#17212d" stroke="#85929c" stroke-width="5"><rect x="360" y="85" width="140" height="140" rx="8"/><rect x="570" y="85" width="140" height="140" rx="8"/><rect x="780" y="85" width="140" height="140" rx="8"/></g>
+<g fill="none" stroke="#1ee779" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"><path d="M430 114V196m-30-30 30 30 30-30"/><path d="M640 114V196m-30-30 30 30 30-30"/></g>
+<path d="m813 118 74 74m0-74-74 74" stroke="#ff303d" stroke-width="19" stroke-linecap="round"/>
+<g><rect x="291" y="497" width="115" height="151" rx="28" fill="#1b65b1"/><rect x="305" y="518" width="87" height="45" rx="8" fill="#a2c8df"/><path d="M303 620h22m48 0h22" stroke="#ff6b6b" stroke-width="10"/><rect x="602" y="388" width="75" height="101" rx="19" fill="#e4e8ed"/><rect x="611" y="402" width="57" height="31" rx="6" fill="#aac9d8"/></g>
+</svg>

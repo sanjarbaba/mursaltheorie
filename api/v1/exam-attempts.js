@@ -79,6 +79,10 @@ async function saveAnswer(sql, userId, body) {
 
   const type = questionType(question.question_type);
   const receivedAnswer = Object.hasOwn(body || {}, 'answer') ? body.answer : body?.selectedOption;
+  if (receivedAnswer === null || (type === 'multiple_response' && Array.isArray(receivedAnswer) && receivedAnswer.length === 0)) {
+    await sql`DELETE FROM exam_attempt_answers_v1 WHERE attempt_id = ${attemptId} AND question_id = ${questionId}`;
+    return ok({ answer: { attemptId, questionId, value: null, selectedOption: null, answeredAt: null } });
+  }
   const answer = normalizeAnswer(type, receivedAnswer, Array.isArray(question.options) ? question.options.length : 0);
   if (answer === null) return fail('VALIDATION_ERROR', 'Het antwoord past niet bij dit vraagtype.', 422);
   const correctAnswer = normalizeAnswer(type, question.correct_answer, Array.isArray(question.options) ? question.options.length : 0);
