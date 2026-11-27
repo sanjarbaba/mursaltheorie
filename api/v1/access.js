@@ -1,4 +1,5 @@
-import { catalogue, offerFor } from '../../storefront-config.js';
+import { catalogue } from '../../storefront-config.js';
+import { offerFor } from './_checkout-catalogue.js';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClerkClient } from '@clerk/backend';
 import { authenticate, ensureUser, getSql, hasCourseAccess, parseBody, requireCourseAccess } from '../_lib.js';
@@ -656,7 +657,7 @@ async function processStripeWebhook(request) {
     SELECT ${userId},${order.product_key},'web',${object.id},'active',
       NOW(),
       GREATEST(NOW(),COALESCE(MAX(ends_at),NOW()))+INTERVAL '30 days'
-    FROM entitlements WHERE clerk_user_id=${userId} AND status='active'
+    FROM entitlements WHERE clerk_user_id=${userId} AND product_key=${order.product_key} AND status='active'
     ON CONFLICT(source,external_reference) DO UPDATE SET
       product_key=EXCLUDED.product_key,status='active',
       starts_at=COALESCE(entitlements.starts_at,EXCLUDED.starts_at),
@@ -857,6 +858,11 @@ const endpoint = {
     try {
       const sql = getSql();
       const user = await ensureUser(sql, auth.userId);
+      if(request.method==='GET'&&resource==='pashto-content'){
+        const access=await requireCourseAccess(sql,auth.userId,'ps');
+        if(access.error)return access.error;
+        return ok({translations:globalThis.MT_PASHTO||{}});
+      }
       if (request.method === 'POST' && resource === 'error-answer') {
         const language = locale(url.searchParams.get('locale'));
         const access = await requireCourseAccess(sql, auth.userId, language);

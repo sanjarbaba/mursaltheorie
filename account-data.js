@@ -52,6 +52,10 @@
 
   const allowedLocales = () => Array.isArray(window.mtAccountLocales) ? window.mtAccountLocales : ['nl'];
   async function loadV1Content() {
+    if(allowedLocales().includes('ps')){
+      const dictionary=await apiRequest('/api/v1/access?resource=pashto-content');
+      window.MT_PASHTO=Object.freeze(dictionary.translations||{});
+    }
     const request = (path, language) => allowedLocales().includes(language) ? apiRequest(`${path}?locale=${language}`) : Promise.resolve({ lessons: [], exams: [] });
     const [lessonsNl, lessonsFa, lessonsPs, examsNl, examsFa, examsPs] = await Promise.all([
       request('/api/v1/lessons', 'nl'), request('/api/v1/lessons', 'fa'), request('/api/v1/lessons', 'ps'),

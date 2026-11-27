@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { catalogue,offerFor,CAMPAIGN_END } from '../storefront-config.js';
+import {offerFor as checkoutOffer} from '../api/v1/_checkout-catalogue.js';
 import { GET as accessRequest } from '../api/v1/access.js';
 import reviews from '../api/v1/reviews.js';
 import {reviewInput,verifiedReviewEligible} from '../api/v1/_review.js';
@@ -22,8 +23,8 @@ test('the sale ends without a visit or timer callback, selecting the existing re
   assert.equal(after.campaign.active,false);
   assert.equal(offerFor('theory_b_nl_30d',now).amount,2999);
   assert.equal(offerFor('theory_b_nl_fa_30d',now).amount,4999);
-  assert.equal(offerFor('theory_b_nl_30d',now).paymentLink.id,'plink_1UTNb0KBUCvMx3oMW7c491tF');
-  assert.equal(offerFor('theory_b_nl_fa_30d',now).paymentLink.id,'plink_1UTNbGKBUCvMx3oMd0ZLAj4X');
+  assert.equal(checkoutOffer('theory_b_nl_30d',now).paymentLink.id,'plink_1UTNb0KBUCvMx3oMW7c491tF');
+  assert.equal(checkoutOffer('theory_b_nl_fa_30d',now).paymentLink.id,'plink_1UTNbGKBUCvMx3oMd0ZLAj4X');
 });
 test('Pashto sales are paused without removing existing entitlement products',async()=>{
   assert.equal(offerFor('theory_b_nl_ps_30d').available,false);
@@ -47,6 +48,7 @@ test('the public catalogue does not require Clerk or query customer data',async(
   assert.equal(response.status,200);const payload=await response.json();
   assert.equal(payload.data.products.length,4);assert.equal(typeof payload.data.serverTime,'number');
   assert.equal(JSON.stringify(payload).includes('customer_email'),false);
+  assert.equal(JSON.stringify(payload).includes('buy.stripe.com'),false);
 });
 test('preview cannot create purchases or process production webhooks',async()=>{
   const previous=process.env.VERCEL_ENV;process.env.VERCEL_ENV='preview';
@@ -72,4 +74,30 @@ test('review input requires explicit publication consent and bounded text',()=>{
   assert.equal(reviewInput({...input,rating:6}),null);assert.equal(reviewInput({...input,text:'kort'}),null);
   assert.equal(verifiedReviewEligible([{status:'payment_pending',paid_at:null}]),false);
   assert.equal(verifiedReviewEligible([{status:'active',paid_at:'2026-11-20'}]),true);
+});
+test('the translation URL requires authentication and is rewritten away from the public file',async()=>{
+  const response=await access.fetch(new Request('https://test.example/api/v1/access?resource=pashto-content'));
+  assert.equal(response.status,401);
+  const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
+  assert.ok(config.rewrites.some(r=>r.source==='/pashto-content.js'&&r.destination.includes('resource=pashto-content')));
+  for(const name of ['learn5.html','learn5.source.html'])assert.doesNotMatch(readFileSync(new URL('../'+name,import.meta.url),'utf8'),/<script src="\/pashto-content/);
+});
+test('paid Pashto content is loaded after language access, without affecting Dutch-only accounts',async()=>{
+  const source=readFileSync(new URL('../account-data.js',import.meta.url),'utf8');
+  const start=source.indexOf('  async function loadV1Content()');
+  const fn=source.slice(start,source.indexOf('\n  async function loadAccountData',start));
+  for(const locales of [['nl'],['nl','ps']]){
+    const calls=[],window={dispatchEvent(){}};
+    const ctx=vm.createContext({allowedLocales:()=>locales,window,Object,Promise,CustomEvent:function(){},mergeContent:()=>({lessons:[]}),apiRequest:async path=>{calls.push(path);return{translations:{'lesson:1':'پښتو'},lessons:[],exams:[]};}});
+    vm.runInContext(fn,ctx);await ctx.loadV1Content();
+    assert.equal(calls.includes('/api/v1/access?resource=pashto-content'),locales.includes('ps'));
+    if(locales.includes('ps'))assert.equal(window.MT_PASHTO['lesson:1'],'پښتو');
+  }
+});
+test('the API router supports both native method exports and legacy fetch handlers',async()=>{
+  const {default:router}=await import('../api/v1/index.js');
+  const status=await router(new Request('https://test.example/api/v1'));
+  assert.equal(status.status,200);
+  const reviews=await router(new Request('https://test.example/api/v1?__endpoint=reviews'));
+  assert.equal(reviews.status,200);
 });

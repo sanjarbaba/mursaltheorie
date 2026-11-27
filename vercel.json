@@ -17,6 +17,10 @@
   },
   "rewrites": [
     {
+      "source": "/pashto-content.js",
+      "destination": "/api/v1/access?resource=pashto-content"
+    },
+    {
       "source": "/api/v1/results",
       "destination": "/api/v1/access?resource=results"
     }
