@@ -6,3 +6,7 @@ Disallow: /learn5
 Disallow: /account
 
 Sitemap: https://www.mursaltheorie.nl/sitemap.xml
+
+Disallow: /learn5.source.html
+Disallow: /pashto-content.js
+Disallow: /admin.html

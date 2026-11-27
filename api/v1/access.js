@@ -1,3 +1,4 @@
+import { catalogue, offerFor } from '../../storefront-config.js';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClerkClient } from '@clerk/backend';
 import { authenticate, ensureUser, getSql, hasCourseAccess, parseBody, requireCourseAccess } from '../_lib.js';
@@ -74,8 +75,11 @@ function stripeShippingDetails(session) {
 }
 
 async function createCheckout(sql, userId, customerEmail, productKey) {
-  const product = MOLLIE_PRODUCTS[productKey];
-  const stripeLink = STRIPE_PAYMENT_LINKS[productKey];
+  const offer = offerFor(productKey);
+  if (offer && !offer.available) return fail('PRODUCT_COMING_SOON', 'Pashto wordt inhoudelijk gecontroleerd. Nieuwe aankopen zijn tijdelijk gesloten.', 409);
+  const baseProduct = MOLLIE_PRODUCTS[productKey];
+  const product = baseProduct && offer ? { ...baseProduct, amount: (offer.amount / 100).toFixed(2) } : baseProduct;
+  const stripeLink = offer?.paymentLink;
   if (!product) return fail('INVALID_PRODUCT', 'Kies een geldig product.', 422);
   if (!stripeLink) return fail('PAYMENTS_NOT_CONFIGURED', 'Stripe is nog niet geconfigureerd voor dit product.', 503);
   const isPhysical = product.kind === 'physical';
@@ -134,7 +138,10 @@ function sameToken(a, b) {
 
 async function createGuestCheckout(sql, customerEmail, productKey, immediateAccessConsent) {
   const secret = configured('MOLLIE_API_KEY');
-  const product = MOLLIE_PRODUCTS[productKey];
+  const offer = offerFor(productKey);
+  if (offer && !offer.available) return fail('PRODUCT_COMING_SOON', 'Pashto wordt inhoudelijk gecontroleerd. Nieuwe aankopen zijn tijdelijk gesloten.', 409);
+  const baseProduct = MOLLIE_PRODUCTS[productKey];
+  const product = baseProduct && offer ? { ...baseProduct, amount: (offer.amount / 100).toFixed(2) } : baseProduct;
   const email = normalizeGuestEmail(customerEmail);
   const appUrl = configured('APP_URL') || 'https://www.mursaltheorie.nl';
   if (!secret) return fail('PAYMENTS_NOT_CONFIGURED', 'Betalen is nog niet geactiveerd.', 503);
@@ -186,8 +193,11 @@ async function createGuestCheckout(sql, customerEmail, productKey, immediateAcce
 }
 
 async function createGuestStripeCheckout(sql, productKey) {
-  const product = MOLLIE_PRODUCTS[productKey];
-  const stripeLink = STRIPE_PAYMENT_LINKS[productKey];
+  const offer = offerFor(productKey);
+  if (offer && !offer.available) return fail('PRODUCT_COMING_SOON', 'Pashto wordt inhoudelijk gecontroleerd. Nieuwe aankopen zijn tijdelijk gesloten.', 409);
+  const baseProduct = MOLLIE_PRODUCTS[productKey];
+  const product = baseProduct && offer ? { ...baseProduct, amount: (offer.amount / 100).toFixed(2) } : baseProduct;
+  const stripeLink = offer?.paymentLink;
   if (!product || !stripeLink) {
     return fail('INVALID_PRODUCT', 'Kies een geldig taalpakket.', 422);
   }
@@ -248,8 +258,12 @@ async function processMollieWebhook(request) {
   let effectiveUserId = userId;
   const isGuest = payment?.metadata?.guest_checkout === 'true';
   const customerEmail = normalizeGuestEmail(payment?.metadata?.customer_email);
-  const product = MOLLIE_PRODUCTS[productKey];
-  const amountMatches = payment?.amount?.currency === 'EUR' && payment?.amount?.value === product?.amount;
+  const sql = getSql();
+  const originalOrders = await sql`SELECT product_key, amount_value::TEXT AS amount_value, amount_currency FROM purchase_orders WHERE provider='mollie' AND provider_payment_id=${payment.id} LIMIT 1`;
+  const original = originalOrders[0];
+  const baseProduct = MOLLIE_PRODUCTS[productKey];
+  const product = baseProduct && original ? { ...baseProduct, amount: original.amount_value } : null;
+  const amountMatches = original?.product_key === productKey && original?.amount_currency === 'EUR' && payment?.amount?.currency === 'EUR' && Number(payment?.amount?.value) === Number(product?.amount);
   const isPhysical = product?.kind === 'physical';
   const consentMatches = isPhysical || payment?.metadata?.immediate_access_consent === 'true';
   if (!product || (isGuest ? !customerEmail : !userId) || !amountMatches || !consentMatches) return fail('PAYMENT_MISMATCH', 'Betalingsgegevens komen niet overeen.', 400);
@@ -262,7 +276,6 @@ async function processMollieWebhook(request) {
       return fail('ACCOUNT_PROVISIONING_PENDING', 'Je betaling is ontvangen. De toegang wordt automatisch opnieuw verwerkt.', 503);
     }
   }
-  const sql = getSql();
   const safePayload = { id: payment.id, status: payment.status, amount: payment.amount, product_key: productKey, immediate_access_consent: !isPhysical };
   await sql`INSERT INTO purchase_events(provider,provider_event_id,event_type,payload,processed_at) VALUES('mollie',${payment.id},${`payment.${payment.status}`},${JSON.stringify(safePayload)}::jsonb,NOW()) ON CONFLICT(provider,provider_event_id) DO UPDATE SET event_type=EXCLUDED.event_type,payload=EXCLUDED.payload,processed_at=NOW()`;
   const ensuredUser = effectiveUserId ? await ensureUser(sql, effectiveUserId, customerEmail ? { email: customerEmail } : undefined) : null;
@@ -670,11 +683,13 @@ async function processStripeWebhook(request) {
         appUrl: configured('APP_URL') || 'https://www.mursaltheorie.nl',
         activated: true
       });
+      if (!email.sent) return fail('PURCHASE_CONFIRMATION_PENDING', 'Je toegang is actief; de aankoopbevestiging wordt opnieuw geprobeerd.', 503);
       if (email.sent) {
         await sql`UPDATE purchase_orders SET confirmation_sent_at=NOW(),confirmation_email_id=${email.id},updated_at=NOW() WHERE id=${order.id}`;
       }
     } catch (error) {
       console.error('Stripe purchase confirmation email could not be sent', { name: error?.name });
+      return fail('PURCHASE_CONFIRMATION_PENDING', 'Je toegang is actief; de aankoopbevestiging wordt opnieuw geprobeerd.', 503);
     }
   }
 
@@ -797,6 +812,8 @@ const endpoint = {
     if (!['GET', 'POST'].includes(request.method)) return fail('METHOD_NOT_ALLOWED', 'Methode niet toegestaan.', 405);
     const url = new URL(request.url);
     const resource = url.searchParams.get('resource');
+    if (request.method === 'GET' && resource === 'catalog') return ok({ ...catalogue(), serverTime:Date.now() });
+    if (process.env.VERCEL_ENV === 'preview' && request.method !== 'GET') return fail('PREVIEW_READ_ONLY', 'Deze preview verwerkt geen betalingen of accountwijzigingen. Gebruik het gratis proefexamen om te testen.', 403);
     if (request.method === 'POST' && resource === 'mollie-webhook') {
       try { return await processMollieWebhook(request); }
       catch (error) { console.error('Mollie webhook failed', error); return fail('WEBHOOK_ERROR', 'Webhook kon niet worden verwerkt.', 400); }
@@ -818,7 +835,17 @@ const endpoint = {
     if (request.method === 'POST' && resource === 'guest-stripe-checkout') {
       const body = await parseBody(request);
       try {
-        return await createGuestStripeCheckout(getSql(), body?.productKey);
+        const sql=getSql();
+        if(request.headers.get('authorization')){
+          const auth=await authenticate(request);
+          if(auth.error)return fail('UNAUTHORIZED','Je sessie is verlopen. Log opnieuw in voordat je koopt.',401);
+          const users=await sql`SELECT access_status,access_ends_at FROM app_users WHERE clerk_user_id=${auth.userId} LIMIT 1`;
+          const entitlements=await loadEntitlements(sql,auth.userId);
+          const summary=accessSummary(entitlements,hasCourseAccess(users[0]));
+          const requestedLocale=productLocales(body?.productKey).find(l=>l!=='nl')||'nl';
+          if(body?.productKey!=='theory_b_book'&&(['admin','beta'].includes(users[0]?.access_status)||summary.locales.includes(requestedLocale)))return fail('ACCESS_ALREADY_ACTIVE','Je hebt al toegang tot deze taal. Open je leeromgeving om verder te leren.',409);
+        }
+        return await createGuestStripeCheckout(sql, body?.productKey);
       } catch (error) {
         console.error('Guest Stripe checkout failed', { name: error?.name });
         return fail('SERVICE_UNAVAILABLE', 'De Stripe-betaalpagina kon niet worden geopend.', 503);

@@ -10,6 +10,8 @@ const webAuthorizedParties = [
 let sqlClient;
 
 export function getSql() {
+  // Preview environment variables currently point to the live Neon database. Never use them.
+  if (process.env.VERCEL_ENV === 'preview') throw Object.assign(new Error('Preview database access is disabled until an isolated test database is configured'), { code:'PREVIEW_ISOLATION_REQUIRED' });
   const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL_NON_POOLING;
   if (!databaseUrl) throw new Error('Neon database URL is not configured'); if (!sqlClient) sqlClient = neon(databaseUrl);
   return sqlClient;

@@ -66,6 +66,7 @@ export function bookOrderConfirmationEmail({ email, orderId, description, amount
     idempotencyKey: `book-order-confirmation-${orderId}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#17131f;line-height:1.6">
       <h1>Bedankt voor je bestelling</h1>
+      <p>Gratis verzending binnen Nederland. Levertijd: 1 tot 4 dagen. Dit is een fysiek boek; digitale toegang koop je afzonderlijk.</p>
       <p>We hebben je betaling voor <strong>${escapeHtml(description)}</strong> ontvangen.<br>€${escapeHtml(amount)} · eenmalige betaling</p>
       <h2 style="font-size:18px">Afleveradres</h2>
       <p>${escapeHtml(shipping.name)}<br>${escapeHtml(shipping.street)}<br>${escapeHtml(shipping.postcode)} ${escapeHtml(shipping.city)}<br>${escapeHtml(shipping.country)}</p>
